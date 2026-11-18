@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Central Operacional</title>
+<meta name="theme-color" content="#0b1220">
+<link rel="manifest" href="manifest.json">
+<style>
+:root{
+  --bg:#0b1220; --bg2:#0f1a2e; --card:#13203a; --card2:#182845; --line:#22355a;
+  --tx:#e8eefb; --tx2:#9fb0cf; --tx3:#6f82a6;
+  --ac:#3b82f6; --ac2:#60a5fa;
+  --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444; --info:#38bdf8;
+  --ouro:#f5c542; --prata:#c9d2df; --bronze:#d08a4e;
+  --r:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--ac2)}
+.app{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:100vh}
+aside{background:var(--bg2);border-right:1px solid var(--line);padding:18px 12px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:4px}
+.brand{font-weight:800;letter-spacing:.06em;font-size:15px;padding:4px 10px 16px}
+.brand small{display:block;font-weight:500;letter-spacing:0;color:var(--tx3);font-size:12px}
+.nav a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:var(--tx2);text-decoration:none;font-weight:500}
+.nav a:hover{background:var(--card)}
+.nav a.on{background:var(--ac);color:#fff}
+.nav a .lock{margin-left:auto;font-size:11px;opacity:.6}
+.nav svg{width:18px;height:18px;flex:none}
+aside .foot{margin-top:auto;color:var(--tx3);font-size:11px;padding:8px 10px}
+main{min-width:0}
+header{display:flex;align-items:center;gap:14px;padding:14px 24px;border-bottom:1px solid var(--line);background:rgba(11,18,32,.92);position:sticky;top:0;z-index:5;backdrop-filter:blur(6px)}
+header h1{font-size:18px;margin:0;font-weight:700}
+.clock{color:var(--tx2);font-variant-numeric:tabular-nums}
+.sp{flex:1}
+.avs{display:flex;align-items:center}
+.av{position:relative;width:34px;height:34px;border-radius:50%;background:var(--card2);display:grid;place-items:center;font-weight:700;font-size:12px;color:var(--tx);border:2px solid var(--bg);overflow:visible;flex:none}
+.av img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.av .dot{position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;border:2px solid var(--bg);background:#64748b}
+.av .dot.on{background:var(--ok);box-shadow:0 0 0 0 rgba(34,197,94,.6);animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.55)}70%{box-shadow:0 0 0 7px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+.avs .av+.av{margin-left:-8px}
+.av.lg{width:46px;height:46px;font-size:15px}
+.btn{border:1px solid var(--line);background:var(--card);padding:8px 14px;border-radius:10px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{border-color:var(--ac)}
+.btn.pri{background:var(--ac);border-color:var(--ac);color:#fff}
+.btn.bad{background:transparent;border-color:#7f1d1d;color:#fca5a5}
+.btn.sm{padding:5px 10px;font-size:12px;border-radius:8px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.wrap{padding:22px 24px 60px;max-width:1500px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;position:relative;overflow:hidden}
+.kpi .l{color:var(--tx2);font-weight:600;font-size:13px}
+.kpi .v{font-size:44px;font-weight:800;line-height:1.1;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+.kpi .s{color:var(--tx3);font-size:12.5px}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c,var(--ac))}
+.kpi.k1{--c:var(--info)} .kpi.k2{--c:var(--warn)} .kpi.k3{--c:var(--ok)} .kpi.k4{--c:var(--bad)}
+.kpi.k4 .v{color:#fca5a5}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;margin-top:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.card h2{font-size:15px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+.card h2 .sp{flex:1}
+.mini{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.mini .m{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px}
+.mini .m b{font-size:22px;font-variant-numeric:tabular-nums}
+.mini .m span{color:var(--tx2);font-size:12.5px}
+.medal{width:12px;height:12px;border-radius:50%;flex:none}
+.medal.ouro{background:var(--ouro)} .medal.prata{background:var(--prata)} .medal.bronze{background:var(--bronze)}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;color:var(--tx3);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px;border-bottom:1px solid rgba(34,53,90,.6);vertical-align:middle}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--card2)}
+.tbl{overflow:auto}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap;background:var(--card2);color:var(--tx2)}
+.pill.aberta{background:rgba(56,189,248,.14);color:#7dd3fc}
+.pill.execucao{background:rgba(245,158,11,.15);color:#fcd34d}
+.pill.concluida{background:rgba(34,197,94,.15);color:#86efac}
+.pill.cancelada{background:rgba(100,116,139,.2);color:#94a3b8}
+.pill.ouro{background:rgba(245,197,66,.16);color:var(--ouro)}
+.pill.prata{background:rgba(201,210,223,.14);color:var(--prata)}
+.pill.bronze{background:rgba(208,138,78,.16);color:var(--bronze)}
+.late{display:inline-grid;place-items:center;min-width:44px;padding:4px 8px;border-radius:8px;font-weight:800;font-variant-numeric:tabular-nums;font-size:13px}
+.late.l0{background:rgba(34,197,94,.14);color:#86efac}
+.late.l1{background:rgba(245,158,11,.18);color:#fcd34d}
+.late.l2{background:rgba(239,68,68,.2);color:#fca5a5}
+.late.l3{background:var(--bad);color:#fff}
+.muted{color:var(--tx3)}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+input.in,select.in,textarea.in{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:8px 11px;outline:none;min-width:0}
+input.in:focus,select.in:focus,textarea.in:focus{border-color:var(--ac)}
+textarea.in{width:100%;min-height:120px;resize:vertical}
+.onl{display:flex;flex-direction:column;gap:10px}
+.onl .u{display:flex;align-items:center;gap:10px}
+.onl .u div{min-width:0}
+.onl .u b{display:block;font-size:13.5px}
+.onl .u small{color:var(--tx3)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px}
+.tab{padding:7px 13px;border-radius:9px;cursor:pointer;color:var(--tx2);font-weight:600;border:1px solid transparent;background:none}
+.tab.on{background:var(--card2);color:var(--tx);border-color:var(--line)}
+.tab .c{background:var(--bg2);border-radius:6px;padding:0 6px;margin-left:5px;font-size:11.5px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.item{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:13px;display:flex;flex-direction:column;gap:5px;cursor:default}
+.item.click{cursor:pointer}
+.item.click:hover{border-color:var(--ac)}
+.item .t{font-weight:700;display:flex;align-items:center;gap:8px}
+.item .k{color:var(--tx2);font-size:12.5px}
+.empty{padding:30px;text-align:center;color:var(--tx3);border:1px dashed var(--line);border-radius:12px}
+.drop{border:2px dashed var(--line);border-radius:14px;padding:28px;text-align:center;color:var(--tx2);cursor:pointer;transition:.15s}
+.drop.hover{border-color:var(--ac);background:rgba(59,130,246,.07)}
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(2,6,15,.7);display:grid;place-items:center;z-index:50;padding:16px}
+.md{background:var(--bg2);border:1px solid var(--line);border-radius:16px;width:min(620px,100%);max-height:92vh;display:flex;flex-direction:column}
+.md.wide{width:min(980px,100%)}
+.md .hd{padding:16px 18px;border-bottom:1px solid var(--line);font-weight:700;font-size:16px;display:flex;align-items:center}
+.md .bd{padding:18px;overflow:auto}
+.md .ft{padding:14px 18px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--tx2);font-weight:600}
+.form label.full{grid-column:1/-1}
+.form .in{width:100%}
+.chks{display:flex;flex-wrap:wrap;gap:8px}
+.chks label{flex-direction:row;align-items:center;gap:6px;background:var(--card);padding:6px 10px;border-radius:8px;border:1px solid var(--line);color:var(--tx)}
+.toast{position:fixed;right:18px;bottom:18px;z-index:60;display:flex;flex-direction:column;gap:8px}
+.toast div{background:var(--card2);border:1px solid var(--line);border-left:4px solid var(--ac);padding:12px 14px;border-radius:10px;max-width:360px;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.toast div.bad{border-left-color:var(--bad)} .toast div.ok{border-left-color:var(--ok)}
+/* calendário */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal .wd{color:var(--tx3);font-size:11.5px;text-align:center;font-weight:700;text-transform:uppercase}
+.cal .d{aspect-ratio:1/.8;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:6px 8px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;min-height:54px}
+.cal .d.out{opacity:.25;cursor:default}
+.cal .d.today{border-color:var(--ac);box-shadow:0 0 0 1px var(--ac)}
+.cal .d.sel{background:rgba(59,130,246,.18)}
+.cal .d .n{font-weight:700;font-size:13px}
+.cal .d .bar{height:5px;border-radius:3px;background:var(--bg);overflow:hidden}
+.cal .d .bar i{display:block;height:100%;background:var(--ok)}
+.cal .d.full .n::after{content:" ✓";color:var(--ok)}
+.task{display:flex;align-items:center;gap:12px;padding:11px 12px;background:var(--card2);border:1px solid var(--line);border-radius:11px;margin-bottom:8px}
+.task.done{opacity:.6}
+.task.done .tt{text-decoration:line-through}
+.task .tt{font-weight:600}
+.ck{width:24px;height:24px;border-radius:7px;border:2px solid var(--tx3);display:grid;place-items:center;cursor:pointer;flex:none;background:none;padding:0}
+.ck.on{background:var(--ok);border-color:var(--ok);color:#06240f;font-weight:900}
+.hint{background:rgba(59,130,246,.09);border:1px solid rgba(59,130,246,.3);border-radius:11px;padding:11px 13px;color:var(--tx2);font-size:13px;margin-bottom:14px}
+.hint.warn{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.3)}
+.bm{display:inline-block;background:linear-gradient(135deg,#2563eb,#0ea5e9);color:#fff;padding:10px 18px;border-radius:10px;font-weight:700;text-decoration:none;cursor:grab}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.stats .s{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:12.5px;color:var(--tx2)}
+.stats .s b{color:var(--tx);font-size:16px;margin-right:4px}
+.mob{display:none}
+body.tv aside,body.tv .notv{display:none!important}
+body.tv .app{grid-template-columns:1fr}
+body.tv .kpi .v{font-size:60px}
+#printArea{display:none}
+@media print{
+  html,body{background:#fff!important;color:#111!important}
+  body>*:not(#printArea){display:none!important}
+  #printArea{display:block!important;font:12pt/1.5 system-ui,"Segoe UI",Roboto,sans-serif;color:#111}
+  #printArea .ph{background:#0f2147;color:#fff;padding:18px 22px;border-bottom:4px solid #e8a92c;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #printArea .pe{font-weight:800;font-size:20pt;letter-spacing:.04em}
+  #printArea .pt{color:#e8a92c;font-weight:700;font-size:11pt;letter-spacing:.06em;margin-top:2px}
+  #printArea .pb{white-space:pre-wrap;padding:18px 4px}
+  #printArea .pf{border-top:1px solid #ccc;padding-top:8px;color:#666;font-size:9pt}
+  @page{margin:14mm}
+}
+@media (max-width:1100px){.row{grid-template-columns:minmax(0,1fr)!important}.kpis{grid-template-columns:repeat(2,1fr)}.mini{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:760px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  aside{position:fixed;bottom:0;top:auto;left:0;right:0;height:auto;flex-direction:row;padding:6px;z-index:20;border-right:0;border-top:1px solid var(--line);overflow-x:auto}
+  aside .brand,aside .foot{display:none}
+  .nav{display:flex;gap:2px}
+  .nav a{flex-direction:column;gap:2px;font-size:10.5px;padding:6px 8px}
+  .nav a .lock{display:none}
+  header{padding:10px 14px}
+  header h1{font-size:15px}
+  .clock,.hidem{display:none}
+  .wrap{padding:14px 12px 90px}
+  .kpi .v{font-size:34px}
+  .form{grid-template-columns:1fr}
+  .hidesm{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand" id="brand">CENTRAL<small>Painel Operacional</small></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="foot" id="modo"></div>
+  </aside>
+  <main>
+    <header>
+      <h1 id="ttl">Painel</h1>
+      <span class="clock" id="clock"></span>
+      <span class="sp"></span>
+      <div class="avs hidem" id="hdrOnline" title="Online agora"></div>
+      <button class="btn sm notv hidem" id="btnTv" title="Modo TV (tela cheia)">⛶ TV</button>
+      <div id="hdrUser"></div>
+    </header>
+    <div class="wrap" id="main"></div>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+<div id="modalRoot"></div>
+
+<script>
+/* ============================================================
+   CONFIGURAÇÃO — cole aqui a URL e a chave pública do Supabase.
+   Sem isso o app roda em MODO LOCAL (só neste navegador).
+   ============================================================ */
+const CONFIG = {
+  supabaseUrl: "",
+  supabaseKey: "",
+  empresa: "Protemaxi",
+};
+</script>
+<script>
+/* Carteira de clientes (planilha do Segware, 18/11/2026) — ouros conforme lista "Carteira de Clientes Ouro" */
+const CARTEIRA = [{"nome":"01 TERRENO JEREISSATI CE 060","codigo":"0010","cidade":"Pacatuba","bairro":"Monguba","endereco":"CE-060","categoria":""},{"nome":"02 TERRENO JEREISSATI","codigo":"0011","cidade":"Pacatuba","bairro":"Olho D'Agua","endereco":"R Manoel Pereira N° 5910 - R Manoel Pereira","categoria":""},{"nome":"A.C CONSTRUÇÕES LTDA","codigo":"9249","cnpj":"11.074.614/0001-34","telefone":"85981158989","cidade":"Fortaleza","bairro":"Cidade Dos Funcionarios","endereco":"Avenida Desembargador Gonzaga N° 1221","categoria":""},{"nome":"ABERTTA SAUDE - ASSOCIACAO BENEFICENTE DOS EMPREGADOS DA ARCELORMITTAL NO BRASIL","codigo":"9796","cnpj":"17.505.793/0032-08","telefone":"3199922249","cidade":"Fortaleza","bairro":"Joaquim Távora","endereco":"Rua Joaquim Torres N° 654","categoria":""},{"nome":"ABERTTA SAUDE - ASSOCIACAO BENEFICENTE DOS EMPREGADOS DA ARCELORMITTAL NO BRASIL","codigo":"9797","cnpj":"17.505.793/0033-80","telefone":"3199922249","cidade":"Sao Goncalo Do Amarante","endereco":"R. Eretides Martins N° 37","categoria":""},{"nome":"AGRIBIOS","codigo":"9692","cnpj":"09.286.232/0001-22","telefone":"32740749","cidade":"Fortaleza","bairro":"Barroso","endereco":"Rua Cléia N° 317 - b","categoria":""},{"nome":"AGUIAR GÁS","codigo":"0228","cnpj":"07.811.757/0001-04","telefone":"3294 9483","cidade":"Fortaleza","bairro":"Granja Portugal","endereco":"Rua José Abílio N° 1150","categoria":""},{"nome":"ALA MARACANAU II","codigo":"1003","cnpj":"61012019018270","cidade":"Maracanau","bairro":"Centro","endereco":"R. MIGUEL ALVES N° 61","categoria":""},{"nome":"AMARAL BAIA ADVOGADOS ASSOCIADOS","codigo":"9786","cnpj":"51.039.845/0001-21","telefone":"8599905124","cidade":"Fortaleza","bairro":"Dionisio Torres","endereco":"Avenida Antônio Sales N° 3027","categoria":""},{"nome":"ARENA AYO","codigo":"9718","cnpj":"13.148.222/0001-06","telefone":"8530461665","cidade":"Fortaleza","bairro":"Guararapes","endereco":"Avenida Chanceler Edson Queiroz N° 100","categoria":""},{"nome":"ASSOCIACAO ENERVIVA","codigo":"9795","cnpj":"59.466.362/0001-15","telefone":"1131996138","cidade":"Fortaleza","bairro":"Parque Iracema","endereco":"Avenida Ministro José Américo N° 326","categoria":""},{"nome":"ASSOCIACAO JARDINS DO LAGO MAX","codigo":"9768","cnpj":"54.144.403/0001-33","telefone":"8588295087","cidade":"Eusébio","bairro":"Urucunema","endereco":"Avenida Coronel Cícero Sá N° 2514","categoria":"ouro","grupo":"Jardim Lago Max","responsavel":"Uchoa"},{"nome":"ATX SERVIÇOS - AMADEU TAVARES XAVIER - EPP","codigo":"0248","cnpj":"00.740.389/0001-01","telefone":"3297 3254","cidade":"Maracanau","bairro":"Jardim Bandeirantes","endereco":"Rua Pontengi N° 320","categoria":""},{"nome":"AYO BEIRA MAR","codigo":"9686","cnpj":"13.148.222/0001-06","telefone":"8530461665","cidade":"Fortaleza","bairro":"Beira Mar","endereco":"TIBURCIO CAVALCANTE N° 01","categoria":""},{"nome":"AYO FITNESS CLUB","codigo":"9429","cnpj":"13148222000106","telefone":"85 3046-1665","cidade":"Fortaleza","bairro":"Guararapes","endereco":"Avenida Chanceler Edson Queiroz N° 100","categoria":""},{"nome":"BARATÃO DA IRRIGAÇÃO COMERCIAL DE BOMBAS LTDA.","codigo":"0217","cnpj":"09067201000180","telefone":"4009 9090","cidade":"Maracanau","bairro":"Jereissate I","endereco":"Av. Dr. Mendel Steinbruch N° 2290","categoria":""},{"nome":"BARATÃO DEPOSITO","codigo":"9155","telefone":"8540099090","cidade":"Maracanau","bairro":"Boa Esperanca","endereco":"Rodovia Doutor Mendel Steinbruch N° 2290","categoria":""},{"nome":"BATERIAS TUDOR","codigo":"1144","telefone":"3254 4168","cidade":"Fortaleza","bairro":"Jose Bonifacio","endereco":"Rua Barão do Rio Branco N° 2613","categoria":""},{"nome":"BEGHUS CASA DE CARNES","codigo":"9820","cnpj":"61.325.662/0001-26","telefone":"8599779830","cidade":"Fortaleza","bairro":"Maraponga","endereco":"Avenida Godofredo Maciel N° 1730","categoria":""},{"nome":"BRASA GRILL","codigo":"9742","cnpj":"50.899.601/0001-56","telefone":"8585502679","cidade":"Fortaleza","bairro":"Montese","endereco":"Rua Queirós Ribeiro N° 580","categoria":""},{"nome":"BRAZLIMP","codigo":"9466","cidade":"Fortaleza","bairro":"Parque Santa Maria","endereco":"Rua João Crispim N° 1325","categoria":""},{"nome":"BRAZLIMP GALPAO","codigo":"9849","cidade":"Fortaleza","bairro":"Parque Santa Maria","endereco":"Rua Jorge da Veiga N° 234","categoria":""},{"nome":"CALDAS & FURLANE","codigo":"9085","cnpj":"02.380.232/0001-48","telefone":"8532961068","cidade":"Fortaleza","bairro":"Planalto Ayrton Senna","endereco":"Avenida Maria Gomes de Sá N° 60","categoria":""},{"nome":"CAPELA IPANEMA","codigo":"1138","telefone":"8532350829","cidade":"Fortaleza","bairro":"Antonio Bezerra","endereco":"Rua Tenente Queirós N° 400","categoria":"ouro","grupo":"Capelas","responsavel":"Cacio"},{"nome":"CAPELA ALVARO WEYNE","codigo":"9130","cnpj":"61012019042732","cidade":"Fortaleza","bairro":"Alvaro Weyne","endereco":"Avenida Pasteur N° 861","categoria":"ouro","grupo":"Capelas","responsavel":"Cacio"},{"nome":"CAPELA ALVORADA","codigo":"0224","cnpj":"61012019075665","cidade":"Fortaleza","bairro":"Sapiranga","endereco":"Avenida Conselheiro Gomes de Freitas N° 3400","categoria":"ouro","grupo":"Capelas","responsavel":"Cacio"},{"nome":"CAPELA ALVORADA","codigo":"9667","cnpj":"61012019075665","cidade":"Fortaleza","bairro":"Sapiranga","endereco":"Avenida Conselheiro Gomes de Freitas N° 3400","categoria":"ouro","grupo":"Capelas","responsavel":"Cacio"},{"nome":"CAPELA CIDADE OESTE","codigo":"0193","cnpj":"61012019084656","telefone":"85999443572","cidade":"Fortaleza","bairro":"Quintino Cunha","endereco":"Rua Padre Perdigão Sampaio N° 400","categoria":"ouro","grupo":"Capelas","responsavel":"Cacio"},{"nome":"CAPELA DEMÓCRITO ROCHA","codigo":"0249","cnpj":"61012019161669","cidade":"Fortaleza","bairro":"Demócrito Rocha","endereco":"Rua Rio Grande do Sul N° 888","categoria":"ouro","grupo":"Capelas","responsavel":"Cacio"},{"nome":"CAPELA HENRIQUE JORGE","codigo":"0206","cnpj":"61012019105408","telefone":"8532902281","cidade":"Fortaleza","bairro":"Henrique Jorge","endereco":"Avenida Senador Fernandes Távora N° 200","categoria":"ouro","grupo":"Capelas","responsavel":"Cacio"},{"nome":"CAPELA ITAPERI","codigo":"0269","cidade":"Fortaleza","bairro":"Itaperi","endereco":"Avenida Doutor Silas Munguba 1700 N° 3902","categoria":"ouro","grupo":"Capelas","responsavel":"Cacio"},{"nome":"CAPELA MARACANAÚ I - NOVO MARACANAÚ","codigo":"9113","cnpj":"61.012.019/0736-11","cidade":"Maracanau","bairro":"Novo Maracanaú","endereco":"RUA 01 N° 70 - NOVO MARACANAÚ I","categoria":"ouro","grupo":"Capelas","responsavel":"Cacio"},{"nome":"CAPELA MARACANAÚ II - ALTO DA MANGUEIRA","codigo":"0199","cnpj":"61012019145035","telefone":"85999443572","cidade":"Maracanau","bairro":"Centro","endereco":"Rua Miguel Alves N° 206","categoria":"ouro","grupo":"Capelas","responsavel":"Cacio"},{"nome":"CAPELA MONTESE","codigo":"0110","cnpj":"61012019028748","cidade":"Fortaleza","bairro":"Montese","endereco":"Rua Elvira Pinho N° 220","categoria":"ouro","grupo":"Capelas","responsavel":"Cacio"},{"nome":"CAPELA RIO ( PACATUBA)","codigo":"0143","cnpj":"61012019076718","telefone":"8533841145","cidade":"Pacatuba","bairro":"Senador Carlos Jereissati","endereco":"Avenida XXI N° 362","categoria":"ouro","grupo":"Capelas","responsavel":"Cacio"},{"nome":"CAPELA RODOLFO TEÓFILO","codigo":"9112","telefone":"8532140646","cidade":"Fortaleza","bairro":"Rodolfo Teofilo","endereco":"Rua Professor João Bosco N° 501","categoria":"ouro","grupo":"Capelas","responsavel":"Cacio"},{"nome":"CAPELA VENEZA","codigo":"0109","cnpj":"61012019075908","telefone":"8532951001","cidade":"Fortaleza","bairro":"Itaperi","endereco":"Avenida Doutor Silas Munguba N° 4850","categoria":"ouro","grupo":"Capelas","responsavel":"Cacio"},{"nome":"CARTEC - ANEXO","codigo":"9845","cnpj":"18.923.586/0001-21","telefone":"8532605013","cidade":"Eusébio","bairro":"Centro","endereco":"Rua 1º de Maio N° 441","categoria":"ouro","grupo":"Cartec Automotivo","responsavel":"Paulo"},{"nome":"CARTEC AUTOMOTIVO LTDA","codigo":"9751","cnpj":"18.923.586/0001-21","telefone":"8532605013","cidade":"Eusébio","bairro":"Centro","endereco":"Rua 1º de Maio N° 411","categoria":"ouro","grupo":"Cartec Automotivo","responsavel":"Paulo"},{"nome":"CENTRAL DAS CORREIAS E CORRENTES LTDA","codigo":"9781","cnpj":"17.945.848/0001-96","telefone":"8532313034","cidade":"Maracanau","bairro":"Cidade Nova","endereco":"Avenida dos Marinheiros N° 519","categoria":""},{"nome":"CENTRAL DAS FRALDAS DISTRIBUIDORA LTDA","codigo":"0271","cnpj":"26436406000105","cidade":"Fortaleza","bairro":"Messejana","endereco":"Rodovia BR-116 N° 3131","categoria":""},{"nome":"CERTA SERVIÇOS EMPRESARIAIS E REPRESENTAÇOES LTDA","codigo":"0135","cnpj":"07468050000147","telefone":"3276 4097","cidade":"Fortaleza","bairro":"Engenheiro Luciano Cavalcante","endereco":"Rua Desembargador Waldemar Alves Pereira N° 515","categoria":""},{"nome":"CHICA BELA","codigo":"0256","telefone":"3472 5812","cidade":"Fortaleza","bairro":"Vila União","endereco":"Rua Abel Garcia N° 1055","categoria":""},{"nome":"CIDADE ALPHA - OBRA","codigo":"9465","cidade":"Eusébio","endereco":"RUA DOMINGOS SÁVIO N° S/N","categoria":""},{"nome":"CLÍNICA SÃO BENTO","codigo":"0285","telefone":"3224 0892","cidade":"Fortaleza","bairro":"Aldeota","endereco":"Rua Paula Ney N° 170","categoria":""},{"nome":"COLÉGIO CARLOS LOBO","codigo":"0158","cnpj":"0738535400140","telefone":"8533712759","cidade":"Maracanau","bairro":"Jereissati I","endereco":"Rua 11 N° 576","categoria":""},{"nome":"COND. ACONCÁGUA","codigo":"0115","cnpj":"34986588000116","telefone":"8532248181","cidade":"Fortaleza","bairro":"Aldeota","endereco":"Rua Fonseca Lobo N° 1400","categoria":""},{"nome":"COND. FIRENZE","codigo":"1069","telefone":"8532424515","cidade":"Fortaleza","bairro":"Meireles","endereco":"Avenida da Abolição N° 3000","categoria":""},{"nome":"COND. JOSÉ PESSOA DE ARAÚJO","codigo":"0262","cnpj":"01090571000127","telefone":"3227 8080","cidade":"Fortaleza","bairro":"Dionisio Torres","endereco":"Avenida Senador Virgílio Távora N° 2431","categoria":""},{"nome":"CONDOMINIO ARVOREDO","codigo":"9712","cnpj":"13.477.197/0001-04","telefone":"88981677600","cidade":"Fortaleza","bairro":"Jangurussu","endereco":"Rua Francisco Alves Ribeiro N° 530","categoria":""},{"nome":"CONDOMINIO EDIFICIO PALACIO DO PLANALTO","codigo":"9777","cnpj":"01.869.117/0001-79","telefone":"85985158545","cidade":"Fortaleza","bairro":"Cocó","endereco":"Avenida Santos Dumont N° 6870","categoria":""},{"nome":"CONDOMINIO RESIDENCIAL VILLAGE DAS PALMEIRAS","codigo":"9779","cnpj":"09.217.182/0001-21","telefone":"8532731657","cidade":"Fortaleza","bairro":"Paupina","endereco":"Rua Oscar Leitão N° 505","categoria":"ouro","grupo":"Cond. Village das Palmeiras","responsavel":"Humberto"},{"nome":"CONDOMINIO ROYAL OAK RESIDENCE","codigo":"9770","cnpj":"36.014.709/0001-93","telefone":"8532484000","cidade":"Fortaleza","bairro":"De Lourdes","endereco":"Rua Júlio Silva N° 720","categoria":"ouro","grupo":"Cond. Royal Oak","responsavel":"Rogério"},{"nome":"CONSTANCE - DOM LUIZ","codigo":"9744","cnpj":"53.289.887/0001-46","telefone":"8585382084","cidade":"Fortaleza","bairro":"Meireles","endereco":"Avenida Dom Luís N° 1023","categoria":""},{"nome":"Conta Transmitter","cidade":"Não Definido","endereco":"Não definido","categoria":""},{"nome":"CONTROLPAX CONTABILIDADE E GESTAO LTDA","codigo":"9759","cnpj":"28.318.136/0001-63","telefone":"8533938612","cidade":"Fortaleza","bairro":"Joaquim Távora","endereco":"Rua Padre Valdevino N° 1600","categoria":""},{"nome":"DATA COMP","codigo":"0251","cnpj":"14.131.911/0001-62","cidade":"Fortaleza","bairro":"Parangaba","endereco":"Rua Sete de Setembro N° 182","categoria":""},{"nome":"DAYSE TAVARES","codigo":"9688","cidade":"Fortaleza","bairro":"Sapiranga","endereco":"Rua Mário Alencar Araripe N° 800","categoria":""},{"nome":"DIFARMA DISTRIBUIDORA DE MEDICAMENTOS LTDA","codigo":"0186","cnpj":"09070060000155","telefone":"8531947075","cidade":"Fortaleza","bairro":"Presidente Kennedy","endereco":"Rua Haroldo Torres N° 1305","categoria":""},{"nome":"DINAMICA HOSPITALAR II","codigo":"1214","cnpj":"09.423.609/0001-48","telefone":"8532813004","cidade":"Fortaleza","bairro":"Parquelandia","endereco":"R. Amadeu Furtado N° 994","categoria":""},{"nome":"DIRETORIA","codigo":"1217","cnpj":"07468050000147","telefone":"3393 4878","cidade":"Fortaleza","bairro":"Guararapes","endereco":"Rua Albert Sabin N° 61","categoria":""},{"nome":"EDIFICIO VILLA MONTALCINO","codigo":"9822","cnpj":"21.929.684/0001-80","telefone":"8530553255","cidade":"Fortaleza","bairro":"Mucuripe","endereco":"RUA MANUEL JACARE N° 190 - POR TRAS DO COCO BAMBU","categoria":"ouro","grupo":"Ed. Villa Montalcino","responsavel":"Marcelo"},{"nome":"ELEVARTECH ELEVADORES E COMPONENTES LTDA","codigo":"9733","cnpj":"20.905.727/0001-25","telefone":"8531227413","cidade":"Fortaleza","bairro":"Jardim America","endereco":"Rua Júlio César N° 454","categoria":""},{"nome":"ENDY SERVIÇOS","codigo":"9838","cnpj":"33.606.676/0001-82","telefone":"8532752444","cidade":"Fortaleza","bairro":"Planalto Ayrton Senna","endereco":"Avenida Nova Fortaleza N° 112","categoria":""},{"nome":"EOLICA PRAINHA","codigo":"9763","cnpj":"24.217.054/0001-71","telefone":"8540059030","cidade":"Aquiraz","bairro":"Prainha /Porto Das Dunas","endereco":"ROD CE 025, KM 04 N° S/N - SALA 02","categoria":"ouro","grupo":"Eólica Prainha","responsavel":"Marcos"},{"nome":"EOLICA PRAINHA","codigo":"9764","cnpj":"24.217.054/0001-71","telefone":"8540059030","cidade":"Aquiraz","bairro":"Prainha /Porto Das Dunas","endereco":"ROD CE 025, KM 04 N° S/N - SALA 02","categoria":"ouro","grupo":"Eólica Prainha","responsavel":"Marcos"},{"nome":"ESTACIONAMENTO - FACULDADE ALDEOTA","codigo":"9840","cnpj":"74.000.738/0006-08","telefone":"8534647803","cidade":"Fortaleza","bairro":"Varjota","endereco":"RUA CASTRO MONTE N° 1364","categoria":""},{"nome":"ESTOCK EMBALAGENS","codigo":"9816","cnpj":"42.003.982/0001-15","telefone":"85988024399","cidade":"Fortaleza","bairro":"Montese","endereco":"professor gomes de mato N° 1212","categoria":""},{"nome":"ESUTRA","codigo":"1130","telefone":"8532994800","cidade":"Fortaleza","bairro":"Passaré","endereco":"Avenida Juscelino Kubitschek N° 3381","categoria":""},{"nome":"F&F DISTRIBUIDORA","codigo":"0301","cidade":"Fortaleza","bairro":"Messejana","endereco":"Rua Manuel Arruda N° 381","categoria":""},{"nome":"FARIAS BRITO - ESPAÇO KIDS","codigo":"9842","cnpj":"74.000.738/0008-61","telefone":"8534647803","cidade":"Fortaleza","bairro":"Aldeota","endereco":"R. Delmiro Gouvêia N° 1390","categoria":""},{"nome":"FARIAS BRITO - BRAVEZA","codigo":"9834","cnpj":"74.000.738/0008-61","telefone":"8534647803","cidade":"Fortaleza","bairro":"Aldeota","endereco":"R 08 DE SETEMBRO N° 1330","categoria":""},{"nome":"FARIAS BRITO - FACULDADE ALDEOTA LTDA","codigo":"9833","cnpj":"74.000.738/0006-08","telefone":"8534647803","cidade":"Fortaleza","bairro":"Varjota","endereco":"RUA CASTRO MONTE N° 1364","categoria":"ouro","grupo":"Farias Brito Aldeota","responsavel":"Tyrso"},{"nome":"FARIAS BRITO BABY ALDEOTA LTDA","codigo":"9835","cnpj":"74.000.738/0013-29","telefone":"8534647803","cidade":"Fortaleza","bairro":"Varjota","endereco":"RUA OSORIO PALMELLA N° 244","categoria":"ouro","grupo":"Farias Brito Aldeota","responsavel":"Tyrso"},{"nome":"FARIAS BRITO PRÉ VESTIBULAR ALDEOTA LTDA","codigo":"9836","cnpj":"74.000.738/0007-80","telefone":"8534647803","cidade":"Fortaleza","bairro":"Aldeota","endereco":"RUA JULIO ABREU N° 284","categoria":"ouro","grupo":"Farias Brito Aldeota","responsavel":"Tyrso"},{"nome":"FARMACIA PRO-VIDA CAUCAIA","codigo":"9702","cnpj":"29080220000154","cidade":"Caucaia","bairro":"Parque Guadalajara (Jurema)","endereco":"Avenida Dom Almeida Lustosa N° 2628","categoria":""},{"nome":"FARMACIA PRO-VIDA FERNANDES TAVORA","codigo":"9701","cnpj":"09621926000179","telefone":"8598813-4000","cidade":"Fortaleza","bairro":"Henrique Jorge","endereco":"Avenida Senador Fernandes Távora N° 1804","categoria":""},{"nome":"FARMACIA PROVIDA (MESSEJANA)","codigo":"9693","cnpj":"44.800.105/0001-09","telefone":"8532913954","cidade":"Fortaleza","bairro":"Conjunto Palmeiras","endereco":"Avenida Deputado Castelo de Castro N° 1150","categoria":""},{"nome":"FARMACIA PROVIDA BERNARDO MANUEL","codigo":"9439","cnpj":"35777583000146","cidade":"Fortaleza","bairro":"Montese","endereco":"BERNADO EMANUEL N° 11173","categoria":""},{"nome":"FARMACIA PROVIDA LINEU MACHADO","codigo":"9003","cnpj":"27.089.559/0001-96","telefone":"32333215","cidade":"Fortaleza","bairro":"Joquei Clube","endereco":"AV. LINEU MACHADO N° 1451","categoria":""},{"nome":"FARMACIA PROVIDA OSÓRIO DE PAIVA","codigo":"9463","telefone":"8534848707","cidade":"Fortaleza","bairro":"Bonsucesso","endereco":"Avenida General Osório de Paiva N° 4849","categoria":""},{"nome":"FB - IDEIAS","codigo":"9843","cnpj":"74.000.738/0001-95","telefone":"8534647803","cidade":"Fortaleza","bairro":"Varjota","endereco":"RUA CASTRO MONTE N° 1325","categoria":""},{"nome":"FB BABY II SUL","codigo":"9729","cnpj":"74.000.738/0010-86","telefone":"8534647803","cidade":"Fortaleza","bairro":"José De Alencar","endereco":"Rua Eliseu Oriá N° 1185","categoria":""},{"nome":"FB BABY PLUS","codigo":"9728","cnpj":"74.000.738/0015-90","telefone":"8534647803","cidade":"Fortaleza","bairro":"Sapiranga","endereco":"Rua Salvador Correia de Sá N° 990","categoria":""},{"nome":"FB JOVEM SUL","codigo":"9730","cnpj":"74.000.738/0014-00","telefone":"8534647803","cidade":"Fortaleza","bairro":"Sapiranga","endereco":"Rua Salvador Correia de Sá N° 1111","categoria":""},{"nome":"FB JUNIOR SUL","codigo":"9731","cnpj":"74.000.738/0011-67","telefone":"8534647803","cidade":"Fortaleza","bairro":"Sapiranga","endereco":"Avenida Engenheiro Leal Lima Verde N° 700","categoria":""},{"nome":"FILIAL PIAUI","codigo":"9710","cnpj":"04.808.914/0004-87","telefone":"(85) 5564_-5556","cidade":"Teresina","bairro":"Macauba","endereco":"RUA PORTO N° 1570","categoria":""},{"nome":"FONTANELLA TRANSPORTES","codigo":"0232","telefone":"8532741388","cidade":"Fortaleza","bairro":"Ancuri","endereco":"Rodovia Quarto Anel Viário N° 1754","categoria":""},{"nome":"FORCE","codigo":"9837","cnpj":"21.765.330/0001-48","telefone":"8532752444","cidade":"Fortaleza","bairro":"Papicu","endereco":"Rua Eduardo Sabóia N° 387","categoria":""},{"nome":"FREDERICO MAPURUNGA","codigo":"0162","cnpj":"35878592304","telefone":"8532232167","cidade":"Fortaleza","bairro":"Parque Araxá","endereco":"Rua José de Barcelos N° 581","categoria":""},{"nome":"GALPÃO BRASIL MOLAS","codigo":"0235","cidade":"Fortaleza","bairro":"Paupina","endereco":"Rua João Crispim N° 1251","categoria":""},{"nome":"H E M","codigo":"9467","cnpj":"41434556000174","telefone":"34737929","cidade":"Fortaleza","bairro":"Aldeota","endereco":"Rua Padre Luiz Figueira N° 555","categoria":""},{"nome":"HABIB'S 13 DE MAIO","codigo":"1043","telefone":"8532835333","cidade":"Fortaleza","bairro":"Fátima","endereco":"Avenida 13 de Maio N° 1746","categoria":""},{"nome":"HARAS SR ARTENISIO","codigo":"9673","cnpj":"07.207.277/0001-39","telefone":"85991172026","cidade":"Eusébio","bairro":"Encantado / Mangabeira","endereco":"RUA SAO JOSE N° 2528","categoria":""},{"nome":"IGNEZ FIUZA","codigo":"9793","cnpj":"29.310.140/0001-48","telefone":"8530456291","cidade":"Fortaleza","bairro":"Maraponga","endereco":"Rua Carlos Juaçaba N° 821","categoria":"ouro","grupo":"Cond. Ignez Fiuza","responsavel":"Marcos"},{"nome":"IGREJA BATISTA DO PLANALTO","codigo":"0212","telefone":"85999457906","cidade":"Fortaleza","bairro":"Papicu","endereco":"Rua Ávila Goulart N° 81","categoria":""},{"nome":"IGREJA DE JESUS CRISTO DOS SANTOS DOS ULTIMOS DIAS","codigo":"9745","cnpj":"61.012.019/0467-20","telefone":"1137233371","cidade":"Caucaia","bairro":"Araturi (Jurema)","endereco":"Avenida de Contorno Oeste N° 512","categoria":""},{"nome":"IGREJA PRESBITERIANA DA GRAÇA","codigo":"0239","cnpj":"04161891000119","telefone":"98418 7871","cidade":"Fortaleza","bairro":"Barra Do Ceará","endereco":"RUA RIO JURUÁ N° 100","categoria":""},{"nome":"IMEX FITNESS","codigo":"9821","cnpj":"16.965.744/0001-80","telefone":"8586320403","cidade":"Fortaleza","bairro":"Barroso","endereco":"Rodovia BR-116 N° 4270 - km 08","categoria":""},{"nome":"IMOBILIARIA E AGROPECUARIA JEREISSATI S.A.","codigo":"9841","cnpj":"07.955.032/0001-90","telefone":"85991424941","cidade":"Fortaleza","bairro":"Edson Querroz","endereco":"AVENIDA WASHINGTON SOARES N° 55 - ANDAR 12 SALA 1208","categoria":""},{"nome":"IMPACTO PRIME","codigo":"9713","cnpj":"50.377.202/0001-25","telefone":"62992511912","cidade":"Fortaleza","bairro":"Benfica","endereco":"Rua Domingos Olímpio N° 999","categoria":""},{"nome":"INSTITUTO QUEIROZ JEREISSATI","codigo":"9828","cnpj":"07.240.829/0001-00","telefone":"8532669010","cidade":"Fortaleza","bairro":"Benfica","endereco":"AVENIDA TRISTAO GONCALVES N° 1354","categoria":"ouro","grupo":"Instituto Queiroz Jereissati","responsavel":"Ananda"},{"nome":"IURY COSTA DA SILVA","codigo":"9696","cnpj":"10.800.982/0001-50","telefone":"85999659509","cidade":"Fortaleza","bairro":"Messejana","endereco":"Rua Aveledo N° 416","categoria":""},{"nome":"KLABIN S.A. (HORIZONTE) CE","codigo":"9827","cnpj":"89.637.490/0168-15","telefone":"1130465800","cidade":"Horizonte","bairro":"Catu","endereco":"AV PRESIDENTE CASTELO BRANCO N° 1145","categoria":""},{"nome":"KLABIN S.A. - UNID II","codigo":"9829","cnpj":"89.637.490/0166-53","telefone":"1130465800","cidade":"Manaus","bairro":"Distrito Industrial Ii","endereco":"AVENIDA DOS OITIS N° 6555 - TERREO","categoria":""},{"nome":"KLABIN S.A. BA ( FEIRA DE SANTANA)","codigo":"9825","cnpj":"89.637.490/0149-52","telefone":"1130465800","cidade":"Feira De Santana","bairro":"Aviario","endereco":"AV DEPUTADO LUIS EDUARDO MAGALHAES N° S/N","categoria":""},{"nome":"KLABIN S.A. PE ( GOIANA)","codigo":"9826","cnpj":"89.637.490/0144-48","telefone":"1130465800","cidade":"Goiana","bairro":"Pedregulho","endereco":"ROD PE-75 - KM 4,5 N° S/N","categoria":""},{"nome":"KLABIN UNID I","codigo":"9830","cnpj":"04.398.525/0001-88","telefone":"1130465800","cidade":"Manaus","bairro":"Distrito Industrial I","endereco":"AVENIDA ACAI N° 2659","categoria":""},{"nome":"LILIANA MARIA GOMES SILVA","codigo":"0137","cnpj":"23057955304","cidade":"Fortaleza","bairro":"Vila União","endereco":"Rua Teodorico Barroso N° 189","categoria":""},{"nome":"LOG Fortaleza III","codigo":"9817","cidade":"Itaitinga","bairro":"Ancuri","endereco":"AV DIONISIO LEONEL ALENCAR","categoria":""},{"nome":"LOG JOAO PESSOA SPE LTDA","codigo":"9747","cnpj":"53.413.614/0001-61","telefone":"3136158100","cidade":"João Pessoa","bairro":"Cabo Branco","endereco":"RUA MARCIONILA DA CONCEIÇÃO N° 1128 - SALA 1","categoria":""},{"nome":"LOG SALVADOR SPE LTDA.","codigo":"9721","cnpj":"43.973.670/0001-05","telefone":"3136158000","cidade":"Simoes Filho","bairro":"Cia I","endereco":"AVENIDA ENGENHEIRO ELMO SEREJO DE FARIAS N° 03333","categoria":""},{"nome":"LOJÃO DAS PEÇAS","codigo":"9214","telefone":"3491-6699","cidade":"Fortaleza","bairro":"Montese","endereco":"Avenida Professor Gomes de Matos N° 1381","categoria":""},{"nome":"LOJAO DOS PARAFUSOS","codigo":"9679","cnpj":"73.413.999/0001-74","telefone":"85999290576","cidade":"Maracanau","bairro":"Pajuçara","endereco":"Rodovia Doutor Mendel Steinbruch N° 10403","categoria":""},{"nome":"LOJAO DOS PARAFUSOS","codigo":"9720","cnpj":"73.413.999/0001-74","telefone":"85999290576","cidade":"Fortaleza","bairro":"Jangurussu","endereco":"Rodovia BR-116 N° 10040","categoria":""},{"nome":"LOJÃO DOS PARAFUSOS (MESSEJANA)","codigo":"0300","telefone":"3276 3240","cidade":"Fortaleza","bairro":"Messejana","endereco":"RUA JOSÉ HIPÓLITO N° 221","categoria":""},{"nome":"LUIZA FARIAS COUTO","codigo":"9724","cnpj":"001.216.143-87","telefone":"8532412451","cidade":"Fortaleza","bairro":"Aldeota","endereco":"Rua João Cordeiro N° 992","categoria":""},{"nome":"MAISON GAMANE CONFECCAO E COMERCIO DE ROUPAS LTDA","codigo":"9765","cnpj":"11.474.073/0001-31","telefone":"8532544581","cidade":"Fortaleza","bairro":"Jardim Cearense","endereco":"Rua Vidal de Negreiros N° 37","categoria":""},{"nome":"MARCELINO FREITAS IMOBILIARIA LTDA","codigo":"9681","cnpj":"04334316000170","cidade":"Fortaleza","bairro":"Farias Brito","endereco":"Avenida Bezerra de Menezes N° 2085","categoria":""},{"nome":"MARCOGRAF - COFRE","codigo":"0252","telefone":"8534745555","cidade":"Fortaleza","bairro":"Barroso","endereco":"Avenida Capitão Hugo Bezerra N° 385","categoria":""},{"nome":"MARCOGRAF - IND. GRÁFICA- COFRE 2","codigo":"0250","cnpj":"02963095000174","telefone":"8534745555","cidade":"Fortaleza","bairro":"Barroso","endereco":"RUA CAPITÃO HUGO BEZERRA N° 386","categoria":""},{"nome":"MARCOGRAF-IND.GRÁFICA- SISTEMA EXTERNO","codigo":"0287","telefone":"8534745555","cidade":"Fortaleza","bairro":"Barroso","endereco":"RUA CAPITÃO HUGO  Nº 386","categoria":""},{"nome":"MATIAS COELHO - SOCIEDADE INDIVIDUAL DE ADVOCACIA.","codigo":"9756","cnpj":"42.307.955/0001-36","telefone":"8581822121","cidade":"Fortaleza","bairro":"Dionisio Torres","endereco":"Rua Tibúrcio Cavalcanti N° 2935","categoria":""},{"nome":"MENDONCA BORRACHAS - FILIAL MARACANAU","codigo":"9784","cnpj":"17.945.848/0005-10","telefone":"8599573607","cidade":"Maracanau","bairro":"Jenipapeiro","endereco":"R JENIPAPEIRO N° 56","categoria":""},{"nome":"MOGNO HOME DESIGN LTDA","codigo":"9839","cnpj":"27.717.309/0001-53","telefone":"8581525281","cidade":"Fortaleza","bairro":"Barroso","endereco":"Rua Rosita N° 345","categoria":""},{"nome":"MURILO FARM","codigo":"9812","cidade":"Fortaleza","bairro":"Vila Velha","endereco":"Rua Rosinha Sampaio N° 2371","categoria":""},{"nome":"NELSON DINIZ","codigo":"1205","cidade":"Fortaleza","bairro":"Messejana","endereco":"Rua Coronel Alves Ribeiro N° 355","categoria":""},{"nome":"ONG GRUPO MULHERES DO BRASIL","codigo":"9819","cidade":"Fortaleza","bairro":"Guararapes","endereco":"Avenida Chanceler Edson Queiroz N° 100","categoria":""},{"nome":"OTIMIZE SAUDE E BEM ESTAR LTDA","codigo":"9794","cnpj":"59.583.238/0001-30","telefone":"8587569521","cidade":"Fortaleza","bairro":"Fátima","endereco":"Rua José Euclides N° 400","categoria":""},{"nome":"PORTARIA 01","codigo":"9735","cnpj":"51.061.524/0001-23","telefone":"85991330173","cidade":"Cabo De Santo Agostinho","bairro":"Distrito Industrial Santo Estevao","endereco":"RODOVIA BR-101 SUL - DO KM 92,001 AO KM 95,005 N° 2308","categoria":""},{"nome":"POSTO MORRO DO OURO","codigo":"9773","cnpj":"05.369.087/0001-92","telefone":"8836111145","cidade":"Fortaleza","bairro":"Jacarecanga","endereco":"Rua Carneiro da Cunha N° 503","categoria":""},{"nome":"POWER LINK","codigo":"9252","cnpj":"28901158000151","telefone":"85981317447","cidade":"Fortaleza","bairro":"Parque Dois Irmãos","endereco":"Rua Menino Jesus de Praga N° 1120","categoria":""},{"nome":"POWERLINK","codigo":"9253","cnpj":"15116027000111","cidade":"Fortaleza","bairro":"Parque Dois Irmãos","endereco":"BERNARDO EMANUEL 9229 N° 9229","categoria":""},{"nome":"PROSPER SOLUÇÕES CONTABEIS","codigo":"0257","telefone":"8530775020","cidade":"Fortaleza","bairro":"Dionisio Torres","endereco":"Rua Marcondes Pereira N° 1368","categoria":""},{"nome":"PROTEMAXI","codigo":"9818","cnpj":"12368110000190","cidade":"Fortaleza","bairro":"Montese","endereco":"antonio correia lima - b","categoria":""},{"nome":"PROTEMAXI (INTELBRAS)","codigo":"9846","cnpj":"12368110000190","cidade":"Fortaleza","bairro":"Montese","endereco":"antonio correia lima N° 3940 - b","categoria":""},{"nome":"PROTEMAXI (SEM FIO)","codigo":"9847","cnpj":"12368110000190","cidade":"Fortaleza","bairro":"Montese","endereco":"antonio correia lima - b","categoria":""},{"nome":"PROVIDA SARGENTO HERMINIO","codigo":"9824","cnpj":"59.693.781/0001-90","telefone":"5821364595","cidade":"Fortaleza","bairro":"Vila Ellery","endereco":"Avenida Sargento Hermínio Sampaio N° 2476","categoria":""},{"nome":"QUANT CONTÁBIL","codigo":"9011","cnpj":"22.896.943/0001-87","telefone":"8532682255","cidade":"Fortaleza","bairro":"Dionisio Torres","endereco":"Travessa Hilnete N° 29","categoria":""},{"nome":"REDE CORDIMARIANA DE EDUCACAO","codigo":"9832","cnpj":"07.872.310/0003-07","telefone":"8540120884","cidade":"Fortaleza","bairro":"Fátima","endereco":"RUA MONSENHOR OTAVIO DE CASTRO N° 535","categoria":""},{"nome":"RESERVA COWORKING","codigo":"9803","cidade":"Fortaleza","bairro":"Fátima","endereco":"Rua Monsenhor Otávio de Castro N° 435","categoria":""},{"nome":"S&J","codigo":"9774","cnpj":"49.605.643/0001-58","telefone":"8582222216","cidade":"Fortaleza","bairro":"Cocó","endereco":"AVENIDA SANTOS DUMONT N° 6740","categoria":""},{"nome":"SERLARES","codigo":"9823","cnpj":"19.293.262/0001-10","telefone":"8530318450","cidade":"Maracanau","bairro":"Distrito Industrial Iii","endereco":"V DE LIGACAO 3 N° 331 - GALPAO 03","categoria":""},{"nome":"SK DISTRIBUIDORA","codigo":"9711","cnpj":"08.237.002/0032-07","telefone":"85992789431","cidade":"Fortaleza","bairro":"Ancuri","endereco":"Rodovia BR-116 N° 3400","categoria":""},{"nome":"SLS","codigo":"1149","cnpj":"04.367.730/0001-86","telefone":"8532786694","cidade":"Fortaleza","bairro":"Engenheiro Luciano Cavalcante","endereco":"Rua Luís Gama N° 280","categoria":""},{"nome":"SLS TERCEIRIZACAO DE SERVICOS LTDA","codigo":"9848","cnpj":"04.367.730/0001-86","telefone":"8534914143","cidade":"Fortaleza","bairro":"Dionisio Torres","endereco":"RUA MARCONDES PEREIRA N° 1354","categoria":""},{"nome":"SS PRANCHARIA","codigo":"9714","cnpj":"26.853.031/0001-89","telefone":"8534543333","cidade":"Fortaleza","bairro":"Praia Do Futuro I","endereco":"Avenida Clóvis Arrais Maia N° 3080","categoria":""},{"nome":"TERRAQUA COMÉRCIO E SERV. DE EQUPAM. AGRICOLAS","codigo":"0219","cnpj":"12340333000149","telefone":"85333884545","cidade":"Maracanau","bairro":"Pajuçara","endereco":"AV. DR. MENDEL STEINBRUCH  LJ.1 E 2 N° 2527","categoria":""},{"nome":"TRADE IN TECHNOLOGY","codigo":"9680","cidade":"Fortaleza","bairro":"Cambeba","endereco":"Rua Francisco Paracampos N° 55","categoria":""},{"nome":"UBIRAJARA FERREIRA LIMA","codigo":"9732","cnpj":"098.296.793-49","telefone":"85987084360","cidade":"Fortaleza","bairro":"Cambeba","endereco":"Rua Santa Marta N° 610","categoria":""},{"nome":"UTILÍDER","codigo":"9811","cnpj":"37.797.121/0001-16","cidade":"Fortaleza","bairro":"Farias Brito","endereco":"Rua Rúbia Sampaio N° 55","categoria":""},{"nome":"VASCONCELOS EMBALAGENS","codigo":"9808","cnpj":"37537642000134","cidade":"Fortaleza","bairro":"Jardim Guanabara","endereco":"Avenida Independência N° 1484","categoria":""},{"nome":"VC COMERCIO DE ACESSORIOS DE MODA LTDA","codigo":"9748","cnpj":"54.697.134/0001-32","telefone":"8532641997","cidade":"Fortaleza","bairro":"Meireles","endereco":"Rua Pereira Valente N° 705","categoria":""},{"nome":"VERA UCHOA","codigo":"9699","cnpj":"001.216.143-87","telefone":"8532412451","cidade":"Fortaleza","bairro":"Guararapes","endereco":"Rua Jaime Pinheiro N° 84","categoria":""},{"nome":"VERTICE MOBILIA","codigo":"0236","cnpj":"03942855000120","telefone":"8533839504","cidade":"Maracanau","bairro":"Pau-Serrado","endereco":"Rua 7 N° 271 - com rua 25 (Cágado)","categoria":""},{"nome":"VILMAR VEICULOS","codigo":"1014","cnpj":"06236289000129","telefone":"8532231212","cidade":"Fortaleza","bairro":"Rodolfo Teofilo","endereco":"Avenida José Bastos N° 3878","categoria":""},{"nome":"WL ELETRÔNICA","codigo":"9789","cnpj":"14.007.552/0001-36","telefone":"8594148121","cidade":"Maracanau","bairro":"Pajuçara","endereco":"Rua Pedro Batista N° 549","categoria":""},{"nome":"WL LOCACOES","codigo":"9749","cnpj":"54.018.985/0001-01","telefone":"8586101415","cidade":"Fortaleza","bairro":"Cajazeiras","endereco":"Avenida Deputado Paulino Rocha N° 1881","categoria":""}];
+</script>
+<script>
+"use strict";
+/* ---------------- utilidades ---------------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const z = n => String(n).padStart(2, "0");
+const ymd = d => d.getFullYear() + "-" + z(d.getMonth() + 1) + "-" + z(d.getDate());
+const hoje = () => ymd(new Date());
+const dt = s => new Date(s + "T12:00:00");
+const addDias = (s, n) => { const d = dt(s); d.setDate(d.getDate() + n); return ymd(d); };
+const diasEntre = (a, b) => Math.round((dt(b) - dt(a)) / 864e5);
+const br = s => s ? s.slice(8, 10) + "/" + s.slice(5, 7) + "/" + s.slice(2, 4) : "—";
+const fmtTempo = ms => { const m = Math.round(ms / 60000); if (m < 60) return m + " min"; const h = Math.floor(m / 60); return h + "h " + z(m % 60) + "min"; };
+const fmtBytes = b => b < 1024 ? b + " B" : b < 1048576 ? (b / 1024).toFixed(0) + " KB" : (b / 1048576).toFixed(1) + " MB";
+const iniciais = n => String(n || "?").trim().split(/\s+/).slice(0, 2).map(p => p[0]).join("").toUpperCase();
+const norm = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } },
+  del(k) { try { localStorage.removeItem(k); } catch {} }
+};
+function parseData(s) {
+  s = String(s || "").trim(); if (!s) return "";
+  let m = s.match(/(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/);
+  if (m) { let y = +m[3]; if (y < 100) y += 2000; return y + "-" + z(+m[2]) + "-" + z(+m[1]); }
+  m = s.match(/(\d{4})-(\d{2})-(\d{2})/); if (m) return m[0];
+  return "";
+}
+function toast(msg, tipo = "") {
+  const d = document.createElement("div"); d.className = tipo; d.textContent = msg;
+  $("#toast").appendChild(d); setTimeout(() => d.remove(), 4200);
+}
+function ico(n) {
+  const p = {
+    painel: '<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
+    os: '<path d="M9 4h6M9 4a2 2 0 0 0-2 2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-1a2 2 0 0 0-2-2"/><path d="M8 12h8M8 16h5"/>',
+    clientes: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 20a6.5 6.5 0 0 0-3-5.5"/>',
+    importar: '<path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>',
+    arquivos: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    coordenador: '<path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/>',
+    admin: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'
+  }[n] || "";
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+}
+
+/* ---------------- estado ---------------- */
+const S = {
+  db: {},          // tipo -> { id -> dados }
+  users: [],       // usuários (sem PIN)
+  me: null,        // usuário logado
+  pin: null,
+  online: {},      // userId -> {id,nome,desde}
+  sessaoId: null,
+  route: "painel",
+};
+const T = tipo => (S.db[tipo] ||= {});
+const lista = tipo => Object.entries(T(tipo)).map(([id, d]) => ({ id, ...d }));
+const cfg = () => ({ sla: 3, empresa: CONFIG.empresa || "Empresa", ...(T("config").geral || {}) });
+const isAdmin = () => S.me?.papel === "admin";
+const pode = perm => !!S.me && (isAdmin() || (S.me.permissoes || []).includes(perm));
+const PERMS = [
+  ["os", "Editar e importar OS"],
+  ["clientes", "Editar clientes"],
+  ["arquivos", "Enviar arquivos"],
+  ["coordenador", "Área do coordenador"],
+];
+const PAPEIS = { admin: "Administrador", coordenador: "Coordenador", operador: "Operador", tecnico: "Técnico", visitante: "Visitante" };
+
+/* ---------------- backend: LOCAL ---------------- */
+const Local = {
+  key: "pm_local_v1",
+  data() {
+    let d = LS.get(this.key, null);
+    if (!d) { d = { usuarios: [{ id: "u_admin", nome: "Andrade", login: "andrade", pin: "1234", papel: "admin", permissoes: [], foto: "", ativo: true }], registros: {} }; seedDemo(d.registros); LS.set(this.key, d); }
+    return d;
+  },
+  async loadAll() { const d = this.data(); return { users: d.usuarios.map(({ pin, ...u }) => u), regs: d.registros }; },
+  async login(login, pin) { const u = this.data().usuarios.find(x => norm(x.login) === norm(login) && x.pin === pin && x.ativo); if (!u) return null; const { pin: _, ...pub } = u; return pub; },
+  async save(tipo, id, dados) { const d = this.data(); (d.registros[tipo] ||= {})[id] = dados; if (!LS.set(this.key, d)) throw new Error("Armazenamento local cheio"); },
+  async saveMany(itens) { const d = this.data(); for (const it of itens) (d.registros[it.tipo] ||= {})[it.id] = it.dados; if (!LS.set(this.key, d)) throw new Error("Armazenamento local cheio"); },
+  async del(tipo, id) { const d = this.data(); if (d.registros[tipo]) delete d.registros[tipo][id]; LS.set(this.key, d); },
+  async saveUser(u) { const d = this.data(); const i = d.usuarios.findIndex(x => x.id === u.id); const old = i >= 0 ? d.usuarios[i] : {}; const n = { ...old, ...u, pin: u.pin || old.pin }; if (i >= 0) d.usuarios[i] = n; else d.usuarios.push(n); LS.set(this.key, d); },
+  async delUser(id) { const d = this.data(); d.usuarios = d.usuarios.filter(x => x.id !== id); LS.set(this.key, d); },
+  async upload(file) {
+    if (file.size > 2.5 * 1048576) throw new Error("No modo local o limite é 2,5 MB por arquivo. Conecte o Supabase para enviar arquivos maiores.");
+    return await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsDataURL(file); });
+  },
+  presence: {
+    beat() { const p = LS.get("pm_presence", {}); const now = Date.now(); if (S.me) p[S.me.id] = { id: S.me.id, nome: S.me.nome, desde: p[S.me.id]?.desde || now, ts: now }; for (const k in p) if (now - p[k].ts > 45000) delete p[k]; LS.set("pm_presence", p); this.read(); },
+    read() { const p = LS.get("pm_presence", {}); const now = Date.now(); S.online = {}; for (const k in p) if (now - p[k].ts < 45000) S.online[k] = p[k]; },
+    leave() { const p = LS.get("pm_presence", {}); if (S.me) delete p[S.me.id]; LS.set("pm_presence", p); },
+  },
+  start() {
+    this.presence.beat(); setInterval(() => { this.presence.beat(); renderHeader(); }, 15000);
+    addEventListener("storage", e => { if (e.key === this.key) reload(); if (e.key === "pm_presence") { this.presence.read(); renderHeader(); softRender(); } });
+  }
+};
+
+/* ---------------- backend: SUPABASE ---------------- */
+const Supa = {
+  sb: null, ch: null,
+  async init() {
+    await new Promise((ok, no) => { const s = document.createElement("script"); s.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"; s.onload = ok; s.onerror = () => no(new Error("Não foi possível carregar o Supabase")); document.head.appendChild(s); });
+    this.sb = supabase.createClient(SB.url, SB.key, { auth: { persistSession: false } });
+  },
+  async loadAll() {
+    const regs = {}; let from = 0;
+    while (true) {
+      const { data, error } = await this.sb.from("registros").select("tipo,id,dados").range(from, from + 999);
+      if (error) throw error;
+      for (const r of data) (regs[r.tipo] ||= {})[r.id] = r.dados;
+      if (data.length < 1000) break; from += 1000;
+    }
+    const { data: us, error: e2 } = await this.sb.rpc("rpc_usuarios"); if (e2) throw e2;
+    return { users: us || [], regs };
+  },
+  async login(login, pin) { const { data, error } = await this.sb.rpc("rpc_login", { p_login: login, p_pin: pin }); if (error) throw error; return data; },
+  async save(tipo, id, dados) { const { error } = await this.sb.rpc("rpc_salvar", { p_login: S.me.login, p_pin: S.pin, p_tipo: tipo, p_id: id, p_dados: dados }); if (error) throw new Error(error.message.includes("permiss") ? "Você não tem permissão para isso." : error.message); },
+  async saveMany(itens) { for (let i = 0; i < itens.length; i += 200) { const { error } = await this.sb.rpc("rpc_salvar_lote", { p_login: S.me.login, p_pin: S.pin, p_itens: itens.slice(i, i + 200) }); if (error) throw new Error(error.message); } },
+  async del(tipo, id) { const { error } = await this.sb.rpc("rpc_excluir", { p_login: S.me.login, p_pin: S.pin, p_tipo: tipo, p_id: id }); if (error) throw new Error(error.message); },
+  async saveUser(u) { const { error } = await this.sb.rpc("rpc_usuario_salvar", { p_login: S.me.login, p_pin: S.pin, p_user: u }); if (error) throw new Error(error.message); },
+  async delUser(id) { const { error } = await this.sb.rpc("rpc_usuario_excluir", { p_login: S.me.login, p_pin: S.pin, p_id: id }); if (error) throw new Error(error.message); },
+  async upload(file) {
+    const path = Date.now() + "_" + file.name.replace(/[^\w.\-]+/g, "_");
+    const { error } = await this.sb.storage.from("arquivos").upload(path, file, { contentType: file.type || "application/octet-stream" });
+    if (error) throw new Error(error.message);
+    return this.sb.storage.from("arquivos").getPublicUrl(path).data.publicUrl;
+  },
+  start() {
+    this.sb.channel("pm-db").on("postgres_changes", { event: "*", schema: "public", table: "registros" }, p => {
+      const r = p.new && p.new.tipo ? p.new : p.old;
+      if (p.eventType === "DELETE") { if (p.old?.tipo) delete T(p.old.tipo)[p.old.id]; else reload(); }
+      else (S.db[r.tipo] ||= {})[r.id] = r.dados;
+      softRender();
+    }).subscribe();
+    const key = S.me ? S.me.id : "v_" + uid();
+    this.ch = this.sb.channel("pm-online", { config: { presence: { key } } });
+    this.ch.on("presence", { event: "sync" }, () => {
+      const st = this.ch.presenceState(); S.online = {};
+      for (const k in st) { const m = st[k][0]; if (m && m.id) S.online[m.id] = m; }
+      renderHeader(); softRender();
+    }).subscribe(async s => { if (s === "SUBSCRIBED" && S.me) await this.ch.track({ id: S.me.id, nome: S.me.nome, desde: Date.now() }); });
+    setInterval(async () => { try { const { data } = await this.sb.rpc("rpc_usuarios"); if (data) { S.users = data; renderHeader(); } } catch {} }, 60000);
+  },
+  presence: {
+    async track() { if (Supa.ch) { try { await Supa.ch.untrack(); } catch {} location.reload(); } },
+    leave() { if (Supa.ch) Supa.ch.untrack(); }
+  }
+};
+
+const SBo = LS.get("pm_supabase", null);
+const SB = { url: (SBo && SBo.url) || CONFIG.supabaseUrl, key: (SBo && SBo.key) || CONFIG.supabaseKey };
+let API = (SB.url && SB.key) ? Supa : Local;
+
+/* ---------------- dados de exemplo (só modo local) ---------------- */
+function seedDemo(r) {
+  const h = hoje();
+  r.config = { geral: { sla: 3, exemplo: true } };
+  r.cliente = {}; CARTEIRA.forEach((c, i) => r.cliente["c" + (c.codigo || i)] = { ...c });
+  const cl = ["CONDOMINIO ROYAL OAK RESIDENCE", "CARTEC AUTOMOTIVO LTDA", "IGNEZ FIUZA", "CAPELA MONTESE", "AGRIBIOS", "AGUIAR GÁS", "EOLICA PRAINHA"].map(n => [n]);
+  const sv = ["Câmera sem imagem", "Revisão de alarme", "Cerca elétrica disparando", "Instalação de DVR", "Troca de sensor", "Manutenção preventiva", "Bateria da central", "Controle de acesso"];
+  const tec = ["Carlos", "Rafael", "Júnior", "Marcos"];
+  r.os = {};
+  for (let i = 0; i < 14; i++) {
+    const ab = addDias(h, -(i % 9) - 1); const st = i < 7 ? "aberta" : i < 10 ? "execucao" : "concluida";
+    r.os["inside_" + (4810 + i)] = { numero: String(4810 + i), cliente: cl[i % cl.length][0], servico: sv[i % sv.length], tecnico: st === "aberta" ? "" : tec[i % 4], status: st, abertura: ab, prazo: addDias(ab, 2 + (i % 3)), conclusao: st === "concluida" ? addDias(h, -(i % 3)) : "", origem: "Inside", prioridade: i % 5 === 0 ? "alta" : "normal", exemplo: true };
+  }
+  r.tarefa = {
+    t1: { titulo: "Atualizar OS do Inside no painel", hora: "08:00", dias: [1, 2, 3, 4, 5], ativo: true },
+    t2: { titulo: "Conferir clientes no Segware", hora: "08:30", dias: [1, 2, 3, 4, 5], ativo: true },
+    t3: { titulo: "Distribuir OS para os técnicos", hora: "09:00", dias: [1, 2, 3, 4, 5, 6], ativo: true },
+    t4: { titulo: "Checar motos e combustível", hora: "16:30", dias: [1, 2, 3, 4, 5], ativo: true },
+    t5: { titulo: "Reporte periódico diurno — clientes ouro", hora: "09:00", dias: [0, 1, 2, 3, 4, 5, 6], ativo: true },
+    t6: { titulo: "Reporte periódico noturno — clientes ouro", hora: "21:00", dias: [0, 1, 2, 3, 4, 5, 6], ativo: true },
+  };
+  r.coord_tecnicos = { x1: { nome: "Carlos Silva", empresa: "Terceirizado", especialidade: "CFTV", telefone: "", status: "Em campo", exemplo: true }, x2: { nome: "Rafael Lima", empresa: "Própria", especialidade: "Alarme / Cerca", telefone: "", status: "Disponível", exemplo: true } };
+  r.coord_motos = { m1: { placa: "ABC1D23", modelo: "Honda CG 160", responsavel: "Carlos Silva", km: "32100", revisao: addDias(h, 12), status: "Em uso", exemplo: true } };
+  r.coord_equipamentos = { e1: { nome: "Central AMT 8000 PRO", marca: "Intelbras", categoria: "Alarme", qtd: "6", exemplo: true }, e2: { nome: "AMT 2018", marca: "Intelbras", categoria: "Alarme", qtd: "4", exemplo: true } };
+  r.coord_sistemas = { s1: { nome: "Inside Sistemas", uso: "Ordens de serviço e materiais", exemplo: true }, s2: { nome: "Segware", uso: "Monitoramento de alarmes", exemplo: true } };
+}
+
+/* ---------------- OS: regras de atraso ---------------- */
+const STATUS = { aberta: "Aberta", execucao: "Em execução", concluida: "Concluída", cancelada: "Cancelada" };
+const ativa = o => o.status === "aberta" || o.status === "execucao";
+const prazoEf = o => o.prazo || (o.abertura ? addDias(o.abertura, +cfg().sla || 3) : "");
+function atraso(o) { if (!ativa(o)) return null; const p = prazoEf(o); if (!p) return null; return diasEntre(p, hoje()); }
+const diasAberta = o => o.abertura ? Math.max(0, diasEntre(o.abertura, ativa(o) ? hoje() : (o.conclusao || hoje()))) : null;
+function badgeAtraso(o) {
+  const a = atraso(o);
+  if (a === null) return ativa(o) ? '<span class="muted">—</span>' : '<span class="muted">ok</span>';
+  if (a < 0) return `<span class="late l0" title="Faltam ${-a} dia(s) para o prazo">${-a}d</span>`;
+  if (a === 0) return `<span class="late l1" title="Vence hoje">hoje</span>`;
+  return `<span class="late ${a >= 5 ? "l3" : "l2"}" title="${a} dia(s) de atraso">+${a}</span>`;
+}
+function clienteDe(nome) {
+  const n = norm(nome); if (!n) return null; const cl = lista("cliente");
+  return cl.find(c => norm(c.nome) === n) || cl.find(c => c.codigo && norm(c.codigo) === n) || cl.find(c => c.grupo && norm(c.grupo) === n)
+    || cl.find(c => { const a = norm(c.nome); return a.length > 5 && n.length > 5 && (a.includes(n) || n.includes(a)); }) || null;
+}
+const tierDe = nome => clienteDe(nome)?.categoria || "";
+const pillTier = t => t ? `<span class="pill ${t}">${t[0].toUpperCase() + t.slice(1)}</span>` : "";
+function segunda() { const d = new Date(); const w = (d.getDay() + 6) % 7; d.setDate(d.getDate() - w); return ymd(d); }
+function kpis() {
+  const os = lista("os"); const seg = segunda();
+  const execu = os.filter(o => o.status === "execucao");
+  return {
+    abertas: os.filter(o => o.status === "aberta").length,
+    execucao: execu.length,
+    tecnicos: new Set(execu.map(o => norm(o.tecnico)).filter(Boolean)).size,
+    semana: os.filter(o => o.status === "concluida" && o.conclusao && o.conclusao >= seg).length,
+    atrasadas: os.filter(o => (atraso(o) ?? -1) > 0).length,
+  };
+}
+
+/* ---------------- avatar / presença ---------------- */
+const userById = id => S.users.find(u => u.id === id);
+function av(u, lg) {
+  if (!u) return "";
+  const on = !!S.online[u.id];
+  return `<span class="av ${lg ? "lg" : ""}" title="${esc(u.nome)} — ${on ? "online" : "offline"}">${u.foto ? `<img src="${esc(u.foto)}" alt="">` : esc(iniciais(u.nome))}<i class="dot ${on ? "on" : ""}"></i></span>`;
+}
+function sessoes(userId) { return lista("sessao").filter(s => s.user === userId); }
+function tempoDesde(userId, desdeMs) { let t = 0; for (const s of sessoes(userId)) { const i = Math.max(s.inicio, desdeMs); if (s.fim > i) t += s.fim - i; } return t; }
+function ultimoAcesso(userId) { let m = 0; for (const s of sessoes(userId)) m = Math.max(m, s.fim || 0); return m; }
+
+/* ---------------- sessão ---------------- */
+function iniciarSessao() {
+  if (!S.me) return;
+  S.sessaoId = "s_" + S.me.id + "_" + uid();
+  const ini = Date.now();
+  const grava = () => API.save("sessao", S.sessaoId, { user: S.me.id, inicio: ini, fim: Date.now() }).catch(() => {});
+  grava(); clearInterval(S._sessT); S._sessT = setInterval(() => { if (S.me) grava(); }, 60000);
+  addEventListener("pagehide", grava);
+}
+
+async function entrar(login, pin) {
+  const u = await API.login(login, pin);
+  if (!u) throw new Error("Usuário ou PIN incorretos.");
+  S.me = u; S.pin = pin;
+  LS.set("pm_login", { login, pin });
+  if (API === Supa) { API.presence.track(); return; } // recarrega para entrar na presença
+  API.presence.beat(); iniciarSessao(); renderAll();
+}
+function sair() {
+  API.presence.leave(); LS.del("pm_login");
+  if (S.sessaoId) API.save("sessao", S.sessaoId, { ...T("sessao")[S.sessaoId], fim: Date.now() }).catch(() => {});
+  S.me = null; S.pin = null; clearInterval(S._sessT);
+  if (API === Supa) { location.hash = "painel"; location.reload(); return; }
+  go("painel"); renderAll();
+}
+
+/* ---------------- gravação com atualização local ---------------- */
+async function salvar(tipo, id, dados) { await API.save(tipo, id, dados); T(tipo)[id] = dados; softRender(true); }
+async function salvarVarios(itens) { await API.saveMany(itens); for (const it of itens) T(it.tipo)[it.id] = it.dados; softRender(true); }
+async function excluir(tipo, id) { await API.del(tipo, id); delete T(tipo)[id]; softRender(true); }
+
+/* ---------------- modal / formulários ---------------- */
+function modal({ titulo, corpo, wide, botoes = [] }) {
+  const root = $("#modalRoot");
+  root.innerHTML = `<div class="ov"><div class="md ${wide ? "wide" : ""}"><div class="hd">${titulo}<span class="sp"></span><button class="btn sm" data-x>✕</button></div><div class="bd">${corpo}</div><div class="ft">${botoes.map((b, i) => `<button class="btn ${b.cls || ""}" data-b="${i}">${b.txt}</button>`).join("")}</div></div></div>`;
+  const close = () => root.innerHTML = "";
+  root.querySelector("[data-x]").onclick = close;
+  root.querySelector(".ov").addEventListener("mousedown", e => { if (e.target.classList.contains("ov")) close(); });
+  botoes.forEach((b, i) => root.querySelector(`[data-b="${i}"]`).onclick = async e => {
+    const el = e.currentTarget; el.disabled = true;
+    try { const r = await b.fn?.(root); if (r !== false) close(); } catch (err) { toast(err.message || String(err), "bad"); } finally { el.disabled = false; }
+  });
+  return root;
+}
+const fechaModal = () => $("#modalRoot").innerHTML = "";
+function campos(fs, o = {}) {
+  return `<div class="form">${fs.map(f => {
+    const v = o[f.k] ?? f.def ?? "";
+    let inp;
+    if (f.t === "select") inp = `<select class="in" name="${f.k}">${f.op.map(x => { const [val, lab] = Array.isArray(x) ? x : [x, x]; return `<option value="${esc(val)}" ${String(v) === String(val) ? "selected" : ""}>${esc(lab)}</option>`; }).join("")}</select>`;
+    else if (f.t === "area") inp = `<textarea class="in" name="${f.k}" rows="3" style="min-height:70px">${esc(v)}</textarea>`;
+    else inp = `<input class="in" name="${f.k}" type="${f.t || "text"}" value="${esc(v)}" ${f.list ? `list="${f.list}"` : ""} ${f.ph ? `placeholder="${esc(f.ph)}"` : ""}>`;
+    return `<label class="${f.full ? "full" : ""}">${esc(f.l)}${inp}</label>`;
+  }).join("")}</div>`;
+}
+function ler(fs, root) { const o = {}; for (const f of fs) { const el = root.querySelector(`[name="${f.k}"]`); if (el) o[f.k] = el.value.trim(); } return o; }
+const datalist = (id, arr) => `<datalist id="${id}">${[...new Set(arr.filter(Boolean))].map(x => `<option value="${esc(x)}">`).join("")}</datalist>`;
+
+/* ---------------- login ---------------- */
+function abrirLogin() {
+  modal({
+    titulo: "Entrar",
+    corpo: `${API === Local ? `<div class="hint warn">Modo local (demonstração): usuário <b>andrade</b>, PIN <b>1234</b>. Troque o PIN na área Admin.</div>` : ""}
+      <div class="form"><label class="full">Usuário<input class="in" name="login" autocomplete="username" autocapitalize="none"></label>
+      <label class="full">PIN<input class="in" name="pin" type="password" inputmode="numeric" autocomplete="current-password"></label></div>
+      <p class="muted" style="margin:12px 0 0">Sem login você vê o painel. Para editar, o administrador precisa liberar sua permissão.</p>`,
+    botoes: [{ txt: "Entrar", cls: "pri", fn: async r => { await entrar(r.querySelector("[name=login]").value.trim(), r.querySelector("[name=pin]").value.trim()); toast("Bem-vindo, " + S.me.nome + "!", "ok"); } }]
+  });
+  setTimeout(() => $("#modalRoot [name=login]")?.focus(), 50);
+  $("#modalRoot [name=pin]").addEventListener("keydown", e => { if (e.key === "Enter") $("#modalRoot [data-b='0']").click(); });
+}
+
+/* ---------------- navegação ---------------- */
+const ROTAS = [
+  ["painel", "Painel", true],
+  ["os", "Ordens de serviço", false],
+  ["clientes", "Clientes", false],
+  ["importar", "Importar Inside / Segware", false],
+  ["arquivos", "Arquivos", false],
+  ["coordenador", "Coordenador", false],
+  ["admin", "Admin", false],
+];
+function permitido(r) {
+  if (r === "painel") return true;
+  if (!S.me) return false;
+  if (r === "admin") return isAdmin();
+  if (r === "coordenador") return pode("coordenador") || S.me.papel === "coordenador";
+  if (r === "importar") return pode("os") || pode("clientes");
+  return true;
+}
+function go(r) { if (location.hash !== "#" + r) location.hash = r; else route(); }
+function route() {
+  let r = (location.hash || "#painel").slice(1) || "painel";
+  if (!ROTAS.some(x => x[0] === r)) r = "painel";
+  if (!permitido(r)) { if (!S.me && r !== "painel") { setTimeout(abrirLogin, 50); } r = "painel"; }
+  S.route = r; renderAll();
+}
+addEventListener("hashchange", route);
+
+function renderNav() {
+  $("#nav").innerHTML = ROTAS.filter(([r]) => r === "painel" || !S.me || permitido(r)).map(([r, l]) =>
+    `<a href="#${r}" class="${S.route === r ? "on" : ""}">${ico(r)}<span>${l.replace(" Inside / Segware", "")}</span>${!S.me && r !== "painel" ? '<span class="lock">🔒</span>' : ""}</a>`).join("");
+  $("#brand").innerHTML = `${esc(cfg().empresa.toUpperCase())}<small>Central Operacional</small>`;
+  $("#modo").innerHTML = (API === Supa ? "● Conectado ao banco online" : "● Modo local (só neste navegador)") + "<br><span style=\"opacity:.7\">Desenvolvido por Andrade</span>";
+}
+function renderHeader() {
+  const onl = Object.keys(S.online).map(userById).filter(Boolean);
+  $("#hdrOnline").innerHTML = onl.slice(0, 6).map(u => av(u)).join("") + (onl.length > 6 ? `<span class="muted" style="margin-left:6px">+${onl.length - 6}</span>` : "");
+  $("#hdrUser").innerHTML = S.me
+    ? `<div style="display:flex;align-items:center;gap:8px">${av(userById(S.me.id) || S.me)}<span class="hidesm" style="font-weight:600">${esc(S.me.nome.split(" ")[0])}</span><button class="btn sm" id="bSair">Sair</button></div>`
+    : `<button class="btn pri sm" id="bEntrar">Entrar</button>`;
+  $("#bSair") && ($("#bSair").onclick = sair);
+  $("#bEntrar") && ($("#bEntrar").onclick = abrirLogin);
+}
+function renderAll() {
+  renderNav(); renderHeader();
+  $("#ttl").textContent = ROTAS.find(x => x[0] === S.route)[1];
+  const fn = VIEWS[S.route]; $("#main").innerHTML = ""; fn($("#main"));
+}
+let _sr;
+function softRender(force) {
+  clearTimeout(_sr);
+  _sr = setTimeout(() => {
+    const a = document.activeElement;
+    if (!force && a && $("#main").contains(a) && /INPUT|TEXTAREA|SELECT/.test(a.tagName)) return;
+    if (S.route === "importar" && !force) return;
+    const y = scrollY; renderAll(); scrollTo(0, y);
+  }, 120);
+}
+async function reload() { try { const { users, regs } = await API.loadAll(); S.users = users; S.db = regs; softRender(); } catch (e) { toast("Erro ao carregar: " + e.message, "bad"); } }
+
+/* ============================================================
+   VIEWS
+   ============================================================ */
+const VIEWS = {};
+const F = { busca: "", status: "ativas", origem: "", tier: "" };
+
+/* ---------- Painel ---------- */
+VIEWS.painel = el => {
+  const k = kpis();
+  const cl = lista("cliente");
+  const cnt = t => new Set(cl.filter(c => c.categoria === t).map(c => c.grupo || c.id)).size;
+  const ctas = t => cl.filter(c => c.categoria === t).length;
+  const seg = T("segware").resumo;
+  el.innerHTML = `
+  ${cfg().exemplo && isAdmin() ? `<div class="hint warn">Estes são dados de exemplo. Quando mandar seus clientes e OS, apague-os em <a href="#admin">Admin → Configurações</a>.</div>` : ""}
+  <div class="kpis">
+    <div class="kpi k1"><div class="l">OS abertas</div><div class="v">${k.abertas}</div><div class="s">Serviços pendentes</div></div>
+    <div class="kpi k2"><div class="l">Em execução</div><div class="v">${k.execucao}</div><div class="s">${k.tecnicos} técnico(s) trabalhando</div></div>
+    <div class="kpi k3"><div class="l">Concluídas na semana</div><div class="v">${k.semana}</div><div class="s">Serviços finalizados desde segunda</div></div>
+    <div class="kpi k4"><div class="l">Atrasadas</div><div class="v">${k.atrasadas}</div><div class="s">Necessitam de atenção</div></div>
+  </div>
+  <div class="mini">
+    <div class="m"><span class="medal ouro"></span><b>${cnt("ouro")}</b><span>Clientes ouro${ctas("ouro") !== cnt("ouro") ? `<br><small class="muted">${ctas("ouro")} contas</small>` : ""}</span></div>
+    <div class="m"><span class="medal prata"></span><b>${cnt("prata")}</b><span>Clientes prata${ctas("prata") !== cnt("prata") ? `<br><small class="muted">${ctas("prata")} contas</small>` : ""}</span></div>
+    <div class="m"><span class="medal bronze"></span><b>${cnt("bronze")}</b><span>Clientes bronze${ctas("bronze") !== cnt("bronze") ? `<br><small class="muted">${ctas("bronze")} contas</small>` : ""}</span></div>
+    <div class="m"><span class="medal" style="background:var(--info)"></span><b>${seg?.total ?? (cl.length || "—")}</b><span>${seg?.total != null ? "Clientes no Segware" : "Contas cadastradas"}${seg?.em ? `<br><small class="muted">atualizado ${br(seg.em.slice(0, 10))}</small>` : ""}</span></div>
+  </div>
+  <div class="row">
+    <div class="card"><h2>OS pendentes por atraso<span class="sp"></span><span class="muted" style="font-weight:500;font-size:12px">prazo padrão: ${cfg().sla} dia(s) após a abertura</span></h2><div id="pTbl"></div></div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card"><h2>Online agora <span class="pill">${Object.keys(S.online).length}</span></h2><div class="onl" id="pOnl"></div></div>
+      <div class="card"><h2>Clientes com mais atraso</h2><div id="pTop"></div></div>
+    </div>
+  </div>`;
+  const pend = lista("os").filter(ativa).sort((a, b) => (atraso(b) ?? -99) - (atraso(a) ?? -99));
+  $("#pTbl").innerHTML = tabelaOS(pend.slice(0, 60), true) + (pend.length > 60 ? `<p class="muted">+${pend.length - 60} OS… veja todas em Ordens de serviço.</p>` : "");
+  ligaTabelaOS($("#pTbl"));
+  const us = S.users.filter(u => u.ativo !== false).sort((a, b) => (!!S.online[b.id]) - (!!S.online[a.id]));
+  $("#pOnl").innerHTML = us.length ? us.map(u => { const on = S.online[u.id]; return `<div class="u">${av(u)}<div><b>${esc(u.nome)}</b><small>${on ? "online há " + fmtTempo(Date.now() - on.desde) : ultimoAcesso(u.id) ? "visto " + new Date(ultimoAcesso(u.id)).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "offline"}</small></div></div>`; }).join("") : '<span class="muted">Ninguém cadastrado</span>';
+  const porCli = {}; pend.forEach(o => { const a = atraso(o); if (a > 0) { const c = o.cliente || "Sem cliente"; porCli[c] = (porCli[c] || 0) + 1; } });
+  const top = Object.entries(porCli).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  $("#pTop").innerHTML = top.length ? top.map(([c, n]) => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)"><span style="flex:1">${esc(c)} ${pillTier(tierDe(c))}</span><span class="late l2">${n}</span></div>`).join("") : '<span class="muted">Nenhuma OS atrasada 👏</span>';
+};
+
+function tabelaOS(arr, compacto) {
+  if (!arr.length) return '<div class="empty">Nenhuma OS aqui.</div>';
+  return `<div class="tbl"><table><thead><tr><th>Atraso</th><th>Nº</th><th>Cliente</th><th>Serviço</th>${compacto ? "" : "<th class='hidesm'>Técnico</th>"}<th class="hidesm">Abertura</th><th class="hidesm">Prazo</th><th>Status</th>${compacto ? "<th class='hidesm'>Técnico</th>" : "<th class='hidesm'>Origem</th>"}</tr></thead><tbody>
+  ${arr.map(o => `<tr class="click" data-os="${esc(o.id)}"><td>${badgeAtraso(o)}</td><td><b>${esc(o.numero || "—")}</b></td><td>${esc(o.cliente || "—")} ${pillTier(tierDe(o.cliente))}</td><td>${o.prioridade === "alta" || o.prioridade === "urgente" ? `<span class="pill" style="background:rgba(239,68,68,.15);color:#fca5a5">${o.prioridade}</span> ` : ""}${esc(o.servico || "")}</td>${compacto ? "" : `<td class="hidesm">${esc(o.tecnico || "—")}</td>`}<td class="hidesm">${br(o.abertura)}<br><small class="muted">${diasAberta(o) ?? "—"}d aberta</small></td><td class="hidesm">${br(prazoEf(o))}${o.prazo ? "" : '<br><small class="muted">padrão</small>'}</td><td><span class="pill ${o.status}">${STATUS[o.status] || o.status}</span></td>${compacto ? `<td class="hidesm">${esc(o.tecnico || "—")}</td>` : `<td class="hidesm muted">${esc(o.origem || "")}</td>`}</tr>`).join("")}
+  </tbody></table></div>`;
+}
+function ligaTabelaOS(root) { $$("[data-os]", root).forEach(tr => tr.onclick = () => abrirOS(tr.dataset.os)); }
+
+/* ---------- OS ---------- */
+const OSF = () => [
+  { k: "numero", l: "Nº da OS" }, { k: "cliente", l: "Cliente", list: "dlCli" },
+  { k: "servico", l: "Serviço / descrição", full: true },
+  { k: "tecnico", l: "Técnico", list: "dlTec" },
+  { k: "status", l: "Status", t: "select", op: Object.entries(STATUS) },
+  { k: "prioridade", l: "Prioridade", t: "select", op: [["normal", "Normal"], ["baixa", "Baixa"], ["alta", "Alta"], ["urgente", "Urgente"]] },
+  { k: "origem", l: "Origem", t: "select", op: ["Inside", "Segware", "Manual"] },
+  { k: "abertura", l: "Data de abertura", t: "date" }, { k: "prazo", l: "Prazo (vazio = padrão)", t: "date" },
+  { k: "conclusao", l: "Data de conclusão", t: "date" },
+  { k: "obs", l: "Observações", t: "area", full: true },
+];
+function abrirOS(id) {
+  const o = id ? { id, ...T("os")[id] } : { status: "aberta", origem: "Manual", abertura: hoje(), prioridade: "normal" };
+  const ed = pode("os");
+  const tecs = [...lista("coord_tecnicos").map(x => x.nome), ...lista("coord_funcionarios").map(x => x.nome), ...lista("os").map(x => x.tecnico)];
+  if (!ed) {
+    modal({ titulo: "OS " + esc(o.numero || ""), corpo: `<div class="form">${OSF().map(f => `<label class="${f.full ? "full" : ""}">${f.l}<div style="color:var(--tx);font-weight:500">${esc(f.k === "status" ? STATUS[o[f.k]] : f.t === "date" ? br(o[f.k]) : o[f.k] || "—")}</div></label>`).join("")}<label>Atraso<div>${badgeAtraso(o)}</div></label></div>`, botoes: [] });
+    return;
+  }
+  const fs = OSF();
+  modal({
+    titulo: id ? "Editar OS " + esc(o.numero || "") : "Nova OS", wide: true,
+    corpo: campos(fs, o) + datalist("dlCli", lista("cliente").map(c => c.nome)) + datalist("dlTec", tecs),
+    botoes: [
+      ...(id ? [{ txt: "Excluir", cls: "bad", fn: async () => { if (!await confirma("Excluir esta OS?")) return false; await excluir("os", id); toast("OS excluída"); } }] : []),
+      ...(id && ativa(o) ? [{ txt: "✓ Concluir", fn: async () => { await salvar("os", id, { ...T("os")[id], status: "concluida", conclusao: hoje() }); toast("OS concluída", "ok"); } }] : []),
+      { txt: "Salvar", cls: "pri", fn: async r => {
+        const d = { ...(id ? T("os")[id] : {}), ...ler(fs, r) }; delete d.exemplo;
+        if (d.status === "concluida" && !d.conclusao) d.conclusao = hoje();
+        if (d.status !== "concluida") d.conclusao = d.conclusao && d.status === "cancelada" ? d.conclusao : "";
+        const nid = id || (norm(d.origem) + "_" + (d.numero ? d.numero.replace(/\W+/g, "") : uid()));
+        await salvar("os", nid, d); toast("OS salva", "ok");
+      } }
+    ]
+  });
+}
+function confirma(msg) {
+  return new Promise(ok => {
+    const box = document.createElement("div"); box.className = "ov"; box.style.zIndex = 70;
+    box.innerHTML = `<div class="md" style="width:min(400px,100%)"><div class="bd">${esc(msg)}</div><div class="ft"><button class="btn" data-n>Cancelar</button><button class="btn bad" data-s>Confirmar</button></div></div>`;
+    document.body.appendChild(box);
+    box.querySelector("[data-n]").onclick = () => { box.remove(); ok(false); };
+    box.querySelector("[data-s]").onclick = () => { box.remove(); ok(true); };
+  });
+}
+VIEWS.os = el => {
+  const todas = lista("os");
+  let arr = todas.filter(o => (F.status === "ativas" ? ativa(o) : F.status === "atrasadas" ? (atraso(o) ?? -1) > 0 : F.status ? o.status === F.status : true)
+    && (!F.origem || o.origem === F.origem) && (!F.tier || tierDe(o.cliente) === F.tier)
+    && (!F.busca || norm([o.numero, o.cliente, o.servico, o.tecnico].join(" ")).includes(norm(F.busca))));
+  arr.sort((a, b) => (atraso(b) ?? -999) - (atraso(a) ?? -999) || String(b.abertura).localeCompare(String(a.abertura)));
+  el.innerHTML = `<div class="tools">
+    <input class="in" id="fB" placeholder="Buscar nº, cliente, serviço, técnico…" value="${esc(F.busca)}" style="flex:1;min-width:200px">
+    <select class="in" id="fS">${[["ativas", "Pendentes (abertas + execução)"], ["atrasadas", "Só atrasadas"], ["aberta", "Abertas"], ["execucao", "Em execução"], ["concluida", "Concluídas"], ["cancelada", "Canceladas"], ["", "Todas"]].map(([v, l]) => `<option value="${v}" ${F.status === v ? "selected" : ""}>${l}</option>`).join("")}</select>
+    <select class="in" id="fO"><option value="">Todas as origens</option>${["Inside", "Segware", "Manual"].map(v => `<option ${F.origem === v ? "selected" : ""}>${v}</option>`).join("")}</select>
+    <select class="in" id="fT"><option value="">Todas as categorias</option>${["ouro", "prata", "bronze"].map(v => `<option value="${v}" ${F.tier === v ? "selected" : ""}>${v[0].toUpperCase() + v.slice(1)}</option>`).join("")}</select>
+    ${pode("os") ? `<button class="btn pri" id="bNova">+ Nova OS</button>` : ""}
+  </div>
+  <div class="stats"><div class="s"><b>${arr.length}</b>listadas</div><div class="s"><b>${todas.length}</b>no total</div></div>
+  <div class="card" id="osT"></div>`;
+  $("#osT").innerHTML = tabelaOS(arr); ligaTabelaOS($("#osT"));
+  $("#fB").oninput = e => { F.busca = e.target.value; clearTimeout(VIEWS._t); VIEWS._t = setTimeout(() => { renderAll(); const i = $("#fB"); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }, 250); };
+  $("#fS").onchange = e => { F.status = e.target.value; renderAll(); };
+  $("#fO").onchange = e => { F.origem = e.target.value; renderAll(); };
+  $("#fT").onchange = e => { F.tier = e.target.value; renderAll(); };
+  $("#bNova") && ($("#bNova").onclick = () => abrirOS(null));
+};
+
+/* ---------- Clientes ---------- */
+const CLF = [
+  { k: "nome", l: "Nome do cliente", full: true },
+  { k: "categoria", l: "Categoria", t: "select", op: [["", "Sem categoria"], ["ouro", "Ouro"], ["prata", "Prata"], ["bronze", "Bronze"]] },
+  { k: "grupo", l: "Grupo (junta várias contas)", list: "dlGrp", ph: "ex.: Capelas" }, { k: "responsavel", l: "Responsável (contato do cliente)" },
+  { k: "codigo", l: "Conta Segware" }, { k: "cnpj", l: "CNPJ" }, { k: "telefone", l: "Telefone" }, { k: "contato", l: "Outro contato" },
+  { k: "servicos", l: "Serviços (CFTV, alarme, cerca…)" }, { k: "cidade", l: "Cidade" }, { k: "bairro", l: "Bairro" }, { k: "endereco", l: "Endereço", full: true },
+  { k: "obs", l: "Observações", t: "area", full: true },
+];
+const FC = { busca: "", tier: "todos" };
+VIEWS.clientes = el => {
+  const cl = lista("cliente"); const os = lista("os").filter(ativa);
+  const arr = cl.filter(c => (FC.tier === "todos" || (c.categoria || "") === FC.tier) && (!FC.busca || norm([c.nome, c.codigo, c.grupo, c.responsavel, c.cidade, c.bairro, c.endereco].join(" ")).includes(norm(FC.busca))))
+    .sort((a, b) => ({ ouro: 0, prata: 1, bronze: 2 }[a.categoria] ?? 3) - ({ ouro: 0, prata: 1, bronze: 2 }[b.categoria] ?? 3) || a.nome.localeCompare(b.nome));
+  const ed = pode("clientes");
+  el.innerHTML = `<div class="tabs">${[["todos", "Todos", cl.length], ["ouro", "🥇 Ouro"], ["prata", "🥈 Prata"], ["bronze", "🥉 Bronze"], ["", "Sem categoria"]].map(([v, l, n]) => `<button class="tab ${FC.tier === v ? "on" : ""}" data-t="${v}">${l}<span class="c">${n ?? cl.filter(c => (c.categoria || "") === v).length}</span></button>`).join("")}</div>
+  <div class="tools"><input class="in" id="cB" placeholder="Buscar cliente…" value="${esc(FC.busca)}" style="flex:1">${ed ? `<button class="btn" id="cImp">Colar lista de clientes</button><button class="btn pri" id="cNovo">+ Novo cliente</button>` : ""}</div>
+  ${arr.length ? `<div class="grid">${arr.map(c => { const p = os.filter(o => norm(o.cliente) === norm(c.nome)); const at = p.filter(o => atraso(o) > 0).length; return `<div class="item click" data-c="${esc(c.id)}"><div class="t"><span class="medal ${c.categoria}" style="${c.categoria ? "" : "background:var(--line)"}"></span>${esc(c.nome)}</div><div class="k">${pillTier(c.categoria)} ${c.codigo ? "· conta " + esc(c.codigo) : ""}${c.grupo ? " · " + esc(c.grupo) : ""}</div>${c.responsavel || c.cidade ? `<div class="k">${c.responsavel ? "Resp.: <b>" + esc(c.responsavel) + "</b>" : ""}${c.responsavel && c.cidade ? " · " : ""}${esc(c.cidade || "")}${c.bairro ? " / " + esc(c.bairro) : ""}</div>` : ""}<div class="k">${p.length} OS pendente(s)${at ? ` · <b style="color:#fca5a5">${at} atrasada(s)</b>` : ""}</div>${c.telefone ? `<div class="k">${esc(c.telefone)}</div>` : ""}</div>`; }).join("")}</div>` : '<div class="empty">Nenhum cliente. Use “Colar lista de clientes” para importar todos de uma vez.</div>'}`;
+  $$("[data-t]", el).forEach(b => b.onclick = () => { FC.tier = b.dataset.t; renderAll(); });
+  $("#cB").oninput = e => { FC.busca = e.target.value; clearTimeout(VIEWS._t); VIEWS._t = setTimeout(() => { renderAll(); const i = $("#cB"); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }, 250); };
+  $$("[data-c]", el).forEach(d => d.onclick = () => abrirCliente(d.dataset.c));
+  $("#cNovo") && ($("#cNovo").onclick = () => abrirCliente(null));
+  $("#cImp") && ($("#cImp").onclick = () => { IMP.destino = "cliente"; go("importar"); });
+};
+function abrirCliente(id) {
+  const c = id ? T("cliente")[id] : { categoria: "" };
+  const ed = pode("clientes");
+  const hist = id ? lista("os").filter(o => norm(o.cliente) === norm(c.nome)).sort((a, b) => String(b.abertura).localeCompare(String(a.abertura))) : [];
+  modal({
+    titulo: id ? esc(c.nome) : "Novo cliente", wide: true,
+    corpo: (ed ? campos(CLF, c) + datalist("dlGrp", lista("cliente").map(x => x.grupo)) : `<div class="form">${CLF.map(f => `<label class="${f.full ? "full" : ""}">${f.l}<div style="color:var(--tx);font-weight:500">${esc(c[f.k] || "—")}</div></label>`).join("")}</div>`)
+      + (hist.length ? `<h3 style="margin:18px 0 8px;font-size:14px">Histórico de OS (${hist.length})</h3>${tabelaOS(hist.slice(0, 30))}` : ""),
+    botoes: ed ? [
+      ...(id ? [{ txt: "Excluir", cls: "bad", fn: async () => { if (!await confirma("Excluir o cliente " + c.nome + "?")) return false; await excluir("cliente", id); } }] : []),
+      { txt: "Salvar", cls: "pri", fn: async r => { const d = { ...c, ...ler(CLF, r) }; delete d.exemplo; if (!d.nome) throw new Error("Informe o nome"); await salvar("cliente", id || "c_" + uid(), d); toast("Cliente salvo", "ok"); } }
+    ] : []
+  });
+  $$("#modalRoot [data-os]").forEach(tr => tr.onclick = () => abrirOS(tr.dataset.os));
+}
+
+/* ---------- Importar (Inside / Segware / prints / colagem) ---------- */
+const IMP = { destino: "inside", texto: "", linhas: null, header: -1, mapa: {}, fechaSumidas: true, ocr: "", fonte: "" };
+const CAMPOS_OS = [["numero", "Nº OS"], ["cliente", "Cliente"], ["servico", "Serviço"], ["tecnico", "Técnico"], ["status", "Status"], ["abertura", "Abertura"], ["prazo", "Prazo"], ["prioridade", "Prioridade"]];
+const CAMPOS_CL = [["nome", "Nome"], ["categoria", "Categoria"], ["codigo", "Conta"], ["responsavel", "Responsável"], ["telefone", "Telefone"], ["cidade", "Cidade"], ["endereco", "Endereço"]];
+const RX = {
+  numero: /^(n[º°o.]?\s*(da\s*)?os|os|ordem|n[uú]mero|n[º°o]|c[oó]d|protocolo|chamado|id)\b/i,
+  cliente: /cliente|raz[aã]o|nome|cond|empresa|assinante|conta/i,
+  servico: /servi[cç]o|descri|assunto|tipo|problema|defeito|motivo|solicita/i,
+  tecnico: /t[eé]cnic|respons|atendente|executor|equipe/i,
+  status: /status|situa[cç]|etapa|fase/i,
+  abertura: /abert|emiss|cadastr|criad|^data$|data\s*(de\s*)?(abert|in[ií]c)/i,
+  prazo: /prazo|previs|agend|vencim|limite|sla/i,
+  prioridade: /priorid|urg/i,
+  nome: /cliente|raz[aã]o|nome|assinante|fantasia/i,
+  responsavel: /respons|resp\.?$|s[ií]ndico|gerente/i,
+  cidade: /cidade|munic/i,
+  categoria: /categ|classe|n[ií]vel|ouro|prata|bronze/i,
+  codigo: /c[oó]d|contas?$|^id$|n[º°o]/i,
+  telefone: /fone|telef|celular|whats/i,
+  contato: /contato|respons/i,
+  endereco: /ender|rua|bairro|logradouro/i,
+};
+function textoParaLinhas(t) {
+  const ls = String(t || "").split(/\r?\n/).map(l => l.replace(/ /g, " ").trimEnd()).filter(l => l.trim());
+  const tab = ls.filter(l => l.includes("\t")).length > ls.length / 3;
+  const pv = !tab && ls.filter(l => l.includes(";")).length > ls.length / 3;
+  const pipe = !tab && !pv && ls.filter(l => l.includes("|")).length > ls.length / 3;
+  return ls.map(l => (tab ? l.split("\t") : pv ? l.split(";") : pipe ? l.split("|") : l.split(/\s{2,}| \t/)).map(c => c.trim())).filter(r => r.some(Boolean));
+}
+function detectar(rows, campos) {
+  let best = -1, bestScore = 0, bestMap = {};
+  for (let i = 0; i < Math.min(rows.length, 12); i++) {
+    const map = {}; let sc = 0;
+    rows[i].forEach((c, j) => { if (c.length > 40) return; for (const [k] of campos) if (map[k] == null && RX[k] && RX[k].test(c.trim())) { map[k] = j; sc++; break; } });
+    if (sc > bestScore) { bestScore = sc; best = i; bestMap = map; }
+  }
+  if (bestScore >= 2) return { header: best, mapa: bestMap };
+  // sem cabeçalho: adivinha pelas colunas
+  const map = {}; const amostra = rows.slice(0, 20); const nc = Math.max(...amostra.map(r => r.length));
+  const col = j => amostra.map(r => r[j] || "");
+  for (let j = 0; j < nc; j++) {
+    const v = col(j);
+    if (campos === CAMPOS_OS) {
+      if (map.numero == null && v.filter(x => /^#?\d{2,10}$/.test(x)).length > v.length * .6) { map.numero = j; continue; }
+      if (map.abertura == null && v.filter(x => parseData(x)).length > v.length * .6) { map.abertura = j; continue; }
+      if (map.status == null && v.filter(x => /abert|exec|andamento|conclu|pendente|agendad/i.test(x)).length > v.length * .5) { map.status = j; continue; }
+    }
+  }
+  const textuais = [...Array(nc).keys()].filter(j => !Object.values(map).includes(j)).sort((a, b) => col(b).join("").length - col(a).join("").length);
+  if (campos === CAMPOS_OS) { if (textuais[1] != null) map.cliente = Math.min(textuais[0], textuais[1]); if (textuais[0] != null) map.servico = textuais[0] === map.cliente ? textuais[1] : textuais[0]; }
+  else { map.nome = textuais[0] ?? 0; const cat = [...Array(nc).keys()].find(j => col(j).some(x => /ouro|prata|bronze/i.test(x))); if (cat != null) map.categoria = cat; }
+  return { header: -1, mapa: map };
+}
+function statusDe(s) { s = norm(s); if (!s) return ""; if (/cancel/.test(s)) return "cancelada"; if (/conclu|finaliz|fechad|encerr|resolvid/.test(s)) return "concluida"; if (/exec|andamento|atendimento|em rota|em campo|iniciad/.test(s)) return "execucao"; return "aberta"; }
+function prepararImport(rows, fonte) {
+  IMP.linhas = rows; IMP.fonte = fonte || "";
+  const d = detectar(rows, IMP.destino === "cliente" ? CAMPOS_CL : CAMPOS_OS);
+  IMP.header = d.header; IMP.mapa = d.mapa;
+}
+function linhasDados() { return (IMP.linhas || []).filter((r, i) => i !== IMP.header && i > IMP.header - 1 || IMP.header < 0).filter((r, i, a) => IMP.header < 0 || r !== IMP.linhas[IMP.header]); }
+function montarItens() {
+  const rows = (IMP.linhas || []).slice(IMP.header + 1);
+  const m = IMP.mapa; const g = (r, k) => m[k] != null && m[k] !== "" ? (r[+m[k]] || "").trim() : "";
+  if (IMP.destino === "cliente") {
+    const exist = {}; lista("cliente").forEach(c => exist[norm(c.nome)] = c);
+    return rows.map(r => {
+      const nome = g(r, "nome"); if (!nome || nome.length < 2) return null;
+      const old = exist[norm(nome)];
+      const catTxt = norm(g(r, "categoria") || r.join(" "));
+      const categoria = /ouro|gold/.test(catTxt) ? "ouro" : /prata|silver/.test(catTxt) ? "prata" : /bronze/.test(catTxt) ? "bronze" : (old?.categoria || "");
+      const d = { ...(old || {}), nome, categoria };
+      ["codigo", "telefone", "contato", "endereco", "cnpj", "cidade", "bairro", "responsavel", "grupo"].forEach(k => { const v = g(r, k); if (v) d[k] = v; });
+      delete d.exemplo; const id = old?.id || "c_" + uid();
+      delete d.id; return { tipo: "cliente", id, dados: d };
+    }).filter(Boolean);
+  }
+  const origem = IMP.destino === "segware" ? "Segware" : "Inside";
+  return rows.map(r => {
+    const numero = g(r, "numero").replace(/^#/, ""); if (!numero && !g(r, "cliente")) return null;
+    const id = norm(origem) + "_" + (numero ? numero.replace(/\W+/g, "") : uid());
+    const old = T("os")[id] || {};
+    const d = { ...old, numero: numero || old.numero || "", origem };
+    const cli = g(r, "cliente"); if (cli) d.cliente = cli;
+    const sv = g(r, "servico"); if (sv) d.servico = sv;
+    const tc = g(r, "tecnico"); if (tc) d.tecnico = tc;
+    const pr = g(r, "prioridade"); if (pr) d.prioridade = /urg/i.test(pr) ? "urgente" : /alta/i.test(pr) ? "alta" : /baixa/i.test(pr) ? "baixa" : "normal";
+    const ab = parseData(g(r, "abertura")); if (ab) d.abertura = ab; else if (!d.abertura) d.abertura = hoje();
+    const pz = parseData(g(r, "prazo")); if (pz) d.prazo = pz;
+    const st = statusDe(g(r, "status")); d.status = st || (old.status && ativa(old) ? old.status : "aberta");
+    if (d.status === "concluida" && !d.conclusao) d.conclusao = hoje();
+    if (ativa(d)) d.conclusao = "";
+    d.importado = new Date().toISOString(); delete d.exemplo;
+    return { tipo: "os", id, dados: d };
+  }).filter(Boolean);
+}
+VIEWS.importar = el => {
+  const isCli = IMP.destino === "cliente";
+  const campos = isCli ? CAMPOS_CL : CAMPOS_OS;
+  const appUrl = location.href.split("#")[0];
+  const bmCode = `(function(){var A=${JSON.stringify(appUrl)};function T(d){var o=[];try{d.querySelectorAll('table').forEach(function(t){var R=[];t.querySelectorAll('tr').forEach(function(tr){var c=[];tr.querySelectorAll('th,td').forEach(function(td){c.push((td.innerText||'').replace(/\\s+/g,' ').trim())});if(c.some(function(x){return x}))R.push(c)});if(R.length>1)o.push(R)});d.querySelectorAll('iframe,frame').forEach(function(f){try{o=o.concat(T(f.contentDocument))}catch(e){}})}catch(e){}return o}var t=T(document);t.sort(function(a,b){return b.length*(b[0]||[]).length-a.length*(a[0]||[]).length});var p={pmImport:1,host:location.hostname,titulo:document.title,linhas:t[0]||null,texto:document.body.innerText.slice(0,300000)};var w=window.open(A+'#importar','pm_central');var n=0;var iv=setInterval(function(){n++;try{w.postMessage(p,'*')}catch(e){}if(n>60)clearInterval(iv)},500);window.addEventListener('message',function(e){if(e.data&&e.data.pmAck){clearInterval(iv)}})})();`;
+  el.innerHTML = `
+  <div class="tabs">${[["inside", "OS do Inside"], ["segware", "Segware"], ["cliente", "Lista de clientes"]].map(([v, l]) => `<button class="tab ${IMP.destino === v ? "on" : ""}" data-d="${v}">${l}</button>`).join("")}</div>
+  <div class="row" style="grid-template-columns:1fr 1fr;margin-top:0">
+    <div class="card"><h2>1 · Leitor automático (1 clique)</h2>
+      <p class="muted" style="margin-top:0">Arraste o botão abaixo para a barra de favoritos do Chrome. Depois, com a tela do ${IMP.destino === "segware" ? "Segware" : "Inside"} aberta e logada, clique no favorito: ele lê a tabela que está na tela e manda direto para cá.</p>
+      <p><a class="bm" id="bmLink" href="#" onclick="event.preventDefault()">📥 Enviar para Central</a></p>
+      <p class="muted" style="font-size:12px">Ele só lê o que já está na sua tela; não usa login, não guarda senha e não altera nada no Inside/Segware.</p>
+    </div>
+    <div class="card"><h2>2 · Print da tela</h2>
+      <div class="drop" id="dropImg">Solte aqui o print das OS (ou clique para escolher)<br><small class="muted">PNG ou JPG · leitura automática do texto</small></div>
+      <input type="file" id="fImg" accept="image/*" hidden>
+      <div id="ocrSt" class="muted" style="margin-top:8px"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px"><h2>3 · Copiar e colar <span class="muted" style="font-weight:500;font-size:12px">(no Inside: selecione a tabela → Ctrl+C → cole aqui)</span></h2>
+    <textarea class="in" id="txt" placeholder="${isCli ? "Cole aqui seus clientes (um por linha). Ex.: Condomínio Mar Azul; ouro" : "Cole aqui as linhas das OS…"}">${esc(IMP.texto)}</textarea>
+    <div class="tools" style="margin-top:10px;margin-bottom:0"><button class="btn pri" id="bLer">Ler texto</button>${IMP.destino === "segware" ? `<label class="muted">Total de clientes no Segware: <input class="in" id="segTot" type="number" style="width:110px" value="${esc(T("segware").resumo?.total ?? "")}"></label><button class="btn" id="bSeg">Salvar total</button>` : ""}</div>
+  </div>
+  <div id="prev"></div>`;
+  $("#bmLink").setAttribute("href", "javascript:" + encodeURIComponent(bmCode));
+  $$("[data-d]", el).forEach(b => b.onclick = () => { IMP.destino = b.dataset.d; if (IMP.linhas) prepararImport(IMP.linhas, IMP.fonte); renderAll(); });
+  $("#txt").oninput = e => IMP.texto = e.target.value;
+  $("#bLer").onclick = () => { const rows = textoParaLinhas(IMP.texto); if (!rows.length) return toast("Nada para ler", "bad"); detectarTotalSegware(IMP.texto); prepararImport(rows, "colagem"); renderPrev(); };
+  $("#bSeg") && ($("#bSeg").onclick = async () => { await salvar("segware", "resumo", { total: +$("#segTot").value || 0, em: new Date().toISOString() }); toast("Total do Segware salvo", "ok"); });
+  const dz = $("#dropImg"), fi = $("#fImg");
+  dz.onclick = () => fi.click();
+  dz.ondragover = e => { e.preventDefault(); dz.classList.add("hover"); };
+  dz.ondragleave = () => dz.classList.remove("hover");
+  dz.ondrop = e => { e.preventDefault(); dz.classList.remove("hover"); const f = e.dataTransfer.files[0]; if (f) lerPrint(f); };
+  fi.onchange = () => fi.files[0] && lerPrint(fi.files[0]);
+  renderPrev();
+};
+function detectarTotalSegware(txt) {
+  if (IMP.destino !== "segware") return;
+  const m = String(txt).match(/(?:total|clientes|registros|contas)[^\d\n]{0,25}(\d{1,6})/i);
+  if (m && pode("os")) salvar("segware", "resumo", { total: +m[1], em: new Date().toISOString() }).then(() => toast("Total do Segware detectado: " + m[1], "ok")).catch(() => {});
+}
+async function lerPrint(file) {
+  const st = $("#ocrSt");
+  try {
+    st.textContent = "Carregando leitor de imagem…";
+    if (!window.Tesseract) await new Promise((ok, no) => { const s = document.createElement("script"); s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"; s.onload = ok; s.onerror = () => no(new Error("Leitor de imagem indisponível aqui (abra o app pelo link do GitHub).")); document.head.appendChild(s); });
+    const r = await Tesseract.recognize(file, "por", { logger: m => { if (m.status === "recognizing text") st.textContent = "Lendo o print… " + Math.round(m.progress * 100) + "%"; } });
+    const txt = r.data.text; IMP.texto = txt; $("#txt").value = txt;
+    st.textContent = "Print lido. Confira as colunas abaixo antes de importar (a leitura de imagem pode errar algum caractere).";
+    detectarTotalSegware(txt);
+    prepararImport(textoParaLinhas(txt.replace(/ {2,}|\s\|\s/g, "\t")), "print");
+    renderPrev();
+  } catch (e) { st.textContent = ""; toast(e.message, "bad"); }
+}
+function renderPrev() {
+  const box = $("#prev"); if (!box) return;
+  if (!IMP.linhas) { box.innerHTML = ""; return; }
+  const isCli = IMP.destino === "cliente"; const campos = isCli ? CAMPOS_CL : CAMPOS_OS;
+  const nc = Math.max(1, ...IMP.linhas.slice(0, 50).map(r => r.length));
+  const opts = `<option value="">— ignorar —</option>` + [...Array(nc).keys()].map(j => `<option value="${j}">Coluna ${j + 1}${IMP.header >= 0 && IMP.linhas[IMP.header][j] ? ": " + esc(IMP.linhas[IMP.header][j].slice(0, 20)) : ""}</option>`).join("");
+  const itens = montarItens();
+  const origem = IMP.destino === "segware" ? "Segware" : "Inside";
+  const sumidas = isCli ? [] : lista("os").filter(o => o.origem === origem && ativa(o) && !itens.some(i => i.id === o.id) && !o.exemplo);
+  box.innerHTML = `<div class="card" style="margin-top:16px"><h2>Conferir e importar <span class="pill">${itens.length} ${isCli ? "cliente(s)" : "OS"}</span>${IMP.fonte ? `<span class="muted" style="font-weight:500;font-size:12px">via ${esc(IMP.fonte)}</span>` : ""}</h2>
+    <div class="form" style="grid-template-columns:repeat(4,1fr);margin-bottom:12px">${campos.map(([k, l]) => `<label>${l}<select class="in" data-m="${k}">${opts}</select></label>`).join("")}
+      <label>Linha do cabeçalho<select class="in" id="hdr"><option value="-1">Sem cabeçalho</option>${IMP.linhas.slice(0, 12).map((r, i) => `<option value="${i}" ${IMP.header === i ? "selected" : ""}>Linha ${i + 1}: ${esc(r.join(" | ").slice(0, 40))}</option>`).join("")}</select></label></div>
+    ${!isCli ? `<label class="chks" style="margin-bottom:12px"><label><input type="checkbox" id="fch" ${IMP.fechaSumidas ? "checked" : ""}> Marcar como concluídas as ${sumidas.length} OS do ${origem} que estavam abertas aqui e não aparecem mais na tela</label></label>` : ""}
+    <div class="tbl" style="max-height:360px"><table><thead><tr>${campos.map(([, l]) => `<th>${l}</th>`).join("")}</tr></thead><tbody>${itens.slice(0, 100).map(i => `<tr>${campos.map(([k]) => `<td>${k === "status" ? `<span class="pill ${i.dados.status}">${STATUS[i.dados.status]}</span>` : k === "abertura" || k === "prazo" ? br(i.dados[k]) : esc(k === "nome" ? i.dados.nome : i.dados[k] || "")}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
+    ${itens.length > 100 ? `<p class="muted">Mostrando 100 de ${itens.length}.</p>` : ""}
+    <div class="tools" style="margin:14px 0 0"><span class="sp"></span><button class="btn" id="bLimp">Descartar</button><button class="btn pri" id="bImp" ${itens.length ? "" : "disabled"}>Importar ${itens.length}</button></div></div>`;
+  $$("[data-m]", box).forEach(s => { s.value = IMP.mapa[s.dataset.m] ?? ""; s.onchange = () => { IMP.mapa[s.dataset.m] = s.value === "" ? null : +s.value; renderPrev(); }; });
+  $("#hdr").onchange = e => { IMP.header = +e.target.value; renderPrev(); };
+  $("#fch") && ($("#fch").onchange = e => IMP.fechaSumidas = e.target.checked);
+  $("#bLimp").onclick = () => { IMP.linhas = null; IMP.texto = ""; renderAll(); };
+  $("#bImp").onclick = async e => {
+    if (!pode(isCli ? "clientes" : "os")) return toast("Você não tem permissão para importar.", "bad");
+    e.target.disabled = true;
+    try {
+      const its = montarItens();
+      if (!isCli && IMP.fechaSumidas) for (const o of sumidas) { const { id, ...d } = o; its.push({ tipo: "os", id, dados: { ...d, status: "concluida", conclusao: hoje(), obs: ((d.obs || "") + " [concluída automaticamente: saiu da lista do " + origem + " em " + br(hoje()) + "]").trim() } }); }
+      await salvarVarios(its);
+      if (!isCli) await salvar("importacao", uid(), { origem, qtd: its.length, por: S.me?.nome, em: new Date().toISOString() }).catch(() => {});
+      toast(`${its.length} registro(s) importado(s)!`, "ok");
+      IMP.linhas = null; IMP.texto = ""; go(isCli ? "clientes" : "painel");
+    } catch (err) { toast(err.message, "bad"); e.target.disabled = false; }
+  };
+}
+// recebe dados do leitor de 1 clique (favorito)
+addEventListener("message", e => {
+  const d = e.data; if (!d || !d.pmImport) return;
+  try { e.source && e.source.postMessage({ pmAck: 1 }, "*"); } catch {}
+  if (IMP._ultimo === JSON.stringify(d).length + d.titulo) return; IMP._ultimo = JSON.stringify(d).length + d.titulo;
+  IMP.destino = /segware/i.test(d.host + d.titulo) ? "segware" : IMP.destino === "cliente" ? "cliente" : "inside";
+  const rows = d.linhas && d.linhas.length > 1 ? d.linhas : textoParaLinhas(d.texto);
+  IMP.texto = d.linhas ? d.linhas.map(r => r.join("\t")).join("\n") : d.texto;
+  if (IMP.destino === "segware") detectarTotalSegware(d.texto);
+  prepararImport(rows, "leitor automático (" + d.host + ")");
+  if (!S.me) toast("Entre com seu usuário para importar.", "bad");
+  if (S.route !== "importar") go("importar"); else renderAll();
+  toast("Tela recebida de " + d.host + ". Confira e clique em Importar.", "ok");
+});
+
+/* ---------- Arquivos ---------- */
+VIEWS.arquivos = el => {
+  const arr = lista("arquivo").sort((a, b) => String(b.em).localeCompare(String(a.em)));
+  const ed = pode("arquivos");
+  el.innerHTML = `${ed ? `<div class="drop" id="dz">Arraste arquivos de qualquer formato (PDF, planilha, foto, vídeo, projeto…) ou clique para escolher</div><input type="file" id="fi" multiple hidden><div style="height:16px"></div>` : `<div class="hint">Peça ao administrador permissão para enviar arquivos.</div>`}
+  <div class="tools"><input class="in" id="aB" placeholder="Buscar arquivo…" style="flex:1"></div>
+  <div class="card"><div class="tbl"><table><thead><tr><th>Arquivo</th><th class="hidesm">Tamanho</th><th class="hidesm">Enviado por</th><th>Data</th><th></th></tr></thead><tbody id="aT">
+  ${arr.length ? arr.map(a => `<tr data-n="${esc(norm(a.nome))}"><td>${extIco(a.nome)} <b>${esc(a.nome)}</b></td><td class="hidesm muted">${fmtBytes(a.tamanho || 0)}</td><td class="hidesm">${esc(a.por || "")}</td><td class="muted">${a.em ? new Date(a.em).toLocaleDateString("pt-BR") : ""}</td><td style="text-align:right;white-space:nowrap"><a class="btn sm" href="${esc(a.url)}" target="_blank" rel="noopener" download="${esc(a.nome)}">Abrir</a> ${ed ? `<button class="btn sm bad" data-del="${esc(a.id)}">✕</button>` : ""}</td></tr>`).join("") : `<tr><td colspan="5"><div class="empty">Nenhum arquivo ainda.</div></td></tr>`}
+  </tbody></table></div></div>`;
+  $("#aB").oninput = e => { const q = norm(e.target.value); $$("#aT tr[data-n]").forEach(tr => tr.style.display = tr.dataset.n.includes(q) ? "" : "none"); };
+  $$("[data-del]", el).forEach(b => b.onclick = async () => { if (await confirma("Remover este arquivo da lista?")) { await excluir("arquivo", b.dataset.del); toast("Removido"); } });
+  if (!ed) return;
+  const dz = $("#dz"), fi = $("#fi");
+  dz.onclick = () => fi.click();
+  dz.ondragover = e => { e.preventDefault(); dz.classList.add("hover"); };
+  dz.ondragleave = () => dz.classList.remove("hover");
+  dz.ondrop = e => { e.preventDefault(); dz.classList.remove("hover"); enviar([...e.dataTransfer.files]); };
+  fi.onchange = () => enviar([...fi.files]);
+  async function enviar(files) {
+    for (const f of files) {
+      dz.textContent = "Enviando " + f.name + "…";
+      try { const url = await API.upload(f); await salvar("arquivo", "a_" + uid(), { nome: f.name, tamanho: f.size, tipo: f.type, url, por: S.me.nome, em: new Date().toISOString() }); toast("Enviado: " + f.name, "ok"); }
+      catch (e) { toast(f.name + ": " + e.message, "bad"); }
+    }
+    renderAll();
+  }
+};
+function extIco(n) { const e = (String(n).split(".").pop() || "").toLowerCase(); const m = { pdf: "📕", xls: "📗", xlsx: "📗", csv: "📗", doc: "📘", docx: "📘", ppt: "📙", pptx: "📙", jpg: "🖼️", jpeg: "🖼️", png: "🖼️", webp: "🖼️", mp4: "🎬", mov: "🎬", zip: "🗜️", rar: "🗜️", dwg: "📐" }; return m[e] || "📄"; }
+
+/* ---------- Coordenador ---------- */
+const COORD = {
+  funcionarios: { l: "Quadro de funcionários", ic: "👷", f: [{ k: "nome", l: "Nome" }, { k: "cargo", l: "Cargo / função" }, { k: "setor", l: "Setor" }, { k: "telefone", l: "Telefone" }, { k: "turno", l: "Turno" }, { k: "status", l: "Situação", t: "select", op: ["Ativo", "Férias", "Afastado", "Folga", "Desligado"] }, { k: "admissao", l: "Admissão", t: "date" }, { k: "obs", l: "Observações", t: "area", full: true }] },
+  operadores: { l: "Operadores", ic: "🎧", f: [{ k: "nome", l: "Nome" }, { k: "turno", l: "Turno", t: "select", op: ["Manhã", "Tarde", "Noite", "12x36 dia", "12x36 noite", "Comercial"] }, { k: "sistema", l: "Sistema que opera", ph: "Segware, Inside…" }, { k: "telefone", l: "Telefone" }, { k: "status", l: "Situação", t: "select", op: ["Em serviço", "Folga", "Férias", "Afastado"] }, { k: "obs", l: "Observações", t: "area", full: true }] },
+  tecnicos: { l: "Técnicos externos", ic: "🛠️", f: [{ k: "nome", l: "Nome" }, { k: "empresa", l: "Empresa / vínculo", ph: "Própria, terceirizado…" }, { k: "especialidade", l: "Especialidade", ph: "CFTV, alarme, cerca…" }, { k: "telefone", l: "Telefone" }, { k: "regiao", l: "Região de atendimento" }, { k: "status", l: "Situação", t: "select", op: ["Disponível", "Em campo", "Indisponível", "Folga"] }, { k: "obs", l: "Observações", t: "area", full: true }] },
+  motos: { l: "Motos", ic: "🏍️", f: [{ k: "placa", l: "Placa" }, { k: "modelo", l: "Modelo" }, { k: "responsavel", l: "Responsável", list: "dlPess" }, { k: "km", l: "KM atual", t: "number" }, { k: "revisao", l: "Próxima revisão", t: "date" }, { k: "status", l: "Situação", t: "select", op: ["Em uso", "Disponível", "Manutenção", "Parada"] }, { k: "obs", l: "Observações", t: "area", full: true }] },
+  equipamentos: { l: "Equipamentos", ic: "📦", f: [{ k: "nome", l: "Equipamento / modelo" }, { k: "marca", l: "Marca" }, { k: "categoria", l: "Categoria", t: "select", op: ["CFTV", "Alarme", "Cerca elétrica", "Controle de acesso", "Rede", "Ferramenta", "Outros"] }, { k: "qtd", l: "Quantidade em estoque", t: "number" }, { k: "codigo", l: "Código (Inside)" }, { k: "obs", l: "Observações", t: "area", full: true }] },
+  sistemas: { l: "Sistemas", ic: "💻", f: [{ k: "nome", l: "Sistema" }, { k: "uso", l: "Para que serve" }, { k: "url", l: "Endereço (link)" }, { k: "responsavel", l: "Responsável" }, { k: "obs", l: "Observações (não coloque senhas aqui)", t: "area", full: true }] },
+};
+let coordTab = "funcionarios";
+const tabsCoord = () => `<div class="tabs">${Object.entries(COORD).map(([k, v]) => `<button class="tab ${coordTab === k ? "on" : ""}" data-ct="${k}">${v.ic} ${v.l}<span class="c">${lista("coord_" + k).length}</span></button>`).join("")}<button class="tab ${coordTab === "relatorios" ? "on" : ""}" data-ct="relatorios">📝 Relatórios<span class="c">${lista("rel_relatorio").length}</span></button></div>`;
+VIEWS.coordenador = el => {
+  if (coordTab === "relatorios") { el.innerHTML = tabsCoord() + '<div id="relB"></div>'; $$("[data-ct]", el).forEach(b => b.onclick = () => { coordTab = b.dataset.ct; renderAll(); }); return viewRelatorios($("#relB")); }
+  const ed = pode("coordenador");
+  const c = COORD[coordTab]; const arr = lista("coord_" + coordTab);
+  const tit = x => x.nome || x.placa || "—";
+  const sub = x => c.f.slice(1, 4).map(f => x[f.k] ? (f.t === "date" ? br(x[f.k]) : esc(x[f.k])) : "").filter(Boolean).join(" · ");
+  const stCor = s => /dispon|ativo|em servi/i.test(s) ? "concluida" : /campo|uso/i.test(s) ? "execucao" : /manut|afast|indisp|parad|deslig/i.test(s) ? "cancelada" : "aberta";
+  el.innerHTML = `${tabsCoord()}
+  <div class="tools"><input class="in" id="kB" placeholder="Buscar em ${c.l.toLowerCase()}…" style="flex:1">${ed ? `<button class="btn pri" id="kN">+ Adicionar</button>` : ""}</div>
+  ${coordTab === "motos" ? (() => { const r = arr.filter(m => m.revisao && diasEntre(hoje(), m.revisao) <= 7); return r.length ? `<div class="hint warn">⚠️ Revisão próxima ou vencida: ${r.map(m => esc(m.placa) + " (" + br(m.revisao) + ")").join(", ")}</div>` : ""; })() : ""}
+  ${arr.length ? `<div class="grid" id="kG">${arr.sort((a, b) => tit(a).localeCompare(tit(b))).map(x => `<div class="item click" data-k="${esc(x.id)}" data-n="${esc(norm(Object.values(x).join(" ")))}"><div class="t">${c.ic} ${esc(tit(x))}</div><div class="k">${sub(x)}</div>${x.status ? `<div><span class="pill ${stCor(x.status)}">${esc(x.status)}</span></div>` : ""}</div>`).join("")}</div>` : `<div class="empty">Nada cadastrado em ${c.l.toLowerCase()}.</div>`}`;
+  $$("[data-ct]", el).forEach(b => b.onclick = () => { coordTab = b.dataset.ct; renderAll(); });
+  $("#kB").oninput = e => { const q = norm(e.target.value); $$("#kG [data-n]").forEach(d => d.style.display = d.dataset.n.includes(q) ? "" : "none"); };
+  $$("[data-k]", el).forEach(d => d.onclick = () => abrirCoord(d.dataset.k));
+  $("#kN") && ($("#kN").onclick = () => abrirCoord(null));
+};
+function abrirCoord(id) {
+  const c = COORD[coordTab]; const tipo = "coord_" + coordTab; const x = id ? T(tipo)[id] : {};
+  const ed = pode("coordenador");
+  const pess = [...lista("coord_funcionarios"), ...lista("coord_tecnicos"), ...lista("coord_operadores")].map(p => p.nome);
+  modal({
+    titulo: (id ? "" : "Novo · ") + c.l, wide: true,
+    corpo: ed ? campos(c.f, x) + datalist("dlPess", pess) : `<div class="form">${c.f.map(f => `<label class="${f.full ? "full" : ""}">${f.l}<div style="color:var(--tx);font-weight:500">${esc(f.t === "date" ? br(x[f.k]) : x[f.k] || "—")}</div></label>`).join("")}</div>`,
+    botoes: ed ? [
+      ...(id ? [{ txt: "Excluir", cls: "bad", fn: async () => { if (!await confirma("Excluir?")) return false; await excluir(tipo, id); } }] : []),
+      { txt: "Salvar", cls: "pri", fn: async r => { const d = { ...x, ...ler(c.f, r) }; delete d.exemplo; await salvar(tipo, id || "k_" + uid(), d); toast("Salvo", "ok"); } }
+    ] : []
+  });
+}
+
+
+/* ---------- Relatórios para clientes (área do coordenador) ---------- */
+const VARS = [["cliente", "Cliente"], ["responsavel", "Responsável"], ["codigo", "Conta"], ["endereco", "Endereço"], ["periodo", "Período"], ["data", "Data de hoje"], ["hora", "Hora"], ["turno", "Diurno/Noturno"], ["total_os", "Total de OS"], ["concluidas", "Concluídas"], ["pendentes", "Pendentes"], ["atrasadas", "Atrasadas"], ["lista_os", "Lista das OS"], ["lista_pendentes", "Lista das pendentes"], ["tecnicos", "Técnicos"], ["observacoes", "Observações"], ["autor", "Seu nome"], ["empresa", "Empresa"]];
+const MODELOS_BASE = {
+  padrao: { nome: "Relatório de atendimento (padrão)", texto: "RELATÓRIO DE ATENDIMENTO\n\nCliente: {{cliente}}\nConta: {{codigo}}\nResponsável: {{responsavel}}\nPeríodo: {{periodo}}\n\nRESUMO\n• Ordens de serviço no período: {{total_os}}\n• Concluídas: {{concluidas}}\n• Pendentes: {{pendentes}}\n• Em atraso: {{atrasadas}}\n\nSERVIÇOS DO PERÍODO\n{{lista_os}}\n\nTécnicos que atenderam: {{tecnicos}}\n\nObservações:\n{{observacoes}}\n\nAtenciosamente,\n{{autor}}\nCoordenação Operacional — {{empresa}}\n{{data}}" },
+  reporte: { nome: "Reporte periódico (ouro)", texto: "REPORTE PERIÓDICO {{turno}} — {{data}} às {{hora}}\n\nCliente: {{cliente}}\nResponsável: {{responsavel}}\n\nSituação do monitoramento: (preencher)\n\nOS pendentes: {{pendentes}} ({{atrasadas}} em atraso)\n{{lista_pendentes}}\n\nObservações: {{observacoes}}\n\n{{autor}} — Central de Monitoramento {{empresa}}" },
+};
+const modelos = () => ({ ...MODELOS_BASE, ...Object.fromEntries(lista("rel_modelo").map(m => [m.id, m])) });
+const REL = { alvo: "", modelo: "padrao", de: "", ate: "", obs: "", texto: "", id: null };
+function alvosRel() {
+  const cl = lista("cliente"); const grupos = [...new Set(cl.map(c => c.grupo).filter(Boolean))].sort();
+  const soltos = cl.filter(c => !c.grupo).sort((a, b) => ({ ouro: 0, prata: 1, bronze: 2 }[a.categoria] ?? 3) - ({ ouro: 0, prata: 1, bronze: 2 }[b.categoria] ?? 3) || a.nome.localeCompare(b.nome));
+  return [...grupos.map(g => ({ v: "g:" + g, l: "★ " + g + " (" + cl.filter(c => c.grupo === g).length + " contas)", membros: cl.filter(c => c.grupo === g), nome: g })),
+    ...soltos.map(c => ({ v: "c:" + c.id, l: (c.categoria === "ouro" ? "★ " : "") + c.nome + (c.codigo ? " · " + c.codigo : ""), membros: [c], nome: c.nome }))];
+}
+function dadosRel() {
+  const a = alvosRel().find(x => x.v === REL.alvo); if (!a) return null;
+  const nomes = new Set(a.membros.map(c => norm(c.nome)).concat(a.membros.map(c => norm(c.codigo)).filter(Boolean), [norm(a.nome)]));
+  const os = lista("os").filter(o => { const c = clienteDe(o.cliente); return nomes.has(norm(o.cliente)) || (c && a.membros.some(m => m.id === c.id)); });
+  const noPer = os.filter(o => ativa(o) || (o.abertura >= REL.de && o.abertura <= REL.ate) || (o.conclusao && o.conclusao >= REL.de && o.conclusao <= REL.ate));
+  const linha = o => `• OS ${o.numero || "—"} — ${o.servico || "serviço"} — ${STATUS[o.status]}${o.status === "concluida" && o.conclusao ? " em " + br(o.conclusao) : ""}${atraso(o) > 0 ? " (" + atraso(o) + " dia(s) de atraso)" : ""}${o.tecnico ? " — téc. " + o.tecnico : ""}`;
+  const m0 = a.membros[0] || {}; const d = new Date();
+  const pend = noPer.filter(ativa);
+  return {
+    cliente: a.nome, responsavel: [...new Set(a.membros.map(c => c.responsavel).filter(Boolean))].join(", ") || "—",
+    codigo: a.membros.map(c => c.codigo).filter(Boolean).join(", ") || "—", endereco: a.membros.length === 1 ? [m0.endereco, m0.bairro, m0.cidade].filter(Boolean).join(" — ") : a.membros.length + " unidades",
+    periodo: br(REL.de) + " a " + br(REL.ate), data: d.toLocaleDateString("pt-BR"), hora: d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+    turno: d.getHours() >= 6 && d.getHours() < 18 ? "DIURNO" : "NOTURNO",
+    total_os: noPer.length, concluidas: noPer.filter(o => o.status === "concluida").length, pendentes: pend.length, atrasadas: pend.filter(o => atraso(o) > 0).length,
+    lista_os: noPer.length ? noPer.sort((x, y) => String(x.abertura).localeCompare(String(y.abertura))).map(linha).join("\n") : "Nenhuma ordem de serviço no período.",
+    lista_pendentes: pend.length ? pend.map(linha).join("\n") : "Nenhuma pendência.",
+    tecnicos: [...new Set(noPer.map(o => o.tecnico).filter(Boolean))].join(", ") || "—",
+    observacoes: REL.obs || "—", autor: S.me?.nome || "", empresa: cfg().empresa,
+  };
+}
+const preencher = (tpl, d) => String(tpl).replace(/\{\{\s*(\w+)\s*\}\}/g, (m, k) => d[k] != null ? String(d[k]) : m);
+function viewRelatorios(el) {
+  const ed = pode("coordenador");
+  REL.de ||= addDias(hoje(), -30); REL.ate ||= hoje();
+  const alvos = alvosRel(); const ms = modelos();
+  if (!REL.alvo && alvos[0]) REL.alvo = alvos[0].v;
+  const hist = lista("rel_relatorio").sort((a, b) => String(b.em).localeCompare(String(a.em)));
+  el.innerHTML = `<div class="row" style="grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);margin-top:0">
+  <div class="card"><h2>${REL.id ? "Editar relatório" : "Novo relatório"}</h2>
+    <div class="form"><label class="full">Cliente<select class="in" id="rA">${alvos.map(a => `<option value="${esc(a.v)}" ${REL.alvo === a.v ? "selected" : ""}>${esc(a.l)}</option>`).join("")}</select></label>
+    <label class="full">Modelo<select class="in" id="rM">${Object.entries(ms).map(([k, m]) => `<option value="${esc(k)}" ${REL.modelo === k ? "selected" : ""}>${esc(m.nome)}</option>`).join("")}</select></label>
+    <label>De<input class="in" type="date" id="rDe" value="${REL.de}"></label><label>Até<input class="in" type="date" id="rAte" value="${REL.ate}"></label>
+    <label class="full">Observações (entram no lugar de {{observacoes}})<textarea class="in" id="rObs" style="min-height:60px">${esc(REL.obs)}</textarea></label></div>
+    <div class="tools" style="margin:12px 0"><button class="btn pri" id="rGer">Gerar relatório</button><span class="muted" style="font-size:12px">Puxa as OS do cliente no período e preenche o modelo.</span></div>
+    ${REL.texto ? `<label class="muted" style="font-size:12.5px;font-weight:600">Relatório (pode editar à vontade)</label><textarea class="in" id="rTx" style="min-height:360px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px">${esc(REL.texto)}</textarea>
+    <div class="tools" style="margin:12px 0 0">${ed ? `<button class="btn pri" id="rSv">Salvar</button>` : ""}<button class="btn" id="rPr">🖨️ Imprimir / PDF</button><button class="btn" id="rCp">Copiar texto</button><a class="btn" id="rWa" target="_blank" rel="noopener">WhatsApp</a>${REL.id ? `<button class="btn" id="rNv">Novo</button>` : ""}</div>` : ""}
+  </div>
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div class="card"><h2>Modelos de relatório<span class="sp"></span>${ed ? `<button class="btn sm pri" id="mUp">Subir modelo</button><input type="file" id="mF" hidden accept=".docx,.pdf,.txt,.md,.html,.htm,image/*">` : ""}</h2>
+      <p class="muted" style="margin-top:0;font-size:12.5px">Suba um relatório que você já manda (Word, PDF, texto ou print). O app lê o texto, troca o nome do cliente, datas e responsável por campos automáticos e passa a gerar todos nesse formato.</p>
+      ${Object.entries(ms).map(([k, m]) => `<div class="task" style="cursor:${ed && !MODELOS_BASE[k] ? "pointer" : "default"}" data-md="${esc(k)}"><span>${MODELOS_BASE[k] ? "📋" : "📄"}</span><div style="flex:1"><div class="tt">${esc(m.nome)}</div><small class="muted">${MODELOS_BASE[k] ? "modelo pronto" : "seu modelo" + (m.arquivoNome ? " · de " + esc(m.arquivoNome) : "")}</small></div>${m.arquivo ? `<a class="btn sm" href="${esc(m.arquivo)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Original</a>` : ""}</div>`).join("")}
+      ${ed ? `<button class="btn sm" id="mNv" style="margin-top:4px">+ Escrever modelo</button>` : ""}
+    </div>
+    <div class="card"><h2>Relatórios feitos <span class="pill">${hist.length}</span></h2>
+      ${hist.length ? hist.slice(0, 40).map(r => `<div class="task" style="cursor:pointer" data-rh="${esc(r.id)}"><span>📝</span><div style="flex:1;min-width:0"><div class="tt">${esc(r.cliente)}</div><small class="muted">${esc(r.modeloNome || "")} · ${r.em ? new Date(r.em).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""} · ${esc(r.por || "")}</small></div></div>`).join("") : '<p class="muted">Nenhum relatório salvo ainda.</p>'}
+    </div>
+  </div></div>`;
+  const sync = () => { REL.alvo = $("#rA").value; REL.modelo = $("#rM").value; REL.de = $("#rDe").value; REL.ate = $("#rAte").value; REL.obs = $("#rObs").value; };
+  ["#rA", "#rM", "#rDe", "#rAte", "#rObs"].forEach(s => $(s).onchange = sync);
+  $("#rObs").oninput = sync;
+  $("#rGer").onclick = () => { sync(); const d = dadosRel(); if (!d) return toast("Escolha o cliente", "bad"); REL.texto = preencher(ms[REL.modelo]?.texto || MODELOS_BASE.padrao.texto, d); REL.id = null; renderAll(); };
+  if (REL.texto) {
+    const wa = () => { const a = alvosRel().find(x => x.v === REL.alvo); const tel = (a?.membros?.[0]?.telefone || "").replace(/\D/g, ""); $("#rWa").href = "https://wa.me/" + (tel.length >= 10 ? (tel.startsWith("55") ? tel : "55" + tel) : "") + "?text=" + encodeURIComponent(REL.texto); };
+    wa(); $("#rTx").oninput = e => { REL.texto = e.target.value; wa(); };
+    $("#rCp").onclick = async () => { try { await navigator.clipboard.writeText(REL.texto); toast("Texto copiado", "ok"); } catch { toast("Selecione o texto e copie (Ctrl+C)", "bad"); } };
+    $("#rPr").onclick = () => imprimirRel(REL.texto);
+    $("#rSv") && ($("#rSv").onclick = async () => { const a = alvosRel().find(x => x.v === REL.alvo); const id = REL.id || "r_" + uid(); await salvar("rel_relatorio", id, { cliente: a?.nome || "", alvo: REL.alvo, modelo: REL.modelo, modeloNome: ms[REL.modelo]?.nome, de: REL.de, ate: REL.ate, obs: REL.obs, texto: REL.texto, por: S.me.nome, em: new Date().toISOString() }); REL.id = id; toast("Relatório salvo", "ok"); });
+    $("#rNv") && ($("#rNv").onclick = () => { REL.texto = ""; REL.id = null; REL.obs = ""; renderAll(); });
+  }
+  $$("[data-rh]", el).forEach(d => d.onclick = () => { const r = T("rel_relatorio")[d.dataset.rh]; Object.assign(REL, { id: d.dataset.rh, alvo: r.alvo, modelo: r.modelo, de: r.de, ate: r.ate, obs: r.obs || "", texto: r.texto }); renderAll(); scrollTo(0, 0); });
+  $$("[data-md]", el).forEach(d => d.onclick = () => { if (ed && !MODELOS_BASE[d.dataset.md]) editarModelo(d.dataset.md); });
+  $("#mNv") && ($("#mNv").onclick = () => editarModelo(null, { nome: "", texto: MODELOS_BASE.padrao.texto }));
+  $("#mUp") && ($("#mUp").onclick = () => $("#mF").click());
+  $("#mF") && ($("#mF").onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    toast("Lendo o modelo " + f.name + "…");
+    try {
+      const txt = await extrairTexto(f);
+      if (!txt.trim()) throw new Error("Não consegui ler texto nesse arquivo.");
+      let url = ""; try { url = await API.upload(f); } catch {}
+      editarModelo(null, { nome: f.name.replace(/\.[^.]+$/, ""), texto: aprenderModelo(txt), arquivo: url, arquivoNome: f.name, original: txt.slice(0, 20000) });
+    } catch (err) { toast(err.message, "bad"); }
+  });
+}
+function aprenderModelo(t) {
+  let s = String(t).replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim();
+  const cl = lista("cliente");
+  const nomes = [...new Set([...cl.map(c => c.nome), ...cl.map(c => c.grupo)].filter(x => x && x.length > 4))].sort((a, b) => b.length - a.length);
+  const escRx = x => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  for (const n of nomes) s = s.replace(new RegExp(escRx(n), "gi"), "{{cliente}}");
+  s = s.replace(/^(\s*(?:cliente|condom[ií]nio|unidade|empresa contratante)\s*:\s*)(?!\s*\{\{).+$/gim, "$1{{cliente}}");
+  s = s.replace(/^(\s*respons[aá]vel\s*:\s*)(?!\s*\{\{).+$/gim, "$1{{responsavel}}");
+  s = s.replace(/^(\s*(?:conta|c[oó]digo)\s*:\s*)(?!\s*\{\{).+$/gim, "$1{{codigo}}");
+  s = s.replace(/^(\s*endere[cç]o\s*:\s*)(?!\s*\{\{).+$/gim, "$1{{endereco}}");
+  s = s.replace(/^(\s*t[eé]cnicos?\s*:\s*)(?!\s*\{\{).+$/gim, "$1{{tecnicos}}");
+  s = s.replace(/^(\s*observa[cç](?:[oõ]es|ão)\s*:\s*)(?!\s*\{\{).+$/gim, "$1{{observacoes}}");
+  s = s.replace(/\d{1,2}\/\d{1,2}\/\d{2,4}\s*(?:a|até|-)\s*\d{1,2}\/\d{1,2}\/\d{2,4}/gi, "{{periodo}}");
+  s = s.replace(/\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/g, "{{data}}");
+  s = s.replace(/\b\d{1,2}[:h]\d{2}\b/g, "{{hora}}");
+  s = s.replace(/\b(diurno|noturno)\b/gi, "{{turno}}");
+  if (!/\{\{lista_(os|pendentes)\}\}/.test(s)) s += "\n\nSERVIÇOS DO PERÍODO\n{{lista_os}}";
+  return s;
+}
+function editarModelo(id, base) {
+  const m = id ? T("rel_modelo")[id] : base;
+  modal({
+    titulo: id ? "Editar modelo" : "Novo modelo", wide: true,
+    corpo: `<div class="hint">Os campos entre {{ }} são trocados pelos dados de cada cliente. Clique em um campo para inserir onde está o cursor. Confira se o app trocou as partes certas.</div>
+    <div class="form"><label class="full">Nome do modelo<input class="in" name="nome" value="${esc(m.nome || "")}"></label></div>
+    <div class="chks" style="margin:12px 0">${VARS.map(([k, l]) => `<button class="btn sm" type="button" data-v="${k}" title="${esc(l)}">{{${k}}}</button>`).join("")}</div>
+    <textarea class="in" name="texto" style="min-height:340px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px">${esc(m.texto || "")}</textarea>
+    ${m.original ? `<details style="margin-top:10px"><summary class="muted" style="cursor:pointer">Ver texto original lido do arquivo</summary><pre style="white-space:pre-wrap;color:var(--tx2);font-size:12px">${esc(m.original)}</pre></details>` : ""}`,
+    botoes: [
+      ...(id ? [{ txt: "Excluir", cls: "bad", fn: async () => { if (!await confirma("Excluir este modelo?")) return false; await excluir("rel_modelo", id); } }] : []),
+      { txt: "Salvar modelo", cls: "pri", fn: async r => { const d = { ...m, nome: r.querySelector("[name=nome]").value.trim() || "Meu modelo", texto: r.querySelector("[name=texto]").value }; const nid = id || "m_" + uid(); await salvar("rel_modelo", nid, d); REL.modelo = nid; toast("Modelo salvo — já pode gerar relatórios com ele", "ok"); } }
+    ]
+  });
+  const ta = $("#modalRoot [name=texto]");
+  $$("#modalRoot [data-v]").forEach(b => b.onclick = () => { const v = "{{" + b.dataset.v + "}}"; const i = ta.selectionStart ?? ta.value.length; ta.value = ta.value.slice(0, i) + v + ta.value.slice(ta.selectionEnd ?? i); ta.focus(); ta.selectionStart = ta.selectionEnd = i + v.length; });
+}
+function carregarScript(src) { return new Promise((ok, no) => { if ([...document.scripts].some(s => s.src === src)) return ok(); const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = () => no(new Error("Não foi possível carregar o leitor (abra o app pelo link do GitHub).")); document.head.appendChild(s); }); }
+async function extrairTexto(file) {
+  const ext = (file.name.split(".").pop() || "").toLowerCase();
+  if (["txt", "md", "csv"].includes(ext)) return await file.text();
+  if (ext === "html" || ext === "htm") { const d = new DOMParser().parseFromString(await file.text(), "text/html"); return d.body.innerText || d.body.textContent || ""; }
+  if (ext === "docx") {
+    await carregarScript("https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js");
+    const zip = await JSZip.loadAsync(file); const xml = await zip.file("word/document.xml").async("string");
+    const doc = new DOMParser().parseFromString(xml, "application/xml"); const W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+    return [...doc.getElementsByTagNameNS(W, "p")].map(p => [...p.getElementsByTagNameNS(W, "t")].map(t => t.textContent).join("")).join("\n");
+  }
+  if (ext === "pdf") {
+    await carregarScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise; const out = [];
+    for (let i = 1; i <= pdf.numPages; i++) { const c = await (await pdf.getPage(i)).getTextContent(); out.push(c.items.map(it => it.str + (it.hasEOL ? "\n" : "")).join("")); }
+    return out.join("\n\n");
+  }
+  if (file.type.startsWith("image/")) {
+    await carregarScript("https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js");
+    return (await Tesseract.recognize(file, "por")).data.text;
+  }
+  throw new Error("Formato não suportado para modelo. Use Word (.docx), PDF, texto ou imagem.");
+}
+function imprimirRel(texto) {
+  let box = $("#printArea"); if (!box) { box = document.createElement("div"); box.id = "printArea"; document.body.appendChild(box); }
+  const linhas = esc(texto).split("\n"); const titulo = linhas.shift();
+  box.innerHTML = `<div class="ph"><div class="pe">${esc(cfg().empresa.toUpperCase())}</div><div class="pt">${titulo}</div></div><div class="pb">${linhas.join("\n")}</div><div class="pf">${esc(cfg().empresa)} · gerado em ${new Date().toLocaleString("pt-BR")}</div>`;
+  try { window.print(); } catch { toast("Use Ctrl+P para imprimir", "bad"); }
+}
+
+/* ---------- Admin ---------- */
+let admTab = "checklist", calMes = null, calSel = null;
+VIEWS.admin = el => {
+  el.innerHTML = `<div class="tabs">${[["checklist", "✅ Checklist diário"], ["usuarios", "👥 Usuários e permissões"], ["tempo", "⏱️ Tempo logado"], ["config", "⚙️ Configurações"]].map(([k, l]) => `<button class="tab ${admTab === k ? "on" : ""}" data-at="${k}">${l}</button>`).join("")}</div><div id="admB"></div>`;
+  $$("[data-at]", el).forEach(b => b.onclick = () => { admTab = b.dataset.at; renderAll(); });
+  ADM[admTab]($("#admB"));
+};
+const ADM = {};
+const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const tarefasDoDia = d => lista("tarefa").filter(t => t.ativo !== false && (t.dias || []).includes(dt(d).getDay())).sort((a, b) => String(a.hora).localeCompare(String(b.hora)));
+const feito = (d, tid) => !!T("check")[d + "_" + tid]?.ok;
+ADM.checklist = el => {
+  calMes ||= hoje().slice(0, 7); calSel ||= hoje();
+  const [y, m] = calMes.split("-").map(Number);
+  const first = new Date(y, m - 1, 1); const start = new Date(first); start.setDate(1 - first.getDay());
+  const cells = [];
+  for (let i = 0; i < 42; i++) { const d = new Date(start); d.setDate(start.getDate() + i); cells.push(d); }
+  const nomeMes = (n => n[0].toUpperCase() + n.slice(1))(first.toLocaleDateString("pt-BR", { month: "long" })) + " " + y;
+  const ts = tarefasDoDia(calSel);
+  const nf = typeof Notification !== "undefined" ? Notification.permission : "unsupported";
+  el.innerHTML = `
+  ${nf !== "granted" ? `<div class="hint">🔔 Para receber os avisos das tarefas no celular/computador, <button class="btn sm pri" id="bNotif">ativar notificações</button> ${nf === "unsupported" ? "<br><small>Este navegador não suporta notificações. No celular, instale o app (menu do Chrome → Adicionar à tela inicial).</small>" : ""}</div>` : ""}
+  <div class="row" style="grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);margin-top:0">
+    <div class="card"><h2><button class="btn sm" id="mP">‹</button><span style="min-width:150px;text-align:center">${nomeMes}</span><button class="btn sm" id="mN">›</button><span class="sp"></span><button class="btn sm" id="mH">Hoje</button></h2>
+      <div class="cal">${DIAS.map(d => `<div class="wd">${d}</div>`).join("")}${cells.map(d => { const s = ymd(d); const t = tarefasDoDia(s); const f = t.filter(x => feito(s, x.id)).length; const pct = t.length ? Math.round(f / t.length * 100) : 0; return `<div class="d ${d.getMonth() !== m - 1 ? "out" : ""} ${s === hoje() ? "today" : ""} ${s === calSel ? "sel" : ""} ${t.length && f === t.length ? "full" : ""}" data-day="${s}"><span class="n">${d.getDate()}</span>${t.length ? `<div class="bar"><i style="width:${pct}%"></i></div>` : ""}</div>`; }).join("")}</div>
+    </div>
+    <div class="card"><h2>${calSel === hoje() ? "Hoje" : br(calSel)} · ${DIAS[dt(calSel).getDay()]}<span class="sp"></span><span class="pill">${ts.filter(t => feito(calSel, t.id)).length}/${ts.length}</span></h2>
+      ${ts.length ? ts.map(t => { const ok = feito(calSel, t.id); const ck = T("check")[calSel + "_" + t.id]; return `<div class="task ${ok ? "done" : ""}"><button class="ck ${ok ? "on" : ""}" data-ck="${esc(t.id)}">${ok ? "✓" : ""}</button><div style="flex:1"><div class="tt">${esc(t.titulo)}</div><small class="muted">${esc(t.hora || "")}${ok && ck.em ? " · feito às " + new Date(ck.em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""}</small></div></div>`; }).join("") : '<div class="empty">Nenhuma tarefa para este dia.</div>'}
+      <h2 style="margin-top:20px">Minhas tarefas recorrentes<span class="sp"></span><button class="btn sm pri" id="tN">+ Tarefa</button></h2>
+      ${lista("tarefa").sort((a, b) => String(a.hora).localeCompare(String(b.hora))).map(t => `<div class="task" style="cursor:pointer" data-te="${esc(t.id)}"><b style="font-variant-numeric:tabular-nums">${esc(t.hora || "--:--")}</b><div style="flex:1"><div class="tt">${esc(t.titulo)}</div><small class="muted">${(t.dias || []).length === 7 ? "Todos os dias" : (t.dias || []).map(d => DIAS[d]).join(", ")}${t.ativo === false ? " · pausada" : ""}</small></div></div>`).join("") || '<p class="muted">Nenhuma tarefa.</p>'}
+    </div>
+  </div>`;
+  const mv = n => { const d = new Date(y, m - 1 + n, 1); calMes = ymd(d).slice(0, 7); renderAll(); };
+  $("#mP").onclick = () => mv(-1); $("#mN").onclick = () => mv(1);
+  $("#mH").onclick = () => { calMes = hoje().slice(0, 7); calSel = hoje(); renderAll(); };
+  $$("[data-day]", el).forEach(c => c.onclick = () => { if (c.classList.contains("out")) return; calSel = c.dataset.day; renderAll(); });
+  $$("[data-ck]", el).forEach(b => b.onclick = async () => { const k = calSel + "_" + b.dataset.ck; const ok = !feito(calSel, b.dataset.ck); try { await salvar("check", k, { ok, em: Date.now(), por: S.me.nome }); } catch (e) { toast(e.message, "bad"); } });
+  $$("[data-te]", el).forEach(d => d.onclick = () => abrirTarefa(d.dataset.te));
+  $("#tN").onclick = () => abrirTarefa(null);
+  $("#bNotif") && ($("#bNotif").onclick = async () => { try { const p = await Notification.requestPermission(); if (p === "granted") { notificar("Notificações ativadas", "Você será avisado na hora de cada tarefa."); } renderAll(); } catch { toast("Não foi possível ativar aqui. Abra pelo link do app.", "bad"); } });
+};
+function abrirTarefa(id) {
+  const t = id ? T("tarefa")[id] : { hora: "08:00", dias: [1, 2, 3, 4, 5], ativo: true };
+  modal({
+    titulo: id ? "Editar tarefa" : "Nova tarefa",
+    corpo: `<div class="form"><label class="full">Tarefa<input class="in" name="titulo" value="${esc(t.titulo || "")}"></label><label>Horário do aviso<input class="in" type="time" name="hora" value="${esc(t.hora || "")}"></label><label>Situação<select class="in" name="ativo"><option value="1">Ativa</option><option value="0" ${t.ativo === false ? "selected" : ""}>Pausada</option></select></label>
+    <label class="full">Dias da semana<div class="chks">${DIAS.map((d, i) => `<label><input type="checkbox" name="dia" value="${i}" ${(t.dias || []).includes(i) ? "checked" : ""}> ${d}</label>`).join("")}</div></label></div>`,
+    botoes: [
+      ...(id ? [{ txt: "Excluir", cls: "bad", fn: async () => { if (!await confirma("Excluir tarefa?")) return false; await excluir("tarefa", id); } }] : []),
+      { txt: "Salvar", cls: "pri", fn: async r => { const d = { titulo: r.querySelector("[name=titulo]").value.trim(), hora: r.querySelector("[name=hora]").value, ativo: r.querySelector("[name=ativo]").value === "1", dias: $$("[name=dia]:checked", r).map(x => +x.value) }; if (!d.titulo) throw new Error("Escreva a tarefa"); await salvar("tarefa", id || "t_" + uid(), d); } }
+    ]
+  });
+}
+ADM.usuarios = el => {
+  el.innerHTML = `<div class="tools"><span class="muted">Só o administrador altera dados. Os demais só veem — a não ser que você libere uma permissão.</span><span class="sp"></span><button class="btn pri" id="uN">+ Novo usuário</button></div>
+  <div class="grid">${S.users.map(u => `<div class="item click" data-u="${esc(u.id)}"><div class="t">${av(u, true)}<div><div>${esc(u.nome)}</div><small class="muted" style="font-weight:500">@${esc(u.login)} · ${PAPEIS[u.papel] || u.papel}</small></div></div><div class="k">${u.papel === "admin" ? "Acesso total" : (u.permissoes || []).length ? (u.permissoes || []).map(p => (PERMS.find(x => x[0] === p) || [p, p])[1]).join(" · ") : "Somente visualizar"}</div><div class="k">${S.online[u.id] ? '<b style="color:var(--ok)">● Online</b>' : "○ Offline"}${u.ativo === false ? " · <b style='color:#fca5a5'>bloqueado</b>" : ""}</div></div>`).join("")}</div>`;
+  $$("[data-u]", el).forEach(d => d.onclick = () => abrirUsuario(d.dataset.u));
+  $("#uN").onclick = () => abrirUsuario(null);
+};
+function abrirUsuario(id) {
+  const u = id ? S.users.find(x => x.id === id) : { papel: "operador", permissoes: [], ativo: true };
+  let foto = u.foto || "";
+  modal({
+    titulo: id ? "Editar usuário" : "Novo usuário",
+    corpo: `<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px"><span id="fPrev">${av({ ...u, nome: u.nome || "?", foto, id: id || "x" }, true)}</span><button class="btn sm" id="fBtn">Escolher foto</button>${foto ? '<button class="btn sm" id="fDel">Remover</button>' : ""}<input type="file" id="fF" accept="image/*" hidden></div>
+    <div class="form"><label>Nome<input class="in" name="nome" value="${esc(u.nome || "")}"></label><label>Usuário (para entrar)<input class="in" name="login" value="${esc(u.login || "")}" autocapitalize="none"></label>
+    <label>${id ? "Novo PIN (vazio = manter)" : "PIN"}<input class="in" name="pin" inputmode="numeric" placeholder="ex.: 4 a 6 números"></label>
+    <label>Função<select class="in" name="papel">${Object.entries(PAPEIS).map(([k, v]) => `<option value="${k}" ${u.papel === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
+    <label class="full">Permissões (o administrador sempre tem todas)<div class="chks">${PERMS.map(([k, l]) => `<label><input type="checkbox" name="perm" value="${k}" ${(u.permissoes || []).includes(k) ? "checked" : ""}> ${l}</label>`).join("")}</div></label>
+    <label>Acesso<select class="in" name="ativo"><option value="1">Liberado</option><option value="0" ${u.ativo === false ? "selected" : ""}>Bloqueado</option></select></label></div>`,
+    botoes: [
+      ...(id && id !== S.me.id ? [{ txt: "Excluir", cls: "bad", fn: async () => { if (!await confirma("Excluir " + u.nome + "?")) return false; await API.delUser(id); await reload(); } }] : []),
+      { txt: "Salvar", cls: "pri", fn: async r => {
+        const g = n => r.querySelector(`[name=${n}]`).value.trim();
+        const d = { id: id || "u_" + uid(), nome: g("nome"), login: g("login").toLowerCase(), pin: g("pin"), papel: g("papel"), ativo: g("ativo") === "1", foto, permissoes: $$("[name=perm]:checked", r).map(x => x.value) };
+        if (!d.nome || !d.login) throw new Error("Preencha nome e usuário");
+        if (!id && !d.pin) throw new Error("Defina um PIN");
+        if (d.pin && d.pin.length < 4) throw new Error("PIN com pelo menos 4 dígitos");
+        if (S.users.some(x => x.login === d.login && x.id !== d.id)) throw new Error("Esse usuário já existe");
+        if (id === S.me.id && d.papel !== "admin") throw new Error("Você não pode tirar seu próprio acesso de admin");
+        await API.saveUser(d);
+        if (id === S.me.id && d.pin) { S.pin = d.pin; LS.set("pm_login", { login: d.login, pin: d.pin }); }
+        if (id === S.me.id) Object.assign(S.me, { nome: d.nome, foto: d.foto, login: d.login });
+        await reload(); toast("Usuário salvo", "ok");
+      } }
+    ]
+  });
+  $("#fBtn").onclick = () => $("#fF").click();
+  $("#fDel") && ($("#fDel").onclick = () => { foto = ""; $("#fPrev").innerHTML = av({ ...u, nome: u.nome || "?", foto: "", id: id || "x" }, true); });
+  $("#fF").onchange = async e => { const f = e.target.files[0]; if (!f) return; foto = await reduzirFoto(f); $("#fPrev").innerHTML = av({ ...u, nome: u.nome || "?", foto, id: id || "x" }, true); };
+}
+function reduzirFoto(file) {
+  return new Promise((ok, no) => { const img = new Image(); img.onload = () => { const s = 192, c = document.createElement("canvas"); c.width = c.height = s; const x = c.getContext("2d"); const m = Math.min(img.width, img.height); x.drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, s, s); ok(c.toDataURL("image/jpeg", .82)); URL.revokeObjectURL(img.src); }; img.onerror = no; img.src = URL.createObjectURL(file); });
+}
+ADM.tempo = el => {
+  const now = Date.now(); const d0 = new Date(); d0.setHours(0, 0, 0, 0);
+  const sem = dt(segunda()); sem.setHours(0, 0, 0, 0); const mes = new Date(d0.getFullYear(), d0.getMonth(), 1);
+  el.innerHTML = `<div class="card"><div class="tbl"><table><thead><tr><th>Pessoa</th><th>Agora</th><th>Hoje</th><th>Semana</th><th>Mês</th><th class="hidesm">Último acesso</th></tr></thead><tbody>
+  ${S.users.map(u => { const on = S.online[u.id]; const ua = ultimoAcesso(u.id); return `<tr><td><div style="display:flex;align-items:center;gap:10px">${av(u)}<b>${esc(u.nome)}</b></div></td><td>${on ? `<b style="color:var(--ok)">online · ${fmtTempo(now - on.desde)}</b>` : '<span class="muted">offline</span>'}</td><td>${fmtTempo(tempoDesde(u.id, +d0))}</td><td>${fmtTempo(tempoDesde(u.id, +sem))}</td><td>${fmtTempo(tempoDesde(u.id, +mes))}</td><td class="hidesm muted">${ua ? new Date(ua).toLocaleString("pt-BR") : "—"}</td></tr>`; }).join("")}
+  </tbody></table></div><p class="muted" style="margin-bottom:0">O tempo conta enquanto a pessoa está logada com o app aberto (atualiza a cada minuto).</p></div>`;
+};
+ADM.config = el => {
+  const c = cfg();
+  el.innerHTML = `<div class="row" style="grid-template-columns:1fr 1fr;margin-top:0">
+  <div class="card"><h2>Geral</h2><div class="form"><label class="full">Nome da empresa<input class="in" id="cE" value="${esc(c.empresa)}"></label><label>Prazo padrão das OS (dias após abertura)<input class="in" id="cS" type="number" min="0" value="${esc(c.sla)}"></label><label>&nbsp;<button class="btn pri" id="cSv">Salvar</button></label></div>
+    ${c.exemplo ? `<div class="hint warn" style="margin-top:16px">Há dados de exemplo no app. <button class="btn sm bad" id="cEx">Apagar dados de exemplo</button></div>` : ""}</div>
+  <div class="card"><h2>Banco de dados online (Supabase)</h2>
+    <p class="muted" style="margin-top:0">${API === Supa ? "✅ Conectado. Todos veem os mesmos dados em tempo real." : "Agora está em modo local: os dados ficam só neste navegador. Conecte o Supabase para a equipe toda ver junto e o online/offline funcionar entre aparelhos."}</p>
+    <div class="form"><label class="full">URL do projeto<input class="in" id="sU" value="${esc(SB.url)}" placeholder="https://xxxx.supabase.co"></label><label class="full">Chave pública (anon / publishable)<input class="in" id="sK" value="${esc(SB.key)}"></label></div>
+    <div class="tools" style="margin:12px 0 0"><button class="btn pri" id="sSv">Conectar</button>${SBo ? `<button class="btn" id="sRm">Voltar ao modo local</button>` : ""}</div></div>
+  <div class="card"><h2>Carteira de clientes</h2><p class="muted" style="margin-top:0">${CARTEIRA.length} contas da planilha do Segware (18/11/2026), com os ouros e seus responsáveis já marcados. Clientes que já existem não são duplicados.</p><button class="btn pri" id="cCart">Carregar carteira</button></div>
+  <div class="card"><h2>Backup</h2><p class="muted" style="margin-top:0">Copie todos os dados (OS, clientes, tarefas, coordenação) para guardar.</p><div class="tools"><button class="btn" id="bkC">Copiar backup</button><button class="btn" id="bkR">Restaurar backup</button></div></div>
+  </div>`;
+  $("#cSv").onclick = async () => { try { const d = { ...(T("config").geral || {}), empresa: $("#cE").value.trim() || "Empresa", sla: Math.max(0, +$("#cS").value || 0) }; await salvar("config", "geral", d); toast("Configurações salvas", "ok"); } catch (e) { toast(e.message, "bad"); } };
+  $("#cEx") && ($("#cEx").onclick = async () => {
+    if (!await confirma("Apagar todos os dados de exemplo (clientes, OS, técnicos, motos…)? Suas tarefas ficam.")) return;
+    for (const tipo of Object.keys(S.db)) for (const [id, d] of Object.entries(S.db[tipo])) if (d && d.exemplo) await API.del(tipo, id).then(() => delete S.db[tipo][id]);
+    const g = { ...(T("config").geral || {}) }; delete g.exemplo; await salvar("config", "geral", g); toast("Dados de exemplo apagados", "ok");
+  });
+  $("#cCart").onclick = async e => {
+    e.target.disabled = true;
+    try {
+      const ex = {}; lista("cliente").forEach(c => ex[norm(c.codigo || c.nome)] = c.id);
+      const its = CARTEIRA.map(c => { const id = ex[norm(c.codigo || c.nome)] || "c" + (c.codigo || uid()); return { tipo: "cliente", id, dados: { ...(T("cliente")[id] || {}), ...c } }; });
+      await salvarVarios(its); toast(its.length + " contas carregadas", "ok");
+    } catch (err) { toast(err.message, "bad"); } e.target.disabled = false;
+  };
+  $("#sSv").onclick = () => { const url = $("#sU").value.trim(), key = $("#sK").value.trim(); if (!url || !key) return toast("Preencha URL e chave", "bad"); LS.set("pm_supabase", { url, key }); LS.del("pm_login"); location.reload(); };
+  $("#sRm") && ($("#sRm").onclick = () => { LS.del("pm_supabase"); LS.del("pm_login"); location.reload(); });
+  $("#bkC").onclick = async () => { const txt = JSON.stringify(S.db); try { await navigator.clipboard.writeText(txt); toast("Backup copiado (" + fmtBytes(txt.length) + "). Cole num bloco de notas e salve.", "ok"); } catch { modal({ titulo: "Backup", corpo: `<textarea class="in" style="min-height:300px">${esc(txt)}</textarea>` }); } };
+  $("#bkR").onclick = () => modal({ titulo: "Restaurar backup", corpo: `<p class="muted">Cole o texto do backup. Os registros serão gravados por cima dos atuais.</p><textarea class="in" id="bkT" style="min-height:220px"></textarea>`, botoes: [{ txt: "Restaurar", cls: "pri", fn: async r => { const d = JSON.parse(r.querySelector("#bkT").value); const its = []; for (const tipo in d) for (const id in d[tipo]) its.push({ tipo, id, dados: d[tipo][id] }); await salvarVarios(its); toast(its.length + " registros restaurados", "ok"); } }] });
+};
+
+/* ---------------- notificações das tarefas ---------------- */
+async function notificar(titulo, corpo) {
+  toast("🔔 " + titulo + (corpo ? " — " + corpo : ""));
+  try {
+    if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
+    if (reg) reg.showNotification(titulo, { body: corpo, icon: "icon.svg", badge: "icon.svg", tag: titulo, requireInteraction: true, data: { url: location.href.split("#")[0] + "#admin" } });
+    else new Notification(titulo, { body: corpo });
+  } catch {}
+}
+function checarLembretes() {
+  if (!isAdmin()) return;
+  const d = new Date(); const hm = z(d.getHours()) + ":" + z(d.getMinutes()); const h = hoje();
+  const avisados = LS.get("pm_avisados", {});
+  const novas = tarefasDoDia(h).filter(t => t.hora && t.hora <= hm && !feito(h, t.id) && !avisados[h + "_" + t.id]);
+  novas.forEach(t => avisados[h + "_" + t.id] = 1);
+  if (novas.length === 1) notificar("Tarefa: " + novas[0].titulo, "Horário: " + novas[0].hora + " · toque para marcar como feita");
+  else if (novas.length > 1) notificar(novas.length + " tarefas pendentes no checklist", novas.map(t => t.hora + " " + t.titulo).join(" · "));
+  for (const k in avisados) if (!k.startsWith(h)) delete avisados[k];
+  LS.set("pm_avisados", avisados);
+}
+
+/* ---------------- inicialização ---------------- */
+function relogio() { const d = new Date(); $("#clock").textContent = d.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" }) + " · " + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }); }
+$("#btnTv").onclick = async () => { document.body.classList.toggle("tv"); try { if (document.body.classList.contains("tv")) await document.documentElement.requestFullscreen(); else if (document.fullscreenElement) await document.exitFullscreen(); } catch {} };
+addEventListener("keydown", e => { if (e.key === "Escape") { document.body.classList.remove("tv"); fechaModal(); } });
+
+(async function init() {
+  relogio(); setInterval(relogio, 15000);
+  $("#main").innerHTML = '<div class="empty">Carregando…</div>';
+  try { if (API === Supa) await Supa.init(); }
+  catch (e) { toast(e.message + " — usando modo local.", "bad"); API = Local; }
+  try { const { users, regs } = await API.loadAll(); S.users = users; S.db = regs; }
+  catch (e) { toast("Erro ao conectar: " + e.message + " — usando modo local.", "bad"); API = Local; const { users, regs } = await API.loadAll(); S.users = users; S.db = regs; }
+  const sv = LS.get("pm_login", null);
+  if (sv) { try { const u = await API.login(sv.login, sv.pin); if (u) { S.me = u; S.pin = sv.pin; } else LS.del("pm_login"); } catch {} }
+  API.start();
+  if (S.me) iniciarSessao();
+  route();
+  setInterval(checarLembretes, 30000); setTimeout(checarLembretes, 3000);
+  setInterval(() => { if (S.route === "painel") softRender(); }, 60000); // atualiza contadores de atraso
+  if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+})();
+</script>
+</body>
+</html>
