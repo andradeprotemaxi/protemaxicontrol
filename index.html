@@ -209,8 +209,8 @@ body.tv .kpi .v{font-size:60px}
    Sem isso o app roda em MODO LOCAL (só neste navegador).
    ============================================================ */
 const CONFIG = {
-  supabaseUrl: "",
-  supabaseKey: "",
+  supabaseUrl: "https://dbrlwhrvqsedpjcdmdjn.supabase.co",
+  supabaseKey: "sb_publishable_gKypo0c01sFfoSS1FJwBgw_FTRvfPvO",
   empresa: "Protemaxi",
 };
 </script>
@@ -622,8 +622,8 @@ VIEWS.painel = el => {
 
 function tabelaOS(arr, compacto) {
   if (!arr.length) return '<div class="empty">Nenhuma OS aqui.</div>';
-  return `<div class="tbl"><table><thead><tr><th>Atraso</th><th>Nº</th><th>Cliente</th><th>Serviço</th>${compacto ? "" : "<th class='hidesm'>Técnico</th>"}<th class="hidesm">Abertura</th><th class="hidesm">Prazo</th><th>Status</th>${compacto ? "<th class='hidesm'>Técnico</th>" : "<th class='hidesm'>Origem</th>"}</tr></thead><tbody>
-  ${arr.map(o => `<tr class="click" data-os="${esc(o.id)}"><td>${badgeAtraso(o)}</td><td><b>${esc(o.numero || "—")}</b></td><td>${esc(o.cliente || "—")} ${pillTier(tierDe(o.cliente))}</td><td>${o.prioridade === "alta" || o.prioridade === "urgente" ? `<span class="pill" style="background:rgba(239,68,68,.15);color:#fca5a5">${o.prioridade}</span> ` : ""}${esc(o.servico || "")}</td>${compacto ? "" : `<td class="hidesm">${esc(o.tecnico || "—")}</td>`}<td class="hidesm">${br(o.abertura)}<br><small class="muted">${diasAberta(o) ?? "—"}d aberta</small></td><td class="hidesm">${br(prazoEf(o))}${o.prazo ? "" : '<br><small class="muted">padrão</small>'}</td><td><span class="pill ${o.status}">${STATUS[o.status] || o.status}</span></td>${compacto ? `<td class="hidesm">${esc(o.tecnico || "—")}</td>` : `<td class="hidesm muted">${esc(o.origem || "")}</td>`}</tr>`).join("")}
+  return `<div class="tbl"><table><thead><tr><th>Atraso</th><th>Nº</th><th>Cliente</th><th>Serviço</th>${compacto ? "" : "<th class='hidesm'>Técnico</th>"}<th class="hidesm">Abertura</th><th class="hidesm">Prazo / entrega</th><th>Status</th>${compacto ? "<th class='hidesm'>Técnico</th>" : "<th class='hidesm'>Origem</th>"}</tr></thead><tbody>
+  ${arr.map(o => `<tr class="click" data-os="${esc(o.id)}"><td>${badgeAtraso(o)}</td><td><b>${esc(o.numero || "—")}</b></td><td>${esc(o.cliente || "—")} ${pillTier(tierDe(o.cliente))}</td><td>${o.prioridade === "alta" || o.prioridade === "urgente" ? `<span class="pill" style="background:rgba(239,68,68,.15);color:#fca5a5">${o.prioridade}</span> ` : ""}${esc(o.servico || "")}</td>${compacto ? "" : `<td class="hidesm">${esc(o.tecnico || "—")}</td>`}<td class="hidesm">${o.abertura ? br(o.abertura) : o.visto ? `<small class="muted">visto ${br(o.visto)}</small>` : "—"}${diasAberta(o) != null ? `<br><small class="muted">${diasAberta(o)}d aberta</small>` : ""}</td><td class="hidesm">${br(prazoEf(o))}${o.prazo ? "" : '<br><small class="muted">padrão</small>'}</td><td><span class="pill ${o.status}">${STATUS[o.status] || o.status}</span></td>${compacto ? `<td class="hidesm">${esc(o.tecnico || "—")}</td>` : `<td class="hidesm muted">${esc(o.origem || "")}</td>`}</tr>`).join("")}
   </tbody></table></div>`;
 }
 function ligaTabelaOS(root) { $$("[data-os]", root).forEach(tr => tr.onclick = () => abrirOS(tr.dataset.os)); }
@@ -638,6 +638,7 @@ const OSF = () => [
   { k: "origem", l: "Origem", t: "select", op: ["Inside", "Segware", "Manual"] },
   { k: "abertura", l: "Data de abertura", t: "date" }, { k: "prazo", l: "Prazo (vazio = padrão)", t: "date" },
   { k: "conclusao", l: "Data de conclusão", t: "date" },
+  { k: "etapa", l: "Etapa no Inside" }, { k: "valor", l: "Valor (R$)" },
   { k: "obs", l: "Observações", t: "area", full: true },
 ];
 function abrirOS(id) {
@@ -738,7 +739,50 @@ function abrirCliente(id) {
 }
 
 /* ---------- Importar (Inside / Segware / prints / colagem) ---------- */
-const IMP = { destino: "inside", texto: "", linhas: null, header: -1, mapa: {}, fechaSumidas: true, ocr: "", fonte: "" };
+const IMP = { destino: "inside", texto: "", linhas: null, header: -1, mapa: {}, fechaSumidas: true, ocr: "", fonte: "", inside: null };
+/* Leitor da tela "Consulta de Andamento de Orçamentos" do Inside (árvore: etapa → tipo → uma linha por OS) */
+const titleCase = t => String(t).toLowerCase().replace(/(^|\s)(\S)/g, (m, a, b) => a + b.toUpperCase()).replace(/\b(Da|De|Do|Das|Dos|E)\b/g, x => x.toLowerCase());
+function parseInside(txt) {
+  const fix = x => String(x).replace(/[oOQD]/g, "0").replace(/[lI|!]/g, "1").replace(/[sS]/g, "5").replace(/[zZ]/g, "2").replace(/B/g, "8");
+  const out = []; let etapa = "", grupo = ""; const cy = new Date().getFullYear();
+  for (const raw of String(txt).split(/\r?\n/)) {
+    const l = raw.replace(/\s+/g, " ").trim(); if (!l) continue;
+    const m = l.match(/\bo[s5]\s*[:.]?\s*([0-9oOQDlIsSzZB]{5,7})\s*-?\s*([0-9oOQDlIsSzZB]{6,9})\s*-\s*(.+)$/i);
+    if (!m) {
+      const h = l.match(/\b(\d{4})\s+O[S5]\s+(.+?)\s*-\s*\d+\s*ite/i);
+      if (h) { grupo = h[2].trim(); continue; }
+      const e = l.match(/([A-Za-zÀ-ú][^-]*?(?:aguardando|fechad|instala|execu|faturamento|retorno)[^-]*?)\s*-\s*\d+\s*ite/i);
+      if (e) { etapa = e[1].replace(/^[^A-Za-zÀ-ú]+/, "").trim(); if (/^[çc]amentos/i.test(etapa)) etapa = "Or" + etapa; continue; }
+      continue;
+    }
+    const numero = fix(m[1]).padStart(6, "0").slice(-6);
+    const resto = m[3];
+    const iR = resto.search(/\s*-?\s*R\s*\$/i);
+    let cliente = (iR >= 0 ? resto.slice(0, iR) : resto.split(/\s+-?\s*(?:Entrega|T[eé]cnico|Vendedor)/i)[0]).replace(/[\s\-.,|!]+$/, "").trim();
+    const ent = resto.match(/entrega\s*:?\s*(\d{1,2}\s*\/\s*\d{1,2}\s*\/\s*\d{2,4})/i);
+    let prazo = ent ? parseData(ent[1].replace(/\s/g, "")) : "";
+    if (prazo) { const y = +prazo.slice(0, 4); if (y > cy + 1 || y < cy - 3) prazo = cy + prazo.slice(4); }
+    const tec = resto.match(/(?:t[eé]cnico|vendedor)\s*:?\s*\d*\s*([A-Za-zÀ-ú][A-Za-zÀ-ú .]*?)(?=\s*-\s*usu|\s*[|!,;)\]]|\s*$)/i);
+    const val = resto.match(/R\s*\$\s*([\d.]+,\d{2})/i);
+    const orc = l.match(/\bOrc\s*([0-9oO]{4,7})/i);
+    out.push({ numero, codCli: fix(m[2]), cliente, prazo, tecnico: tec ? titleCase(tec[1].trim().replace(/\s+\S?$/, m => m.trim().length > 1 ? m : "")) : "", valor: val ? val[1] : "", servico: grupo, etapa, orcamento: orc ? fix(orc[1]) : "" });
+  }
+  // técnico cortado no fim da linha ("Diogo A") → usa o nome completo visto em outra linha
+  const tecs = [...new Set(out.map(o => o.tecnico).filter(Boolean))].sort((a, b) => b.length - a.length);
+  out.forEach(o => { if (o.tecnico) { const full = tecs.find(t => t.length > o.tecnico.length && norm(t).startsWith(norm(o.tecnico))); if (full) o.tecnico = full; } });
+  // nº de OS lido errado (ex.: 023603 no meio de 0035xx/0036xx) → corrige pelo padrão das outras
+  const pref = (() => { const c = {}; out.forEach(o => { const k = o.numero.slice(0, 3); c[k] = (c[k] || 0) + 1; }); return Object.entries(c).sort((a, b) => b[1] - a[1])[0]?.[0]; })();
+  if (pref && out.length >= 4) out.forEach(o => { const k = o.numero.slice(0, 3); if (k !== pref) { for (let i = 0; i < 3; i++) { const t = o.numero.slice(0, i) + pref[i] + o.numero.slice(i + 1); if (t.slice(0, 3) === pref && [...o.numero.slice(0, 3)].filter((ch, j) => ch !== pref[j]).length === 1) { o.numero = t; break; } } } });
+  const uniq = {}; out.forEach(o => uniq[o.numero] = o);
+  return Object.values(uniq);
+}
+function processarTexto(txt, fonte) {
+  IMP.texto = txt; IMP.inside = null;
+  if (IMP.destino === "inside") { const r = parseInside(txt); if (r.length) { IMP.inside = r; IMP.linhas = []; IMP.fonte = fonte; return r.length; } }
+  detectarTotalSegware(txt);
+  const rows = textoParaLinhas(fonte === "print" ? txt.replace(/ {2,}|\s\|\s/g, "\t") : txt);
+  prepararImport(rows, fonte); return rows.length;
+}
 const CAMPOS_OS = [["numero", "Nº OS"], ["cliente", "Cliente"], ["servico", "Serviço"], ["tecnico", "Técnico"], ["status", "Status"], ["abertura", "Abertura"], ["prazo", "Prazo"], ["prioridade", "Prioridade"]];
 const CAMPOS_CL = [["nome", "Nome"], ["categoria", "Categoria"], ["codigo", "Conta"], ["responsavel", "Responsável"], ["telefone", "Telefone"], ["cidade", "Cidade"], ["endereco", "Endereço"]];
 const RX = {
@@ -813,6 +857,15 @@ function montarItens() {
       delete d.id; return { tipo: "cliente", id, dados: d };
     }).filter(Boolean);
   }
+  if (IMP.inside && IMP.destino === "inside") {
+    return IMP.inside.map(r => {
+      const id = "inside_" + r.numero; const old = T("os")[id] || {};
+      const st = /fechad|conclu|finaliz|faturad/i.test(r.etapa) ? "concluida" : /execu/i.test(r.etapa) || old.status === "execucao" ? "execucao" : "aberta";
+      const d = { ...old, numero: r.numero, origem: "Inside", cliente: r.cliente || old.cliente || "", codCliente: r.codCli, servico: r.servico || old.servico || "", tecnico: r.tecnico || old.tecnico || "", prazo: r.prazo || old.prazo || "", etapa: r.etapa || old.etapa || "", valor: r.valor || old.valor || "", orcamento: r.orcamento || old.orcamento || "", status: st, abertura: old.abertura || "", visto: old.visto || hoje(), importado: new Date().toISOString() };
+      if (st === "concluida" && !d.conclusao) d.conclusao = hoje(); if (ativa(d)) d.conclusao = "";
+      delete d.exemplo; return { tipo: "os", id, dados: d };
+    });
+  }
   const origem = IMP.destino === "segware" ? "Segware" : "Inside";
   return rows.map(r => {
     const numero = g(r, "numero").replace(/^#/, ""); if (!numero && !g(r, "cliente")) return null;
@@ -839,34 +892,34 @@ VIEWS.importar = el => {
   const bmCode = `(function(){var A=${JSON.stringify(appUrl)};function T(d){var o=[];try{d.querySelectorAll('table').forEach(function(t){var R=[];t.querySelectorAll('tr').forEach(function(tr){var c=[];tr.querySelectorAll('th,td').forEach(function(td){c.push((td.innerText||'').replace(/\\s+/g,' ').trim())});if(c.some(function(x){return x}))R.push(c)});if(R.length>1)o.push(R)});d.querySelectorAll('iframe,frame').forEach(function(f){try{o=o.concat(T(f.contentDocument))}catch(e){}})}catch(e){}return o}var t=T(document);t.sort(function(a,b){return b.length*(b[0]||[]).length-a.length*(a[0]||[]).length});var p={pmImport:1,host:location.hostname,titulo:document.title,linhas:t[0]||null,texto:document.body.innerText.slice(0,300000)};var w=window.open(A+'#importar','pm_central');var n=0;var iv=setInterval(function(){n++;try{w.postMessage(p,'*')}catch(e){}if(n>60)clearInterval(iv)},500);window.addEventListener('message',function(e){if(e.data&&e.data.pmAck){clearInterval(iv)}})})();`;
   el.innerHTML = `
   <div class="tabs">${[["inside", "OS do Inside"], ["segware", "Segware"], ["cliente", "Lista de clientes"]].map(([v, l]) => `<button class="tab ${IMP.destino === v ? "on" : ""}" data-d="${v}">${l}</button>`).join("")}</div>
-  <div class="row" style="grid-template-columns:1fr 1fr;margin-top:0">
-    <div class="card"><h2>1 · Leitor automático (1 clique)</h2>
+  <div class="row" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr);margin-top:0">
+    <div class="card" style="order:2"><h2>Leitor de 1 clique <span class="muted" style="font-weight:500;font-size:12px">(sistemas que abrem no navegador)</span></h2>
       <p class="muted" style="margin-top:0">Arraste o botão abaixo para a barra de favoritos do Chrome. Depois, com a tela do ${IMP.destino === "segware" ? "Segware" : "Inside"} aberta e logada, clique no favorito: ele lê a tabela que está na tela e manda direto para cá.</p>
       <p><a class="bm" id="bmLink" href="#" onclick="event.preventDefault()">📥 Enviar para Central</a></p>
       <p class="muted" style="font-size:12px">Ele só lê o que já está na sua tela; não usa login, não guarda senha e não altera nada no Inside/Segware.</p>
     </div>
-    <div class="card"><h2>2 · Print da tela</h2>
-      <div class="drop" id="dropImg">Solte aqui o print das OS (ou clique para escolher)<br><small class="muted">PNG ou JPG · leitura automática do texto</small></div>
-      <input type="file" id="fImg" accept="image/*" hidden>
+    <div class="card" style="order:1"><h2>📸 Print da tela ${IMP.destino === "segware" ? "do Segware" : "do Inside"}</h2>
+      <div class="drop" id="dropImg">Solte aqui o(s) print(s) da tela do Inside<br><small class="muted">ou tire o print (Win+Shift+S) e aperte <b>Ctrl+V</b> nesta página · pode mandar vários de uma vez</small></div>
+      <input type="file" id="fImg" accept="image/*" multiple hidden>
       <div id="ocrSt" class="muted" style="margin-top:8px"></div>
     </div>
   </div>
-  <div class="card" style="margin-top:16px"><h2>3 · Copiar e colar <span class="muted" style="font-weight:500;font-size:12px">(no Inside: selecione a tabela → Ctrl+C → cole aqui)</span></h2>
+  <div class="card" style="margin-top:16px"><h2>Texto lido / copiar e colar <span class="muted" style="font-weight:500;font-size:12px">(no Inside: selecione a tabela → Ctrl+C → cole aqui)</span></h2>
     <textarea class="in" id="txt" placeholder="${isCli ? "Cole aqui seus clientes (um por linha). Ex.: Condomínio Mar Azul; ouro" : "Cole aqui as linhas das OS…"}">${esc(IMP.texto)}</textarea>
     <div class="tools" style="margin-top:10px;margin-bottom:0"><button class="btn pri" id="bLer">Ler texto</button>${IMP.destino === "segware" ? `<label class="muted">Total de clientes no Segware: <input class="in" id="segTot" type="number" style="width:110px" value="${esc(T("segware").resumo?.total ?? "")}"></label><button class="btn" id="bSeg">Salvar total</button>` : ""}</div>
   </div>
   <div id="prev"></div>`;
   $("#bmLink").setAttribute("href", "javascript:" + encodeURIComponent(bmCode));
-  $$("[data-d]", el).forEach(b => b.onclick = () => { IMP.destino = b.dataset.d; if (IMP.linhas) prepararImport(IMP.linhas, IMP.fonte); renderAll(); });
+  $$("[data-d]", el).forEach(b => b.onclick = () => { IMP.destino = b.dataset.d; if (IMP.texto) processarTexto(IMP.texto, IMP.fonte); renderAll(); });
   $("#txt").oninput = e => IMP.texto = e.target.value;
-  $("#bLer").onclick = () => { const rows = textoParaLinhas(IMP.texto); if (!rows.length) return toast("Nada para ler", "bad"); detectarTotalSegware(IMP.texto); prepararImport(rows, "colagem"); renderPrev(); };
+  $("#bLer").onclick = () => { if (!IMP.texto.trim()) return toast("Nada para ler", "bad"); const n = processarTexto(IMP.texto, "texto"); if (!n) toast("Não encontrei OS nesse texto", "bad"); renderPrev(); };
   $("#bSeg") && ($("#bSeg").onclick = async () => { await salvar("segware", "resumo", { total: +$("#segTot").value || 0, em: new Date().toISOString() }); toast("Total do Segware salvo", "ok"); });
   const dz = $("#dropImg"), fi = $("#fImg");
   dz.onclick = () => fi.click();
   dz.ondragover = e => { e.preventDefault(); dz.classList.add("hover"); };
   dz.ondragleave = () => dz.classList.remove("hover");
-  dz.ondrop = e => { e.preventDefault(); dz.classList.remove("hover"); const f = e.dataTransfer.files[0]; if (f) lerPrint(f); };
-  fi.onchange = () => fi.files[0] && lerPrint(fi.files[0]);
+  dz.ondrop = e => { e.preventDefault(); dz.classList.remove("hover"); lerPrints([...e.dataTransfer.files]); };
+  fi.onchange = () => lerPrints([...fi.files]);
   renderPrev();
 };
 function detectarTotalSegware(txt) {
@@ -874,22 +927,40 @@ function detectarTotalSegware(txt) {
   const m = String(txt).match(/(?:total|clientes|registros|contas)[^\d\n]{0,25}(\d{1,6})/i);
   if (m && pode("os")) salvar("segware", "resumo", { total: +m[1], em: new Date().toISOString() }).then(() => toast("Total do Segware detectado: " + m[1], "ok")).catch(() => {});
 }
-async function lerPrint(file) {
-  const st = $("#ocrSt");
+async function ampliar(file) {
+  const img = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = URL.createObjectURL(file); });
+  const k = img.width < 1600 ? 2 : 1; const c = document.createElement("canvas"); c.width = img.width * k; c.height = img.height * k;
+  const x = c.getContext("2d"); x.imageSmoothingQuality = "high"; x.drawImage(img, 0, 0, c.width, c.height);
+  const d = x.getImageData(0, 0, c.width, c.height); const p = d.data;
+  for (let i = 0; i < p.length; i += 4) { const g = 0.299 * p[i] + 0.587 * p[i + 1] + 0.114 * p[i + 2]; const v = g > 165 ? 255 : g < 90 ? 0 : g; p[i] = p[i + 1] = p[i + 2] = v; }
+  x.putImageData(d, 0, 0); return c;
+}
+async function lerPrints(files) {
+  const st = $("#ocrSt"); files = files.filter(f => f.type.startsWith("image/")); if (!files.length) return;
   try {
     st.textContent = "Carregando leitor de imagem…";
-    if (!window.Tesseract) await new Promise((ok, no) => { const s = document.createElement("script"); s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"; s.onload = ok; s.onerror = () => no(new Error("Leitor de imagem indisponível aqui (abra o app pelo link do GitHub).")); document.head.appendChild(s); });
-    const r = await Tesseract.recognize(file, "por", { logger: m => { if (m.status === "recognizing text") st.textContent = "Lendo o print… " + Math.round(m.progress * 100) + "%"; } });
-    const txt = r.data.text; IMP.texto = txt; $("#txt").value = txt;
-    st.textContent = "Print lido. Confira as colunas abaixo antes de importar (a leitura de imagem pode errar algum caractere).";
-    detectarTotalSegware(txt);
-    prepararImport(textoParaLinhas(txt.replace(/ {2,}|\s\|\s/g, "\t")), "print");
-    renderPrev();
+    await carregarScript("https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js");
+    let txt = "";
+    for (let i = 0; i < files.length; i++) {
+      const r = await Tesseract.recognize(await ampliar(files[i]), "por", { logger: m => { if (m.status === "recognizing text") st.textContent = `Lendo print ${i + 1} de ${files.length}… ${Math.round(m.progress * 100)}%`; } });
+      txt += (txt ? "\n" : "") + r.data.text;
+    }
+    IMP.fechaSumidas = false;
+    const n = processarTexto(txt, files.length > 1 ? files.length + " prints" : "print");
+    if ($("#txt")) $("#txt").value = txt;
+    st.textContent = IMP.inside ? `✅ ${IMP.inside.length} OS encontradas. Confira abaixo e clique em Importar.` : n ? "Print lido. Confira as colunas abaixo." : "Não encontrei OS nesse print.";
+    renderPrev(); $("#prev")?.scrollIntoView({ behavior: "smooth" });
   } catch (e) { st.textContent = ""; toast(e.message, "bad"); }
 }
+addEventListener("paste", e => {
+  if (S.route !== "importar") return;
+  const fs = [...(e.clipboardData?.files || [])].filter(f => f.type.startsWith("image/"));
+  if (fs.length) { e.preventDefault(); lerPrints(fs); }
+});
 function renderPrev() {
   const box = $("#prev"); if (!box) return;
-  if (!IMP.linhas) { box.innerHTML = ""; return; }
+  if (!IMP.linhas && !IMP.inside) { box.innerHTML = ""; return; }
+  if (IMP.inside && IMP.destino === "inside") return renderPrevInside(box);
   const isCli = IMP.destino === "cliente"; const campos = isCli ? CAMPOS_CL : CAMPOS_OS;
   const nc = Math.max(1, ...IMP.linhas.slice(0, 50).map(r => r.length));
   const opts = `<option value="">— ignorar —</option>` + [...Array(nc).keys()].map(j => `<option value="${j}">Coluna ${j + 1}${IMP.header >= 0 && IMP.linhas[IMP.header][j] ? ": " + esc(IMP.linhas[IMP.header][j].slice(0, 20)) : ""}</option>`).join("");
@@ -917,6 +988,35 @@ function renderPrev() {
       if (!isCli) await salvar("importacao", uid(), { origem, qtd: its.length, por: S.me?.nome, em: new Date().toISOString() }).catch(() => {});
       toast(`${its.length} registro(s) importado(s)!`, "ok");
       IMP.linhas = null; IMP.texto = ""; go(isCli ? "clientes" : "painel");
+    } catch (err) { toast(err.message, "bad"); e.target.disabled = false; }
+  };
+}
+function renderPrevInside(box) {
+  const itens = montarItens();
+  const sumidas = lista("os").filter(o => o.origem === "Inside" && ativa(o) && !itens.some(i => i.id === o.id) && !o.exemplo);
+  const ds = itens.map(i => ({ id: i.id, ...i.dados })).sort((a, b) => (atraso(b) ?? -999) - (atraso(a) ?? -999));
+  const novos = itens.filter(i => !T("os")[i.id]).length;
+  box.innerHTML = `<div class="card" style="margin-top:16px"><h2>Conferir e importar <span class="pill">${itens.length} OS lidas</span><span class="muted" style="font-weight:500;font-size:12px">tela do Inside · ${novos} nova(s) · via ${esc(IMP.fonte)}</span></h2>
+    <div class="stats"><div class="s"><b>${ds.filter(o => ativa(o)).length}</b>pendentes</div><div class="s"><b style="color:#fca5a5">${ds.filter(o => atraso(o) > 0).length}</b>atrasadas</div><div class="s"><b>${ds.filter(o => o.status === "concluida").length}</b>fechadas</div><div class="s"><b>${new Set(ds.map(o => o.tecnico).filter(Boolean)).size}</b>técnicos</div></div>
+    <label class="chks" style="margin-bottom:12px"><label><input type="checkbox" id="fch" ${IMP.fechaSumidas ? "checked" : ""}> Dar baixa (concluir) nas ${sumidas.length} OS do Inside que estavam pendentes aqui e não aparecem neste(s) print(s) — marque só se os prints mostram TODAS as OS abertas</label></label>
+    ${sumidas.length && IMP.fechaSumidas ? `<div class="hint warn">Serão concluídas: ${sumidas.slice(0, 12).map(o => "OS " + esc(o.numero)).join(", ")}${sumidas.length > 12 ? "…" : ""}</div>` : ""}
+    <div class="tbl" style="max-height:420px"><table><thead><tr><th>Atraso</th><th>Nº OS</th><th>Cliente</th><th>Tipo</th><th>Técnico</th><th>Entrega</th><th>Etapa</th></tr></thead><tbody>
+    ${ds.map(o => `<tr><td>${badgeAtraso(o)}</td><td><b>${esc(o.numero)}</b>${T("os")[o.id] ? "" : ' <span class="pill" style="font-size:10.5px">nova</span>'}</td><td>${esc(o.cliente)} ${pillTier(tierDe(o.cliente))}</td><td class="muted">${esc(o.servico)}</td><td>${esc(o.tecnico || "—")}</td><td>${br(o.prazo)}</td><td class="muted" style="font-size:12px">${esc(o.etapa)}</td></tr>`).join("")}
+    </tbody></table></div>
+    <p class="muted" style="font-size:12px">A leitura de imagem pode errar alguma letra do nome. Os números das OS, datas de entrega e técnicos são conferidos automaticamente. Você pode corrigir qualquer OS depois, clicando nela.</p>
+    <div class="tools" style="margin:14px 0 0"><span class="sp"></span><button class="btn" id="bLimp">Descartar</button><button class="btn pri" id="bImp" ${itens.length ? "" : "disabled"}>Importar ${itens.length} OS para o painel</button></div></div>`;
+  $("#fch").onchange = e => { IMP.fechaSumidas = e.target.checked; renderPrev(); };
+  $("#bLimp").onclick = () => { IMP.linhas = null; IMP.inside = null; IMP.texto = ""; renderAll(); };
+  $("#bImp").onclick = async e => {
+    if (!pode("os")) return toast("Você não tem permissão para importar OS.", "bad");
+    e.target.disabled = true;
+    try {
+      const its = montarItens();
+      if (IMP.fechaSumidas) for (const o of sumidas) { const { id, ...d } = o; its.push({ tipo: "os", id, dados: { ...d, status: "concluida", conclusao: hoje(), obs: ((d.obs || "") + " [baixa automática: saiu da tela do Inside em " + br(hoje()) + "]").trim() } }); }
+      await salvarVarios(its);
+      await salvar("importacao", uid(), { origem: "Inside", qtd: its.length, por: S.me?.nome, em: new Date().toISOString() }).catch(() => {});
+      toast(`${its.length} OS atualizadas no painel!`, "ok");
+      IMP.linhas = null; IMP.inside = null; IMP.texto = ""; go("painel");
     } catch (err) { toast(err.message, "bad"); e.target.disabled = false; }
   };
 }
