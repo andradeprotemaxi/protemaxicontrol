@@ -294,6 +294,7 @@ body.tv .msTit{font-size:30px}
       <div id="hdrUser"></div>
       <div class="sinoW"><button class="btn sm sino" id="btnSino" title="Notificações">🔔<span class="sinoN" id="sinoN" hidden></span></button><div class="sinoP" id="sinoP" hidden></div></div>
       <button class="btn sm notv hidem" id="btnTv" title="Modo TV (tela cheia)">⛶ TV</button>
+      <div id="hdrSair"></div>
     </header>
     <div class="wrap" id="main"></div>
   </main>
@@ -712,8 +713,9 @@ function renderHeader() {
   const nCon = Object.keys(S.online).length + (S.visOn || []).length;
   $("#hdrOnline").innerHTML = `<button class="btn sm conChip" id="conChip" title="Quem está conectado agora"><span class="dotV"></span> ${nCon || 1} online</button>` + onl.slice(0, 6).map(u => `<span class="avBtn" data-perfil="${esc(u.id)}">${av(u)}</span>`).join("") + (onl.length > 6 ? `<span class="muted" style="margin-left:6px">+${onl.length - 6}</span>` : "");
   $("#hdrUser").innerHTML = S.me
-    ? `<div style="display:flex;align-items:center;gap:8px"><span class="avBtn" data-perfil="${esc(S.me.id)}" title="Meu perfil">${av(userById(S.me.id) || S.me)}</span><span class="hidesm" style="font-weight:600">${esc(S.me.nome.split(" ")[0])}</span><button class="btn sm" id="bSair">Sair</button></div>`
+    ? `<div style="display:flex;align-items:center;gap:8px"><span class="avBtn" data-perfil="${esc(S.me.id)}" title="Meu perfil">${av(userById(S.me.id) || S.me)}</span><span class="hidesm" style="font-weight:600">${esc(S.me.nome.split(" ")[0])}</span></div>`
     : `<button class="btn pri sm" id="bEntrar">Entrar</button>`;
+  $("#hdrSair").innerHTML = S.me ? `<button class="btn sm" id="bSair">Sair</button>` : "";
   $("#bSair") && ($("#bSair").onclick = sair);
   $$("[data-perfil]").forEach(b => b.onclick = () => abrirPerfil(b.dataset.perfil));
   $("#conChip") && ($("#conChip").onclick = abrirConectados);
