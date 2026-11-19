@@ -374,3 +374,58 @@ end $$;
 
 grant execute on function public.rpc_login(text,text,text), public.rpc_dispositivos(text,text),
   public.rpc_dispositivo_status(text,text,text,text,text) to anon, authenticated;
+
+-- =====================================================================
+-- MISSÕES (19/11/2026): quem tem a permissão "missoes" cria e marca como
+-- realizado; o dashboard público mostra as missões pendentes (pop-up para todos)
+-- =====================================================================
+create or replace function public._pode(p_papel text, p_perm jsonb, p_tipo text)
+returns boolean language sql immutable as $$
+  select case
+    when p_papel = 'admin' then true
+    when p_tipo = 'sessao' then true
+    when p_tipo in ('chat','nota') then true
+    when p_tipo in ('os','segware','importacao') then p_perm ? 'os'
+    when p_tipo = 'cliente' then p_perm ? 'clientes'
+    when p_tipo = 'arquivo' then p_perm ? 'arquivos'
+    when p_tipo = 'missao' then p_perm ? 'missoes'
+    when p_tipo like 'coord\_%' then p_perm ? 'coordenador'
+    when p_tipo like 'rel\_%' then p_perm ? 'coordenador'
+    else false
+  end
+$$;
+
+-- dashboard público: números agregados + missões pendentes
+create or replace function public.rpc_publico()
+returns json language sql stable security definer set search_path = public as $$
+  with p as (select (now() at time zone 'America/Fortaleza')::date hoje,
+                    coalesce(nullif((select (dados->>'sla')::int from public.registros where tipo='config' and id='geral'), 0), 3) sla),
+  os as (
+    select dados->>'status' st,
+           case when dados->>'abertura' ~ '^\d{4}-\d{2}-\d{2}' then left(dados->>'abertura',10)::date end ab,
+           case when dados->>'prazo' ~ '^\d{4}-\d{2}-\d{2}' then left(dados->>'prazo',10)::date end pr,
+           case when dados->>'conclusao' ~ '^\d{4}-\d{2}-\d{2}' then left(dados->>'conclusao',10)::date end co
+    from public.registros where tipo = 'os'),
+  cl as (select id, dados->>'categoria' cat, nullif(dados->>'grupo','') grp from public.registros where tipo = 'cliente')
+  select json_build_object(
+    'hoje', p.hoje,
+    'abertas', (select count(*) from os where st = 'aberta'),
+    'execucao', (select count(*) from os where st = 'execucao'),
+    'semana', (select count(*) from os where st = 'concluida' and co >= date_trunc('week', p.hoje)::date),
+    'atrasadas', (select count(*) from os where st in ('aberta','execucao') and coalesce(pr, ab + p.sla) < p.hoje),
+    'd_verde', (select count(*) from os where st in ('aberta','execucao') and ab is not null and p.hoje - ab <= 2),
+    'd_amarelo', (select count(*) from os where st in ('aberta','execucao') and ab is not null and p.hoje - ab between 3 and 4),
+    'd_vermelho', (select count(*) from os where st in ('aberta','execucao') and ab is not null and p.hoje - ab >= 5),
+    'ouro', (select count(distinct coalesce(grp, id)) from cl where cat = 'ouro'),
+    'prata', (select count(distinct coalesce(grp, id)) from cl where coalesce(cat,'') <> 'ouro'),
+    'contas', (select count(*) from cl),
+    'missoes', (select coalesce(jsonb_agg(r.dados || jsonb_build_object('id', r.id)), '[]'::jsonb) from public.registros r
+                where r.tipo = 'missao' and coalesce(r.dados->>'feito','false') <> 'true' and coalesce(r.dados->>'ativo','true') <> 'false'),
+    'serie', (select json_agg(json_build_object('d', d::date,
+                'abertas', (select count(*) from os where ab = d::date),
+                'concluidas', (select count(*) from os where co = d::date)) order by d)
+              from generate_series(p.hoje - 13, p.hoje, interval '1 day') d)
+  ) from p
+$$;
+
+grant execute on function public.rpc_publico() to anon, authenticated;

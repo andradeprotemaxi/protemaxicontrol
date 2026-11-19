@@ -221,6 +221,20 @@ body.tv .kpi .v{font-size:60px}
 body.tv .dashMarca img{width:min(260px,40%)}
 .atrTop{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}.atrTop div{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--bad);border-radius:12px;padding:10px 12px}
 .atrTop b{display:block;font-size:28px;font-weight:900;color:#fca5a5;line-height:1.1}.atrTop span{font-size:12px;color:var(--tx2)}
+/* missões */
+.msL{display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:var(--bg2)}.msL[data-med]{cursor:pointer}.msL[data-med]:hover{border-color:var(--ac)}
+.msL.venc{border-left:4px solid var(--bad)}
+.btn.ok{background:#16a34a;border-color:#16a34a;color:#fff}.btn.ok:hover{background:#15803d}
+.msOv{position:fixed;inset:0;z-index:90;background:rgba(2,6,15,.82);display:grid;place-items:center;padding:16px;backdrop-filter:blur(3px)}
+.msBox{position:relative;width:min(760px,100%);max-height:92vh;overflow:auto;background:linear-gradient(180deg,#14254a,#0f1a2e);border:2px solid var(--warn);border-radius:20px;padding:26px;box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 6px rgba(245,158,11,.15);animation:msIn .25s ease-out}
+@keyframes msIn{from{transform:scale(.94);opacity:0}to{transform:none;opacity:1}}
+.msX{position:absolute;top:14px;right:14px;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card2);color:#fff;font-size:20px;cursor:pointer}.msX:hover{background:var(--bad)}
+.msHd{display:flex;align-items:center;gap:14px;margin-bottom:18px;padding-right:50px}.msIco{font-size:46px;animation:msPulse 1.4s infinite}@keyframes msPulse{50%{transform:scale(1.12)}}
+.msT{font-size:30px;font-weight:900;color:#fcd34d;line-height:1.1}
+.msLista{display:flex;flex-direction:column;gap:12px}.msCard{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--warn);border-radius:14px;padding:16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.msC1{flex:1;min-width:240px}.msTit{font-size:22px;font-weight:800}.msCli{font-size:16px;margin-top:4px;color:var(--tx)}.msQ{color:var(--tx2);margin-top:6px}.msObs{margin-top:8px;color:var(--tx2);font-size:14px;white-space:pre-wrap}
+.msBt{display:flex;gap:8px;flex-wrap:wrap}.msBt .btn{padding:12px 16px;font-size:15px;font-weight:700}
+body.tv .msTit{font-size:30px}
 /* atualização */
 .upd ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
 .updBar{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:70;background:var(--card2);border:1px solid var(--ac);border-radius:12px;padding:10px 14px;display:flex;gap:12px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.5);flex-wrap:wrap;max-width:calc(100% - 24px)}
@@ -371,6 +385,7 @@ const PERMS = [
   ["clientes", "Editar clientes"],
   ["arquivos", "Enviar arquivos"],
   ["coordenador", "Área do coordenador"],
+  ["missoes", "Criar missões e marcar como realizado"],
 ];
 const PAPEIS = { admin: "Administrador", coordenador: "Coordenador", operador: "Operador", tecnico: "Técnico", visitante: "Visitante" };
 
@@ -432,6 +447,7 @@ const Supa = {
       for (const r of data.dels) if (T(r.tipo)[r.id]) { delete T(r.tipo)[r.id]; tipos.add(r.tipo); }
       if (tipos.has("chat")) chatMudou("chat"); if (tipos.has("nota")) chatMudou("nota");
       if ([...tipos].some(t => t !== "chat" && t !== "nota" && t !== "sessao")) softRender();
+      if (tipos.has("missao")) checarMissoes();
     } catch {} finally { this._sy = false; }
   },
   ping() { try { this.pc?.send({ type: "broadcast", event: "mudou", payload: { t: Date.now() } }); } catch {} setTimeout(() => this.sync(), 400); },
@@ -464,7 +480,7 @@ const Supa = {
     if (isAdmin()) { const pm = async () => { try { S.maquinas = await this.maquinas(); checarPedidos(); if (S.route === "admin" && admTab === "maquinas") softRender(); } catch {} }; pm(); setInterval(pm, 30000); }
     if (S.me) setInterval(async () => { try { const { data } = await this.sb.rpc("rpc_usuarios", { p_login: S.me.login, p_pin: pinDev() }); if (data) { S.users = data; renderHeader(); checarPedidos(); if (S.route === "admin") softRender(); } } catch {} }, 45000);
   },
-  async publico() { try { const { data } = await this.sb.rpc("rpc_publico"); if (data) { S.pub = data; if (S.route === "dashboard") softRender(); } } catch {}
+  async publico() { try { const { data } = await this.sb.rpc("rpc_publico"); if (data) { S.pub = data; if (S.route === "dashboard") softRender(); checarMissoes(); } } catch {}
   },
   presence: {
     async track() { if (Supa.ch) { try { await Supa.ch.untrack(); } catch {} location.reload(); } },
@@ -589,7 +605,7 @@ function sair() {
 }
 
 /* ---------------- gravação com atualização local ---------------- */
-async function salvar(tipo, id, dados) { await API.save(tipo, id, dados); T(tipo)[id] = dados; softRender(true); }
+async function salvar(tipo, id, dados) { await API.save(tipo, id, dados); T(tipo)[id] = dados; softRender(true); if (tipo === "missao") setTimeout(() => typeof checarMissoes === "function" && checarMissoes(), 200); }
 async function salvarVarios(itens) { await API.saveMany(itens); for (const it of itens) T(it.tipo)[it.id] = it.dados; softRender(true); }
 async function excluir(tipo, id) { await API.del(tipo, id); delete T(tipo)[id]; softRender(true); }
 
@@ -776,12 +792,102 @@ VIEWS.dashboard = el => {
     return `<div class="card" style="margin-top:16px"><h2>⚠️ Quem está atrasado <span class="pill">${at.length}</span>${at.length ? ` <button class="btn sm" onclick="alertaAtrasos(true)" style="margin-left:6px">🔔 Aviso</button>` : ""}<span class="sp"></span><span class="muted" style="font-weight:500;font-size:12px">atualiza sozinho a cada importação</span></h2>${legendaDias()}
       ${at.length ? `<div class="tbl"><table><thead><tr><th>Aberta há</th><th>Atraso</th><th>Nº</th><th>Cliente</th><th class="hidesm">Serviço</th><th class="hidesm">Técnico</th><th class="hidesm">Prazo</th></tr></thead><tbody>${at.slice(0, 40).map(o => `<tr class="click" data-os="${esc(o.id)}"><td>${badgeDias(o)}</td><td><span class="late ${atraso(o) > 3 ? "l3" : "l2"}">+${atraso(o)}d</span></td><td><b>${esc(o.numero || "—")}</b></td><td>${esc(o.cliente || "—")} ${pillTier(tierDe(o.cliente))}</td><td class="hidesm">${esc(o.servico || "")}</td><td class="hidesm">${esc(o.tecnico || "—")}</td><td class="hidesm">${br(prazoEf(o))}</td></tr>`).join("")}</tbody></table></div>${at.length > 40 ? `<p class="muted">+${at.length - 40} atrasadas… <a href="#" data-kgo="atrasadas">ver todas</a></p>` : ""}` : `<div class="empty">Nenhuma OS atrasada 👏</div>`}</div>`;
   })() : ""}
+  ${(() => { const ms = missoesFonte().filter(m => ocorrencia(m)).sort((a, b) => (ocorrencia(a) + (a.hora || "")).localeCompare(ocorrencia(b) + (b.hora || ""))); return (ms.length || podeMissao()) ? `<div class="card" style="margin-top:16px" id="dMs"><h2>📌 Missões <span class="pill">${ms.length}</span><span class="sp"></span>${podeMissao() ? `<button class="btn sm pri" id="dMsN">+ Nova missão</button>` : ""}</h2>${ms.length ? ms.slice(0, 20).map(m => linhaMissao(m, !!S.me)).join("") : '<div class="empty">Nenhuma missão programada.</div>'}</div>` : ""; })()}
   <div class="dashMarca"><img src="protemaxi.png" alt="Protemaxi Segurança"></div>
   ${!S.me ? `<div class="hint" style="margin-top:16px">🔒 A parte interna (ordens de serviço, clientes, arquivos) é só para quem tem acesso. <a href="#" id="dEnt">Entrar</a> · <a href="#" id="dSol">Solicitar acesso</a></div>` : ""}`;
   S.me && typeof ligaTabelaOS === "function" && ligaTabelaOS(el);
+  $("#dMs") && ligarMissoes($("#dMs")); $("#dMsN") && ($("#dMsN").onclick = () => abrirMissao(null));
   $("#dEnt") && ($("#dEnt").onclick = e => { e.preventDefault(); abrirLogin(); });
   $("#dSol") && ($("#dSol").onclick = e => { e.preventDefault(); abrirSolicitar(); });
 };
+
+/* ============================================================
+   MISSÕES / COMANDOS (por cliente ou livres) com lembrete em pop-up
+   ============================================================ */
+const REPETE = { nao: "Não repete", diario: "Todo dia", semanal: "Toda semana", quinzenal: "A cada 15 dias", mensal: "Todo mês", trimestral: "A cada 3 meses", semestral: "A cada 6 meses", anual: "Todo ano" };
+const podeMissao = () => pode("missoes");
+function avancaData(d, rep) {
+  const dt_ = new Date(d + "T12:00:00");
+  if (rep === "diario") dt_.setDate(dt_.getDate() + 1); else if (rep === "semanal") dt_.setDate(dt_.getDate() + 7); else if (rep === "quinzenal") dt_.setDate(dt_.getDate() + 15);
+  else { const n = { mensal: 1, trimestral: 3, semestral: 6, anual: 12 }[rep] || 1; const dia = +d.slice(8, 10); dt_.setDate(1); dt_.setMonth(dt_.getMonth() + n); const ult = new Date(dt_.getFullYear(), dt_.getMonth() + 1, 0).getDate(); dt_.setDate(Math.min(dia, ult)); }
+  return ymd(dt_);
+}
+function ocorrencia(m) {   // próxima data ainda não realizada
+  if (!m || !m.data || m.ativo === false) return null;
+  if (!m.repete || m.repete === "nao") return m.feito ? null : m.data;
+  let d = m.data, g = 0; while (m.feitoAte && d <= m.feitoAte && g++ < 3000) d = avancaData(d, m.repete);
+  return d;
+}
+const agoraHM = () => { const d = new Date(); return z(d.getHours()) + ":" + z(d.getMinutes()); };
+const missaoVencida = (m, oc = ocorrencia(m)) => !!oc && (oc < hoje() || (oc === hoje() && agoraHM() >= (m.hora || "00:00")));
+const missoesFonte = () => (API === Supa && !S.me) ? (S.pub?.missoes || []) : lista("missao");
+function abrirMissao(id, base = {}) {
+  if (!podeMissao()) return toast("Só o administrador (ou quem ele autorizar) cria e altera missões.", "bad");
+  const m = id ? { ...T("missao")[id] } : { data: hoje(), hora: "08:00", repete: "nao", ...base };
+  const sug = ["Manutenção preventiva mensal", "Teste de sensor de fumaça", "Revisão das câmeras", "Teste da cerca elétrica", "Teste do alarme", "Troca de bateria da central", "Visita técnica"];
+  modal({
+    titulo: id ? "📌 Editar missão" : "📌 Nova missão", wide: true,
+    corpo: `<div class="form">
+      <label class="full">O que precisa ser feito<input class="in" name="titulo" list="dlMs" value="${esc(m.titulo || "")}" placeholder="ex.: Realizar teste de sensor de fumaça"></label>
+      <label class="full">Cliente (opcional)<input class="in" name="cliente" list="dlMc" value="${esc(m.cliente || "")}" placeholder="ex.: Instituto…"></label>
+      <label>Data<input class="in" type="date" name="data" value="${esc(m.data || hoje())}"></label>
+      <label>Horário<input class="in" type="time" name="hora" value="${esc(m.hora || "08:00")}"></label>
+      <label>Repetir<select class="in" name="repete">${Object.entries(REPETE).map(([k, l]) => `<option value="${k}" ${m.repete === k ? "selected" : ""}>${l}</option>`).join("")}</select></label>
+      <label>Situação<select class="in" name="ativo"><option value="1">Ativa</option><option value="0" ${m.ativo === false ? "selected" : ""}>Pausada</option></select></label>
+      <label class="full">Detalhes (opcional)<textarea class="in" name="obs" rows="3">${esc(m.obs || "")}</textarea></label></div>
+      <p class="muted" style="margin-bottom:0">📣 No dia e horário, aparece um aviso grande para todos (inclusive quem só tem o link do Dashboard), de manhã e à tarde, até alguém autorizado marcar como realizado.</p>
+      ${(m.hist || []).length ? `<h3 style="margin:14px 0 6px;font-size:14px">Histórico</h3>${m.hist.slice(-8).reverse().map(h => `<div class="muted" style="font-size:13px">✅ ${br(h.data)} — realizado por ${esc(h.por || "")} em ${new Date(h.em).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</div>`).join("")}` : ""}
+      ${datalist("dlMs", sug)}${datalist("dlMc", lista("cliente").map(c => c.nome))}`,
+    botoes: [
+      ...(id ? [{ txt: "Excluir", cls: "bad", fn: async () => { if (!await confirma("Excluir esta missão?")) return false; await excluir("missao", id); } }] : []),
+      { txt: "Salvar missão", cls: "pri", fn: async r => {
+        const g = n => r.querySelector(`[name=${n}]`).value.trim();
+        const d = { ...m, titulo: g("titulo"), cliente: g("cliente"), data: g("data"), hora: g("hora") || "08:00", repete: g("repete"), ativo: g("ativo") === "1", obs: g("obs"), por: m.por || S.me.nome, criado: m.criado || new Date().toISOString() };
+        if (!d.titulo) throw new Error("Escreva o que precisa ser feito"); if (!d.data) throw new Error("Escolha a data");
+        if (id && (d.data !== T("missao")[id].data || d.repete !== T("missao")[id].repete)) { d.feito = false; }
+        delete d.id; await salvar("missao", id || "m_" + uid(), d); toast("Missão salva", "ok"); setTimeout(checarMissoes, 300);
+      } }]
+  });
+}
+async function realizarMissao(id) {
+  if (!podeMissao()) return toast("Só o administrador (ou quem ele autorizar) marca como realizado.", "bad");
+  const m = T("missao")[id]; if (!m) return; const oc = ocorrencia(m); if (!oc) return;
+  const d = { ...m, hist: [...(m.hist || []), { data: oc, por: S.me.nome, em: new Date().toISOString() }].slice(-60) };
+  if (!m.repete || m.repete === "nao") d.feito = true; else d.feitoAte = oc;
+  await salvar("missao", id, d); toast("✅ Missão realizada" + (d.feito ? "" : " · próxima: " + br(ocorrencia(d))), "ok");
+}
+function linhaMissao(m, comBotoes) {
+  const oc = ocorrencia(m); const venc = missaoVencida(m, oc); const atr = oc ? diasEntre(oc, hoje()) : 0;
+  const st = !oc ? (m.ativo === false ? '<span class="pill">Pausada</span>' : '<span class="pill concluida">Concluída</span>') : venc ? `<span class="pill cancelada">${atr > 0 ? "Atrasada " + atr + " dia" + (atr > 1 ? "s" : "") : "Hoje"}</span>` : oc === hoje() ? `<span class="pill aberta">Hoje ${esc(m.hora || "")}</span>` : `<span class="pill">${br(oc)} ${esc(m.hora || "")}</span>`;
+  return `<div class="msL ${venc ? "venc" : ""}" ${podeMissao() && m.id ? `data-med="${esc(m.id)}"` : ""}><div style="flex:1;min-width:0"><b>📌 ${esc(m.titulo)}</b><div class="muted" style="font-size:12.5px">${m.cliente ? esc(m.cliente) + " · " : ""}${REPETE[m.repete || "nao"]}${oc ? " · " + br(oc) + " às " + esc(m.hora || "") : ""}</div></div>${st}${comBotoes && venc && podeMissao() ? `<button class="btn sm ok" data-mok="${esc(m.id)}">✅ Realizado</button>` : ""}</div>`;
+}
+function ligarMissoes(root) {
+  $$("[data-med]", root).forEach(d => d.onclick = e => { if (e.target.closest("button")) return; abrirMissao(d.dataset.med); });
+  $$("[data-mok]", root).forEach(b => b.onclick = async e => { e.stopPropagation(); b.disabled = true; try { await realizarMissao(b.dataset.mok); } catch (err) { toast(err.message, "bad"); b.disabled = false; } });
+}
+/* ---------- o pop-up grande ---------- */
+const periodo = () => new Date().getHours() < 12 ? "manhã" : "tarde";
+const ackKey = (m, oc) => m.id + "|" + oc + "|" + hoje() + "|" + periodo();
+function acks() { const a = LS.get("pm_miss_ack", {}); const lim = addDias(hoje(), -7); for (const k in a) if (a[k] < lim) delete a[k]; return a; }
+function marcarAck(ms) { const a = acks(); for (const m of ms) a[ackKey(m, ocorrencia(m))] = hoje(); LS.set("pm_miss_ack", a); }
+function missoesParaAvisar() { const a = acks(); return missoesFonte().filter(m => { const oc = ocorrencia(m); return missaoVencida(m, oc) && !a[ackKey(m, oc)]; }); }
+function checarMissoes() {
+  const ms = missoesParaAvisar(); const root = $("#missaoRoot");
+  if (!ms.length) { if (root && !root.dataset.fixo) root.remove(); return; }
+  desenharPopMissoes(ms);
+}
+function desenharPopMissoes(ms) {
+  let root = $("#missaoRoot"); if (!root) { root = document.createElement("div"); root.id = "missaoRoot"; document.body.appendChild(root); }
+  const pm = podeMissao();
+  root.innerHTML = `<div class="msOv"><div class="msBox"><button class="msX" data-msx title="Fechar">✕</button>
+    <div class="msHd"><span class="msIco">📣</span><div><div class="msT">Missão${ms.length > 1 ? "ões" : ""} importante${ms.length > 1 ? "s" : ""}</div><div class="muted">Lembrete da ${periodo()} · ${new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "2-digit" })}</div></div></div>
+    <div class="msLista">${ms.map(m => { const oc = ocorrencia(m); const atr = diasEntre(oc, hoje()); return `<div class="msCard"><div class="msC1"><div class="msTit">${esc(m.titulo)}</div>${m.cliente ? `<div class="msCli">🏢 ${esc(m.cliente)}</div>` : ""}<div class="msQ">🗓️ ${br(oc)} às ${esc(m.hora || "—")}${m.repete && m.repete !== "nao" ? " · 🔁 " + REPETE[m.repete] : ""}${atr > 0 ? ` · <b style="color:#fca5a5">${atr} dia${atr > 1 ? "s" : ""} sem realizar</b>` : ""}</div>${m.obs ? `<div class="msObs">${esc(m.obs)}</div>` : ""}</div>
+      <div class="msBt"><button class="btn" data-mcie="${esc(m.id)}">👍 Ciente</button>${pm ? `<button class="btn ok" data-mfez="${esc(m.id)}">✅ Serviço realizado</button>` : ""}</div></div>`; }).join("")}</div>
+    <div class="muted" style="text-align:center;font-size:12.5px;margin-top:10px">${pm ? "Ciente ou ✕ fecha até o próximo lembrete (manhã/tarde). Serviço realizado encerra a missão." : "Ciente ou ✕ fecha até o próximo lembrete. Só o administrador marca como realizado."}</div></div></div>`;
+  root.querySelector("[data-msx]").onclick = () => { marcarAck(ms); root.remove(); };
+  $$("[data-mcie]", root).forEach(b => b.onclick = () => { const m = ms.find(x => x.id === b.dataset.mcie); marcarAck([m]); checarMissoes(); });
+  $$("[data-mfez]", root).forEach(b => b.onclick = async () => { b.disabled = true; try { await realizarMissao(b.dataset.mfez); checarMissoes(); } catch (e) { toast(e.message, "bad"); b.disabled = false; } });
+}
 
 /* ---------- pop-up de clientes atrasados ---------- */
 function resumoAtrasos() {
@@ -1016,6 +1122,7 @@ function abrirCliente(id) {
   modal({
     titulo: id ? esc(c.nome) : "Novo cliente", wide: true,
     corpo: (ed ? campos(CLF, c) + datalist("dlGrp", lista("cliente").map(x => x.grupo)) : `<div class="form">${CLF.map(f => `<label class="${f.full ? "full" : ""}">${f.l}<div style="color:var(--tx);font-weight:500">${esc(c[f.k] || "—")}</div></label>`).join("")}</div>`)
+      + (id ? (() => { const ms = lista("missao").filter(m => norm(m.cliente) === norm(c.nome)); return `<h3 style="margin:18px 0 8px;font-size:14px;display:flex;align-items:center;gap:8px">📌 Missões / comandos deste cliente (${ms.length})<span class="sp" style="flex:1"></span>${podeMissao() ? `<button class="btn sm pri" id="cMsN" type="button">+ Adicionar comando</button>` : ""}</h3><div id="cMs">${ms.length ? ms.map(m => linhaMissao(m, true)).join("") : '<div class="muted">Nenhuma missão para este cliente. Ex.: manutenção mensal, teste de sensor de fumaça…</div>'}</div>`; })() : "")
       + (hist.length ? `<h3 style="margin:18px 0 8px;font-size:14px">Histórico de OS (${hist.length})</h3>${tabelaOS(hist.slice(0, 30))}` : ""),
     botoes: ed ? [
       ...(id ? [{ txt: "Excluir", cls: "bad", fn: async () => { if (!await confirma("Excluir o cliente " + c.nome + "?")) return false; await excluir("cliente", id); } }] : []),
@@ -1023,6 +1130,7 @@ function abrirCliente(id) {
     ] : []
   });
   $$("#modalRoot [data-os]").forEach(tr => tr.onclick = () => abrirOS(tr.dataset.os));
+  $("#cMs") && ligarMissoes($("#cMs")); $("#cMsN") && ($("#cMsN").onclick = () => abrirMissao(null, { cliente: c.nome }));
 }
 
 /* ---------- Importar (Inside / Segware / prints / colagem) ---------- */
@@ -1908,8 +2016,9 @@ function checarLembretes() {
    ATUALIZAÇÕES — pop-up de novidades para toda a equipe
    (a cada versão nova: troque APP_VERSAO e acrescente no topo de NOVIDADES)
    ============================================================ */
-const APP_VERSAO = "2026.11.19-3";
+const APP_VERSAO = "2026.11.19-4";
 const NOVIDADES = [
+  { v: "2026.11.19-4", data: "19/11/2026", itens: ["📌 Missões: em cada cliente (ou livres), com data, horário e repetição", "📣 Aviso grande na tela para todos, de manhã e à tarde, até ser realizado", "✅ Só o administrador (ou quem ele autorizar) marca como realizado; os outros podem dar Ciente"] },
   { v: "2026.11.19-3", data: "19/11/2026", itens: ["🔔 Pop-up de atrasos: quantos clientes estão atrasados e há quantos dias (ao abrir, depois de importar e quando mudar)", "⚠️ Depois de importar as OS, o app abre o Dashboard com quem está atrasado e há quantos dias", "📅 Tempo em aberto agora conversa com o atraso: sem data de abertura no Inside, ela é estimada pela data de entrega"] },
   { v: "2026.11.19-2", data: "19/11/2026", itens: ["💬 Chat da equipe: botão flutuante que você arrasta para onde quiser", "📝 Anotações dentro do chat (só suas ou compartilhadas com a equipe)", "🚀 Este aviso: sempre que sair uma atualização, todo mundo vê o que mudou", "🟢🟡🔴 Dias em aberto de cada OS em destaque: verde até 2 dias, amarelo de 3 a 4, vermelho acima de 4", "🥈 Cliente que não é ouro agora é prata (bronze saiu)", "📷 Fotos da equipe: clique na foto para trocar, enquadrar o rosto, dar zoom e girar", "👤 Clique na sua bolinha (ou na de quem está online) para ver o perfil e trocar a foto", "📊 Novo Dashboard com gráficos: quem tem só o link vê apenas ele; o resto exige login", "🔐 Pedido de acesso: quem quiser entrar pede, e o administrador autoriza ou recusa", "🏗️ Atalho Projetos no menu, que abre o app de projetos", "👆 Os cartões (OS abertas, em execução, concluídas, atrasadas, ouro/prata e faixas de dias) são clicáveis e abrem a lista certa", "🔷 Nova logo BASE: clique nela (no topo) para voltar à página principal", "🦅 Marca Protemaxi Segurança no Dashboard", "⚠️ Depois de importar as OS, o app abre o Dashboard com a lista de quem está atrasado e há quantos dias", "💻 Cada computador ou celular precisa ser autorizado pelo administrador; em Admin → Máquinas você vê quem está logado e em qual máquina"] },
   { v: "2026.11.19-1", data: "19/11/2026", itens: ["🏷️ Cargo virou lista para selecionar, com edição (✎) para renomear e acrescentar", "🗓️ Novo campo Escala, com lista editável e cartões mostrando quem está em cada escala", "🔎 Filtros por cargo e por escala no quadro de funcionários"] },
@@ -2096,6 +2205,7 @@ addEventListener("keydown", e => { if (e.key === "Escape") { document.body.class
   if (S.me) { setTimeout(checarPedidos, 1500); setTimeout(ofereceMigrar, 2500); setTimeout(() => alertaAtrasos(true), 3500); setInterval(() => alertaAtrasos(false), 10 * 60000); }
   if (maqPend) setTimeout(() => aguardarMaquina(...maqPend), 600);
   else if (!S.me && API === Supa && !sessionStorage.getItem("pm_aviso")) setTimeout(avisoRestrito, 700);
+  setTimeout(checarMissoes, 4500); setInterval(checarMissoes, 60000);
   montarChat(); _chatUlt = (chatMsgs().slice(-1)[0] || {}).ts || 0; atualizarFab();
   setTimeout(() => { if (!$("#modalRoot").innerHTML) mostrarNovidades(); }, 900);
   setInterval(checarVersao, 120000); setTimeout(checarVersao, 20000);
