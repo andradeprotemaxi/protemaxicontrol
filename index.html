@@ -237,6 +237,14 @@ body.tv .dashMarca img{width:min(260px,40%)}
 body.tv .msTit{font-size:30px}
 .aoVivo{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--tx2);margin:-4px 0 12px}.dotV{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(34,197,94,.6);animation:pulse 2s infinite}
 .avBox{grid-column:1/-1;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px}#avL{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}.avIt{display:flex;gap:4px;align-items:center}.avIt .in{width:130px}
+.sinoW{position:relative}.sino{position:relative;font-size:16px;padding:6px 10px}.sino.tem{border-color:var(--warn);animation:sinoBalanca 2.5s infinite}
+@keyframes sinoBalanca{0%,90%,100%{transform:none}93%{transform:rotate(-12deg)}96%{transform:rotate(12deg)}}
+.sinoN{position:absolute;top:-7px;right:-7px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:var(--bad);color:#fff;font-size:11.5px;font-weight:800;display:grid;place-items:center;border:2px solid var(--bg)}
+.sinoP{position:absolute;right:0;top:calc(100% + 8px);width:min(380px,92vw);max-height:70vh;overflow:auto;background:var(--bg2);border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.55);z-index:70;padding:6px}
+.sinoH{font-weight:800;padding:10px 10px 8px;display:flex;align-items:center;gap:8px}
+.sinoI{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:0;border-radius:10px;padding:10px;color:var(--tx);cursor:pointer;font:inherit}.sinoI:hover{background:var(--card2)}
+.sinoI small{display:block;color:var(--tx2);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sinoIc{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:none;background:var(--card2)}.sinoIc.bad{background:rgba(239,68,68,.18)}.sinoIc.warn{background:rgba(245,158,11,.18)}.sinoIc.ac{background:rgba(59,130,246,.18)}
 /* atualização */
 .upd ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
 .updBar{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:70;background:var(--card2);border:1px solid var(--ac);border-radius:12px;padding:10px 14px;display:flex;gap:12px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.5);flex-wrap:wrap;max-width:calc(100% - 24px)}
@@ -282,6 +290,7 @@ body.tv .msTit{font-size:30px}
       <span class="clock" id="clock"></span>
       <span class="sp"></span>
       <div class="avs hidem" id="hdrOnline" title="Online agora"></div>
+      <div class="sinoW"><button class="btn sm sino" id="btnSino" title="Notificações">🔔<span class="sinoN" id="sinoN" hidden></span></button><div class="sinoP" id="sinoP" hidden></div></div>
       <button class="btn sm notv hidem" id="btnTv" title="Modo TV (tela cheia)">⛶ TV</button>
       <div id="hdrUser"></div>
     </header>
@@ -706,6 +715,7 @@ function renderHeader() {
   $$("[data-perfil]").forEach(b => b.onclick = () => abrirPerfil(b.dataset.perfil));
   $("#bEntrar") && ($("#bEntrar").onclick = abrirLogin);
   typeof atualizarFab === "function" && atualizarFab();
+  typeof atualizarSino === "function" && atualizarSino();
 }
 /* regra: cliente que não é ouro é prata */
 function normalizarClientes() { for (const c of Object.values(T("cliente"))) if (c && c.categoria !== "ouro" && c.categoria !== "prata") c.categoria = "prata"; }
@@ -933,6 +943,37 @@ function alertaAtrasos(forcar) {
   });
   if (document.body.classList.contains("tv")) setTimeout(() => { if ($("#modalRoot .atrTop")) fechaModal(); }, 45000);   // na TV fecha sozinho
 }
+/* ---------- central de notificações (sino) ---------- */
+function notificacoes() {
+  const n = [];
+  for (const m of missoesFonte()) { const oc = ocorrencia(m); if (missaoVencida(m, oc)) { const a = diasEntre(oc, hoje()); n.push({ ic: "📣", cor: "warn", t: m.titulo, s: (m.cliente ? m.cliente + " · " : "") + (a > 0 ? a + " dia" + (a > 1 ? "s" : "") + " sem realizar" : "hoje às " + (m.hora || "")), go: () => { LS.set("pm_miss_ack", {}); checarMissoes(); } }); } }
+  if (S.me) {
+    const r = resumoAtrasos(); if (r.length) n.push({ ic: "⚠️", cor: "bad", t: `${r.length} cliente${r.length > 1 ? "s" : ""} com OS atrasada`, s: `maior atraso: ${r[0].max} dia${r[0].max > 1 ? "s" : ""} · ${r[0].cliente}`, go: () => alertaAtrasos(true) });
+    const cn = chatNaoLidas(); if (cn) n.push({ ic: "💬", cor: "ac", t: `${cn} mensage${cn > 1 ? "ns" : "m"} nova${cn > 1 ? "s" : ""} no chat`, s: (chatMsgs().slice(-1)[0] || {}).nome || "", go: () => abrirChat(true) });
+    if (isAdmin()) {
+      const pd = pedidos().length, mq = maqPend().length;
+      if (pd) n.push({ ic: "🔐", cor: "warn", t: `${pd} pedido${pd > 1 ? "s" : ""} de acesso`, s: pedidos().map(u => u.nome).join(", "), go: () => abrirPedidos() });
+      if (mq) n.push({ ic: "💻", cor: "warn", t: `${mq} máquina${mq > 1 ? "s" : ""} pedindo autorização`, s: maqPend().map(m => m.pessoa + " · " + (m.nome || "")).join(", "), go: () => abrirPedidos() });
+      try { const h = hoje(), hm = agoraHM(); const tp = tarefasDoDia(h).filter(t => t.hora && t.hora <= hm && !feito(h, t.id)); if (tp.length) n.push({ ic: "✅", cor: "ac", t: `${tp.length} tarefa${tp.length > 1 ? "s" : ""} do checklist pendente${tp.length > 1 ? "s" : ""}`, s: tp.map(t => t.hora + " " + t.titulo).slice(0, 3).join(" · "), go: () => { admTab = "checklist"; go("admin"); } }); } catch {}
+    }
+  } else if (S.pub && S.pub.atrasadas) n.push({ ic: "⚠️", cor: "bad", t: `${S.pub.atrasadas} OS atrasada${S.pub.atrasadas > 1 ? "s" : ""}`, s: "Entre para ver os detalhes", go: () => abrirLogin() });
+  return n;
+}
+function atualizarSino() {
+  const b = $("#sinoN"); if (!b) return; const n = notificacoes(); S._notif = n;
+  b.hidden = !n.length; b.textContent = n.length > 99 ? "99+" : n.length; $("#btnSino").classList.toggle("tem", !!n.length);
+  if (!$("#sinoP").hidden) desenharSino();
+}
+function desenharSino() {
+  const p = $("#sinoP"); const n = S._notif || notificacoes();
+  p.innerHTML = `<div class="sinoH">🔔 Notificações <span class="pill">${n.length}</span></div>${n.length ? n.map((x, i) => `<button class="sinoI" data-ni="${i}"><span class="sinoIc ${x.cor}">${x.ic}</span><span style="flex:1;min-width:0"><b>${esc(x.t)}</b><small>${esc(x.s || "")}</small></span>›</button>`).join("") : '<div class="empty" style="margin:10px">Nada novo por aqui 👍</div>'}`;
+  $$("[data-ni]", p).forEach(b => b.onclick = () => { p.hidden = true; n[+b.dataset.ni].go(); });
+}
+document.addEventListener("click", e => {
+  if (e.target.closest("#btnSino")) { const p = $("#sinoP"); p.hidden = !p.hidden; if (!p.hidden) { S._notif = notificacoes(); desenharSino(); } return; }
+  if (!e.target.closest("#sinoP")) { const p = $("#sinoP"); if (p) p.hidden = true; }
+});
+setInterval(() => typeof atualizarSino === "function" && atualizarSino(), 30000);
 /* ---------- perfil (clique na bolinha) ---------- */
 function abrirPerfil(id) {
   const u = userById(id) || (S.me && S.me.id === id ? S.me : null); if (!u) return;
@@ -2039,7 +2080,7 @@ function checarLembretes() {
    ============================================================ */
 const APP_VERSAO = "2026.11.19-5";
 const NOVIDADES = [
-  { v: "2026.11.19-5", data: "19/11/2026", itens: ["🔔 Horários do aviso livres: adicione quantos quiser em cada missão", "🟢 Dashboard ao vivo: atualiza sozinho a cada 20 s e na hora em que alguém muda algo", "📺 Modo TV fica lembrado e a tela não apaga"] },
+  { v: "2026.11.19-5", data: "19/11/2026", itens: ["🔔 Sino de notificações no topo, com o número do que precisa de atenção", "🔔 Horários do aviso livres: adicione quantos quiser em cada missão", "🟢 Dashboard ao vivo: atualiza sozinho a cada 20 s e na hora em que alguém muda algo", "📺 Modo TV fica lembrado e a tela não apaga"] },
   { v: "2026.11.19-4", data: "19/11/2026", itens: ["📌 Missões: em cada cliente (ou livres), com data, horário e repetição", "📣 Aviso grande na tela para todos, de manhã e à tarde, até ser realizado", "✅ Só o administrador (ou quem ele autorizar) marca como realizado; os outros podem dar Ciente"] },
   { v: "2026.11.19-3", data: "19/11/2026", itens: ["🔔 Pop-up de atrasos: quantos clientes estão atrasados e há quantos dias (ao abrir, depois de importar e quando mudar)", "⚠️ Depois de importar as OS, o app abre o Dashboard com quem está atrasado e há quantos dias", "📅 Tempo em aberto agora conversa com o atraso: sem data de abertura no Inside, ela é estimada pela data de entrega"] },
   { v: "2026.11.19-2", data: "19/11/2026", itens: ["💬 Chat da equipe: botão flutuante que você arrasta para onde quiser", "📝 Anotações dentro do chat (só suas ou compartilhadas com a equipe)", "🚀 Este aviso: sempre que sair uma atualização, todo mundo vê o que mudou", "🟢🟡🔴 Dias em aberto de cada OS em destaque: verde até 2 dias, amarelo de 3 a 4, vermelho acima de 4", "🥈 Cliente que não é ouro agora é prata (bronze saiu)", "📷 Fotos da equipe: clique na foto para trocar, enquadrar o rosto, dar zoom e girar", "👤 Clique na sua bolinha (ou na de quem está online) para ver o perfil e trocar a foto", "📊 Novo Dashboard com gráficos: quem tem só o link vê apenas ele; o resto exige login", "🔐 Pedido de acesso: quem quiser entrar pede, e o administrador autoriza ou recusa", "🏗️ Atalho Projetos no menu, que abre o app de projetos", "👆 Os cartões (OS abertas, em execução, concluídas, atrasadas, ouro/prata e faixas de dias) são clicáveis e abrem a lista certa", "🔷 Nova logo BASE: clique nela (no topo) para voltar à página principal", "🦅 Marca Protemaxi Segurança no Dashboard", "⚠️ Depois de importar as OS, o app abre o Dashboard com a lista de quem está atrasado e há quantos dias", "💻 Cada computador ou celular precisa ser autorizado pelo administrador; em Admin → Máquinas você vê quem está logado e em qual máquina"] },
@@ -2138,7 +2179,7 @@ function marcarLido() { if (!S.me) return; const ult = chatMsgs().slice(-1)[0]; 
 function atualizarFab() {
   const f = $("#chatFab"); if (!f) return;
   f.style.display = S.me ? "" : "none"; if (!S.me && CH.aberto) { CH.aberto = false; $("#chatPan").hidden = true; }
-  const n = chatNaoLidas(); const b = f.querySelector(".fabN"); b.hidden = !n; b.textContent = n > 99 ? "99+" : n;
+  const n = chatNaoLidas(); const b = f.querySelector(".fabN"); b.hidden = !n; b.textContent = n > 99 ? "99+" : n; typeof atualizarSino === "function" && setTimeout(atualizarSino, 0);
   f.classList.toggle("on", CH.aberto);
 }
 function desenharPainelChat() {
