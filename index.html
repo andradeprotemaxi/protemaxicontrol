@@ -579,9 +579,15 @@ function badgeAtraso(o) {
   if (a === 0) return `<span class="late l1" title="Vence hoje">hoje</span>`;
   return `<span class="late ${a >= 5 ? "l3" : "l2"}" title="${a} dia(s) de atraso">+${a}</span>`;
 }
+function palpiteCliente(nome) {
+  const k = s => norm(s).replace(/[^a-z0-9]/g, ""); const a = k(nome); if (a.length < 4) return null;
+  let best = null, bl = 3;
+  for (const c of lista("cliente")) { const b = k(c.nome); let i = 0; while (i < a.length && i < b.length && a[i] === b[i]) i++; if (i > bl || (i === bl && best && b.length < k(best.nome).length)) { bl = i; best = c; } }
+  return bl >= 4 ? best : null;
+}
 function clienteDe(nome) {
   const n = norm(nome); if (!n) return null; const cl = lista("cliente");
-  return cl.find(c => norm(c.nome) === n) || cl.find(c => c.codigo && norm(c.codigo) === n) || cl.find(c => c.grupo && norm(c.grupo) === n)
+  return cl.find(c => norm(c.nome) === n) || cl.find(c => (c.apelidos || []).some(a => norm(a) === n)) || cl.find(c => c.codigo && norm(c.codigo) === n) || cl.find(c => c.grupo && norm(c.grupo) === n)
     || cl.find(c => { const a = norm(c.nome); return a.length > 5 && n.length > 5 && (a.includes(n) || n.includes(a)); }) || null;
 }
 const tierDe = nome => clienteDe(nome)?.categoria || "";
@@ -1138,8 +1144,10 @@ function abrirOS(id) {
     return;
   }
   const fs = OSF();
-  const cli = o.cliente ? clienteDe(o.cliente) : null; const ppOk = cli && pode("clientes");
-  const ppHtml = !o.cliente ? "" : ppOk ? popupForm(cli.popup).replace('<div class="ppBox" id="ppBox">', `<div class="ppBox" id="ppBox" style="margin-top:16px"><div class="muted" style="font-size:12.5px;margin-bottom:8px">Vale para todas as OS de <b>${esc(cli.nome)}</b> (fica salvo no cliente).</div>`)
+  const cli0 = o.cliente ? clienteDe(o.cliente) : null; const sem = o.cliente && !cli0 && pode("clientes"); const palp = sem ? palpiteCliente(o.cliente) : null;
+  const cli = cli0 || (sem ? { id: null, nome: o.cliente, popup: null } : null); const ppOk = cli && pode("clientes");
+  const ppHtml = !o.cliente ? "" : sem ? popupForm(null).replace('<div class="ppBox" id="ppBox">', `<div class="ppBox" id="ppBox" style="margin-top:16px"><div class="ppRow" style="margin-top:0"><b>Cliente do popup</b><input class="in" data-pplink list="dlCli" value="${esc(palp ? palp.nome : "")}" placeholder="vazio = criar cadastro novo com o nome desta OS" style="flex:1;min-width:260px"></div><div class="muted" style="font-size:12.5px;margin-bottom:8px">“${esc(o.cliente)}” não está ligado a nenhum cliente cadastrado.${palp ? ` Parece ser <b>${esc(palp.nome)}</b>, confira.` : ""} Ao salvar o popup, esta OS fica ligada ao cliente escolhido (ou é criado um cadastro novo).</div>`)
+    : ppOk ? popupForm(cli.popup).replace('<div class="ppBox" id="ppBox">', `<div class="ppBox" id="ppBox" style="margin-top:16px"><div class="muted" style="font-size:12.5px;margin-bottom:8px">Vale para todas as OS de <b>${esc(cli.nome)}</b> (fica salvo no cliente).</div>`)
     : cli ? (cli.popup && cli.popup.modo && cli.popup.modo !== "padrao" ? `<div class="ppBox" style="margin-top:16px"><h3>🔔 Popup</h3><div class="ppRes">${esc(popupResumo(cli.popup))}</div></div>` : "")
     : `<div class="ppBox" style="margin-top:16px"><h3>🔔 Popup</h3><div class="ppRes">Este cliente ainda não está cadastrado em Clientes. Cadastre para configurar o popup.</div></div>`;
   modal({
@@ -1157,7 +1165,15 @@ function abrirOS(id) {
         if (pp) {
           if (pp.modo === "personalizado" && !pp.horarios.length) throw new Error("Popup: adicione pelo menos um horário");
           if (pp.modo === "personalizado" && !pp.dias.length && !pp.datas.length) throw new Error("Popup: marque pelo menos um dia da semana ou uma data");
-          const dc = { ...T("cliente")[cli.id], popup: pp }; delete dc.id; await salvar("cliente", cli.id, dc); setTimeout(checarPopupClientes, 300);
+          if (cli.id) { const dc = { ...T("cliente")[cli.id], popup: pp }; delete dc.id; await salvar("cliente", cli.id, dc); }
+          else {
+            const lk = (r.querySelector("[data-pplink]")?.value || "").trim(); const alvo = lk ? lista("cliente").find(c => norm(c.nome) === norm(lk)) : null;
+            if (lk && !alvo) throw new Error("Popup: escolha um cliente da lista ou deixe o campo vazio para criar um novo");
+            const nomeOS = d.cliente || o.cliente;
+            if (alvo) { const dc = { ...T("cliente")[alvo.id], popup: pp, apelidos: [...new Set([...(T("cliente")[alvo.id].apelidos || []), nomeOS])] }; delete dc.id; await salvar("cliente", alvo.id, dc); }
+            else await salvar("cliente", "c_" + uid(), { nome: nomeOS, categoria: "prata", popup: pp });
+          }
+          setTimeout(checarPopupClientes, 300);
         }
         await salvar("os", nid, d); toast(pp ? "OS e popup salvos" : "OS salva", "ok");
       } }
@@ -1229,6 +1245,7 @@ function abrirCliente(id) {
   modal({
     titulo: id ? esc(c.nome) : "Novo cliente", wide: true,
     corpo: (ed ? popupForm(c.popup) : c.popup && c.popup.modo && c.popup.modo !== "padrao" ? `<div class="ppBox"><h3>🔔 Popup</h3><div class="ppRes">${esc(popupResumo(c.popup))}</div></div>` : "")
+      + ((c.apelidos || []).length ? `<div class="muted" style="font-size:12.5px;margin:-6px 0 12px">No Inside também aparece como: <b>${(c.apelidos || []).map(esc).join("</b>, <b>")}</b></div>` : "")
       + (ed ? campos(CLF, c) + datalist("dlGrp", lista("cliente").map(x => x.grupo)) : `<div class="form">${CLF.map(f => `<label class="${f.full ? "full" : ""}">${f.l}<div style="color:var(--tx);font-weight:500">${esc(c[f.k] || "—")}</div></label>`).join("")}</div>`)
       + (id ? (() => { const ms = lista("missao").filter(m => norm(m.cliente) === norm(c.nome)); return `<h3 style="margin:18px 0 8px;font-size:14px;display:flex;align-items:center;gap:8px">📌 Missões / comandos deste cliente (${ms.length})<span class="sp" style="flex:1"></span>${podeMissao() ? `<button class="btn sm pri" id="cMsN" type="button">+ Adicionar comando</button>` : ""}</h3><div id="cMs">${ms.length ? ms.map(m => linhaMissao(m, true)).join("") : '<div class="muted">Nenhuma missão para este cliente. Ex.: manutenção mensal, teste de sensor de fumaça…</div>'}</div>`; })() : "")
       + (hist.length ? `<h3 style="margin:18px 0 8px;font-size:14px">Histórico de OS (${hist.length})</h3>${tabelaOS(hist.slice(0, 30))}` : ""),
@@ -2222,8 +2239,9 @@ function checarLembretes() {
    ATUALIZAÇÕES — pop-up de novidades para toda a equipe
    (a cada versão nova: troque APP_VERSAO e acrescente no topo de NOVIDADES)
    ============================================================ */
-const APP_VERSAO = "2026.11.19-9";
+const APP_VERSAO = "2026.11.19-10";
 const NOVIDADES = [
+  { v: "2026.11.19-10", data: "19/11/2026", itens: ["🔗 Popup em todas as OS: quando o nome do Inside é diferente do cadastro (ex.: BRAZIL LIMP x BRAZLIMP), você liga a OS ao cliente certo na própria tela da OS"] },
   { v: "2026.11.19-9", data: "19/11/2026", itens: ["🔔 Popup também dentro de Editar OS: ajuste os dias, as datas e os horários do aviso do cliente sem sair da OS"] },
   { v: "2026.11.19-8", data: "19/11/2026", itens: ["🔔 Botão Popup em cada cliente da lista: abre direto os dias, as datas e os horários do aviso", "⬆️ No perfil do cliente, o Popup agora fica no topo"] },
   { v: "2026.11.19-7", data: "19/11/2026", itens: ["🔔 Popup em cada cliente: escolha os dias da semana (ex.: Seg, Qua e Sex), datas avulsas, os horários (quantas vezes por dia) e a partir de quantos dias em aberto o aviso aparece", "🔕 Dá para desligar o aviso de um cliente ou deixar no padrão (aviso geral de atraso)", "🏢 O aviso mostra o cliente, quantas OS estão em aberto e há quantos dias"] },

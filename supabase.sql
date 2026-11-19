@@ -499,7 +499,7 @@ returns json language sql stable security definer set search_path = public as $$
     'os', (select coalesce(jsonb_agg((r.dados - 'valor' - 'orcamento') || jsonb_build_object('id', r.id)), '[]'::jsonb) from public.registros r
            where r.tipo = 'os' and (coalesce(r.dados->>'status','') in ('aberta','execucao')
              or (r.dados->>'conclusao' ~ '^\d{4}-\d{2}-\d{2}' and left(r.dados->>'conclusao',10)::date >= p.hoje - 30))),
-    'clientes', (select coalesce(jsonb_agg(jsonb_build_object('id', r.id, 'nome', r.dados->>'nome', 'categoria', r.dados->>'categoria', 'grupo', r.dados->>'grupo', 'popup', r.dados->'popup')), '[]'::jsonb)
+    'clientes', (select coalesce(jsonb_agg(jsonb_build_object('id', r.id, 'nome', r.dados->>'nome', 'categoria', r.dados->>'categoria', 'grupo', r.dados->>'grupo', 'popup', r.dados->'popup', 'apelidos', r.dados->'apelidos')), '[]'::jsonb)
            from public.registros r where r.tipo = 'cliente'),
     'config', (select dados from public.registros where tipo = 'config' and id = 'geral'),
     'missoes', (select coalesce(jsonb_agg(r.dados || jsonb_build_object('id', r.id)), '[]'::jsonb) from public.registros r
