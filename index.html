@@ -447,8 +447,16 @@ const Supa = {
     this.sb = supabase.createClient(SB.url, SB.key, { auth: { persistSession: false } });
   },
   syncAt: null,
+  aplicarPub(d) {
+    S.pub = d; S.ultSync = Date.now();
+    if (S.me || !Array.isArray(d.os)) return;
+    const os = {}; for (const o of d.os) { const { id, ...x } = o; os[id] = x; }
+    const cl = {}; for (const c of d.clientes || []) { const { id, ...x } = c; cl[id] = x; }
+    const ms = {}; for (const m of d.missoes || []) { const { id, ...x } = m; ms[id] = x; }
+    S.db = { ...S.db, os, cliente: cl, missao: ms, config: { geral: d.config || {} } };
+  },
   async loadAll() {
-    if (!S.me || !S.pin) { const { data, error } = await this.sb.rpc("rpc_publico"); if (error) throw error; S.pub = data; return { users: [], regs: {} }; }
+    if (!S.me || !S.pin) { const { data, error } = await this.sb.rpc("rpc_publico"); if (error) throw error; S.db = {}; this.aplicarPub(data); return { users: [], regs: S.db }; }
     const { data, error } = await this.sb.rpc("rpc_sync", { p_login: S.me.login, p_pin: pinDev(), p_desde: null }); if (error) throw error;
     const regs = {}; for (const r of data.regs) (regs[r.tipo] ||= {})[r.id] = r.dados; this.syncAt = data.agora;
     const { data: us, error: e2 } = await this.sb.rpc("rpc_usuarios", { p_login: S.me.login, p_pin: pinDev() }); if (e2) throw e2;
@@ -499,7 +507,7 @@ const Supa = {
     if (isAdmin()) { const pm = async () => { try { S.maquinas = await this.maquinas(); checarPedidos(); if (S.route === "admin" && admTab === "maquinas") softRender(); } catch {} }; pm(); setInterval(pm, 30000); }
     if (S.me) setInterval(async () => { try { const { data } = await this.sb.rpc("rpc_usuarios", { p_login: S.me.login, p_pin: pinDev() }); if (data) { S.users = data; renderHeader(); checarPedidos(); if (S.route === "admin") softRender(); } } catch {} }, 45000);
   },
-  async publico() { try { const { data } = await this.sb.rpc("rpc_publico"); if (data) { S.pub = data; S.ultSync = Date.now(); if (S.route === "dashboard") softRender(); checarMissoes(); } } catch {}
+  async publico() { try { const { data } = await this.sb.rpc("rpc_publico"); if (data) { this.aplicarPub(data); if (S.route === "dashboard" || S.route === "os") softRender(); checarMissoes(); } } catch {}
   },
   presence: {
     async track() { if (Supa.ch) { try { await Supa.ch.untrack(); } catch {} location.reload(); } },
@@ -666,7 +674,7 @@ function abrirLogin() {
     corpo: `${API === Local ? `<div class="hint warn">Modo local (demonstração): usuário <b>andrade</b>, PIN <b>1234</b>. Troque o PIN na área Admin.</div>` : ""}
       <div class="form"><label class="full">Usuário<input class="in" name="login" autocomplete="username" autocapitalize="none"></label>
       <label class="full">PIN<input class="in" name="pin" type="password" inputmode="numeric" autocomplete="current-password"></label></div>
-      <p class="muted" style="margin:12px 0 0">Sem login você vê só o dashboard. Ainda não tem acesso? <a href="#" id="lSol">Solicitar acesso</a></p>`,
+      <p class="muted" style="margin:12px 0 0">Sem login você vê o dashboard e as OS, só para consulta. Ainda não tem acesso? <a href="#" id="lSol">Solicitar acesso</a></p>`,
     botoes: [{ txt: "Entrar", cls: "pri", fn: async r => { await entrar(r.querySelector("[name=login]").value.trim(), r.querySelector("[name=pin]").value.trim()); if (S.me) toast("Bem-vindo, " + S.me.nome + "!", "ok"); } }]
   });
   setTimeout(() => $("#modalRoot [name=login]")?.focus(), 50);
@@ -687,7 +695,7 @@ const ROTAS = [
   ["admin", "Admin", false],
 ];
 function permitido(r) {
-  if (r === "dashboard") return true;
+  if (r === "dashboard" || r === "os") return true;
   if (!S.me) return false;
   if (r === "admin" || r === "arquivos") return isAdmin();
   if (r === "coordenador") return pode("coordenador") || S.me.papel === "coordenador";
@@ -704,7 +712,7 @@ function route() {
 addEventListener("hashchange", route);
 
 function renderNav() {
-  $("#nav").innerHTML = ROTAS.filter(([r]) => S.me ? permitido(r) : r === "dashboard").map(([r, l]) =>
+  $("#nav").innerHTML = ROTAS.filter(([r]) => S.me ? permitido(r) : (r === "dashboard" || r === "os")).map(([r, l]) =>
     `<a href="#${r}" class="${S.route === r ? "on" : ""}">${ico(r)}<span>${l.replace(" Inside / Segware", "")}</span></a>`).join("")
     + (S.me ? (isAdmin() ? `<a href="${LINK_PROJETOS}" target="_blank" rel="noopener">${ico("projetos")}<span>Projetos</span><span class="lock">↗</span></a>` : "") : `<a href="#" id="navLogin">${ico("admin")}<span>Entrar</span></a>`);
   $("#navLogin") && ($("#navLogin").onclick = e => { e.preventDefault(); abrirLogin(); });
@@ -757,12 +765,12 @@ document.addEventListener("click", e => { if (!e.target.closest("#hdrHome, .bran
 /* cartões clicáveis: levam para a área certa já filtrada */
 document.addEventListener("click", e => {
   const k = e.target.closest("#main [data-kgo], #main [data-kcli]"); if (!k) return; e.preventDefault();
-  if (!S.me) { toast("Entre com seu usuário para ver os detalhes"); return abrirLogin(); }
+  if (!S.me && !k.dataset.kgo) { toast("Entre com seu usuário para ver os detalhes"); return abrirLogin(); }
   if (k.dataset.kgo) { F.status = k.dataset.kgo; F.busca = ""; go("os"); } else { FC.tier = k.dataset.kcli; FC.busca = ""; go("clientes"); }
 });
 /* ---------- Dashboard (público: só números e gráficos) ---------- */
 function dadosDash() {
-  if (!S.me && API === Supa) return S.pub;
+  if (!S.me && API === Supa && !Array.isArray(S.pub?.os)) return S.pub;
   const os = lista("os"), at = os.filter(ativa), cl = lista("cliente"), h = hoje(), seg = segunda();
   const serie = []; for (let i = 13; i >= 0; i--) { const d = addDias(h, -i); serie.push({ d, abertas: os.filter(o => (o.abertura || "").slice(0, 10) === d).length, concluidas: os.filter(o => (o.conclusao || "").slice(0, 10) === d).length }); }
   const da = o => diasAberta(o);
@@ -811,15 +819,15 @@ VIEWS.dashboard = el => {
         </div><small class="muted">${k.contas} contas cadastradas</small></div>
     </div>
   </div>
-  ${S.me ? (() => {
+  ${(S.me || Array.isArray(S.pub?.os) || API === Local) ? (() => {
     const at = lista("os").filter(o => (atraso(o) ?? -1) > 0).sort((a, b) => atraso(b) - atraso(a) || (diasAberta(b) ?? 0) - (diasAberta(a) ?? 0));
     return `<div class="card" style="margin-top:16px"><h2>⚠️ Quem está atrasado <span class="pill">${at.length}</span>${at.length ? ` <button class="btn sm" onclick="alertaAtrasos(true)" style="margin-left:6px">🔔 Aviso</button>` : ""}<span class="sp"></span><span class="muted" style="font-weight:500;font-size:12px">atualiza sozinho a cada importação</span></h2>${legendaDias()}
       ${at.length ? `<div class="tbl"><table><thead><tr><th>Aberta há</th><th>Atraso</th><th>Nº</th><th>Cliente</th><th class="hidesm">Serviço</th><th class="hidesm">Técnico</th><th class="hidesm">Prazo</th></tr></thead><tbody>${at.slice(0, 40).map(o => `<tr class="click" data-os="${esc(o.id)}"><td>${badgeDias(o)}</td><td><span class="late ${atraso(o) > 3 ? "l3" : "l2"}">+${atraso(o)}d</span></td><td><b>${esc(o.numero || "—")}</b></td><td>${esc(o.cliente || "—")} ${pillTier(tierDe(o.cliente))}</td><td class="hidesm">${esc(o.servico || "")}</td><td class="hidesm">${esc(o.tecnico || "—")}</td><td class="hidesm">${br(prazoEf(o))}</td></tr>`).join("")}</tbody></table></div>${at.length > 40 ? `<p class="muted">+${at.length - 40} atrasadas… <a href="#" data-kgo="atrasadas">ver todas</a></p>` : ""}` : `<div class="empty">Nenhuma OS atrasada 👏</div>`}</div>`;
   })() : ""}
   ${(() => { const ms = missoesFonte().filter(m => ocorrencia(m)).sort((a, b) => (ocorrencia(a) + (a.hora || "")).localeCompare(ocorrencia(b) + (b.hora || ""))); return (ms.length || podeMissao()) ? `<div class="card" style="margin-top:16px" id="dMs"><h2>📌 Missões <span class="pill">${ms.length}</span><span class="sp"></span>${podeMissao() ? `<button class="btn sm pri" id="dMsN">+ Nova missão</button>` : ""}</h2>${ms.length ? ms.slice(0, 20).map(m => linhaMissao(m, !!S.me)).join("") : '<div class="empty">Nenhuma missão programada.</div>'}</div>` : ""; })()}
   <div class="dashMarca"><img src="protemaxi.png" alt="Protemaxi Segurança"></div>
-  ${!S.me ? `<div class="hint" style="margin-top:16px">🔒 A parte interna (ordens de serviço, clientes, arquivos) é só para quem tem acesso. <a href="#" id="dEnt">Entrar</a> · <a href="#" id="dSol">Solicitar acesso</a></div>` : ""}`;
-  S.me && typeof ligaTabelaOS === "function" && ligaTabelaOS(el);
+  ${!S.me ? `<div class="hint" style="margin-top:16px">🔒 Clientes, arquivos e alterações são só para quem tem acesso. <a href="#" id="dEnt">Entrar</a> · <a href="#" id="dSol">Solicitar acesso</a></div>` : ""}`;
+  typeof ligaTabelaOS === "function" && ligaTabelaOS(el);
   $("#dMs") && ligarMissoes($("#dMs")); $("#dMsN") && ($("#dMsN").onclick = () => abrirMissao(null));
   $("#dEnt") && ($("#dEnt").onclick = e => { e.preventDefault(); abrirLogin(); });
   $("#dSol") && ($("#dSol").onclick = e => { e.preventDefault(); abrirSolicitar(); });
@@ -844,7 +852,7 @@ function ocorrencia(m) {   // próxima data ainda não realizada
 }
 const agoraHM = () => { const d = new Date(); return z(d.getHours()) + ":" + z(d.getMinutes()); };
 const missaoVencida = (m, oc = ocorrencia(m)) => !!oc && (oc < hoje() || (oc === hoje() && agoraHM() >= (m.hora || "00:00")));
-const missoesFonte = () => (API === Supa && !S.me) ? (S.pub?.missoes || []) : lista("missao");
+const missoesFonte = () => (API === Supa && !S.me && !Array.isArray(S.pub?.os)) ? (S.pub?.missoes || []) : lista("missao");
 function abrirMissao(id, base = {}) {
   if (!podeMissao()) return toast("Só o administrador (ou quem ele autorizar) cria e altera missões.", "bad");
   const m = id ? { ...T("missao")[id] } : { data: hoje(), hora: "08:00", repete: "nao", ...base };
@@ -937,7 +945,6 @@ function resumoAtrasos() {
 }
 let _atrT = null;
 function alertaAtrasos(forcar) {
-  if (!S.me) return;
   const r = resumoAtrasos(); if (!r.length) return;
   const os = r.reduce((t, x) => t + x.n, 0), sig = r.length + ":" + os + ":" + r[0].max;
   const ult = LS.get("pm_atr_ult", { sig: "", em: 0 });
@@ -1987,7 +1994,7 @@ function avisoRestrito() {
   if ($("#modalRoot").innerHTML) return;
   modal({
     titulo: "🔐 Acesso restrito",
-    corpo: `<p>Este sistema é de uso interno. Sem login você vê só o <b>Dashboard</b> com os números gerais.</p><p class="muted" style="margin-bottom:0">Para entrar, use seu usuário e PIN. Se ainda não tem acesso, peça autorização ao administrador.</p>`,
+    corpo: `<p>Este sistema é de uso interno. Sem login você vê o <b>Dashboard</b> e as <b>Ordens de serviço</b>, só para consulta.</p><p class="muted" style="margin-bottom:0">Para entrar, use seu usuário e PIN. Se ainda não tem acesso, peça autorização ao administrador.</p>`,
     botoes: [{ txt: "Só ver o dashboard" }, { txt: "Solicitar autorização", fn: () => { setTimeout(abrirSolicitar, 30); } }, { txt: "Entrar", cls: "pri", fn: () => { setTimeout(abrirLogin, 30); } }]
   });
 }
@@ -2098,8 +2105,9 @@ function checarLembretes() {
    ATUALIZAÇÕES — pop-up de novidades para toda a equipe
    (a cada versão nova: troque APP_VERSAO e acrescente no topo de NOVIDADES)
    ============================================================ */
-const APP_VERSAO = "2026.11.19-5";
+const APP_VERSAO = "2026.11.19-6";
 const NOVIDADES = [
+  { v: "2026.11.19-6", data: "19/11/2026", itens: ["👀 Sem login agora dá para ver o Dashboard completo e as Ordens de serviço (só consulta), tudo ao vivo"] },
   { v: "2026.11.19-5", data: "19/11/2026", itens: ["🗂️ Arquivos e Projetos agora só aparecem para o administrador", "🟢 No topo: quantos estão online, quem está logado e quantas telas veem o link", "🔔 Sino de notificações no topo (só para o administrador)", "🔔 Horários do aviso livres: adicione quantos quiser em cada missão", "🟢 Dashboard ao vivo: atualiza sozinho a cada 20 s e na hora em que alguém muda algo", "📺 Modo TV fica lembrado e a tela não apaga"] },
   { v: "2026.11.19-4", data: "19/11/2026", itens: ["📌 Missões: em cada cliente (ou livres), com data, horário e repetição", "📣 Aviso grande na tela para todos, de manhã e à tarde, até ser realizado", "✅ Só o administrador (ou quem ele autorizar) marca como realizado; os outros podem dar Ciente"] },
   { v: "2026.11.19-3", data: "19/11/2026", itens: ["🔔 Pop-up de atrasos: quantos clientes estão atrasados e há quantos dias (ao abrir, depois de importar e quando mudar)", "⚠️ Depois de importar as OS, o app abre o Dashboard com quem está atrasado e há quantos dias", "📅 Tempo em aberto agora conversa com o atraso: sem data de abertura no Inside, ela é estimada pela data de entrega"] },
@@ -2292,6 +2300,7 @@ addEventListener("keydown", e => { if (e.key === "Escape") { document.body.class
   if (S.me) { setTimeout(checarPedidos, 1500); setTimeout(ofereceMigrar, 2500); setTimeout(() => alertaAtrasos(true), 3500); setInterval(() => alertaAtrasos(false), 10 * 60000); }
   if (maqPend) setTimeout(() => aguardarMaquina(...maqPend), 600);
   else if (!S.me && API === Supa && !sessionStorage.getItem("pm_aviso")) setTimeout(avisoRestrito, 700);
+  if (!S.me) { setTimeout(() => alertaAtrasos(true), 4000); setInterval(() => alertaAtrasos(false), 10 * 60000); }
   setTimeout(checarMissoes, 4500); setInterval(checarMissoes, 60000);
   montarChat(); _chatUlt = (chatMsgs().slice(-1)[0] || {}).ts || 0; atualizarFab();
   setTimeout(() => { if (!$("#modalRoot").innerHTML) mostrarNovidades(); }, 900);
