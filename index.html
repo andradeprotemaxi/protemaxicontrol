@@ -215,7 +215,7 @@ body.tv .kpi .v{font-size:60px}
 .avXL img{width:100%;height:100%;border-radius:50%;object-fit:cover}.avXL .dot{position:absolute;right:6px;bottom:6px;width:20px;height:20px;border-radius:50%;border:3px solid var(--bg2);background:#64748b}.avXL .dot.on{background:var(--ok)}
 .kgo{cursor:pointer;transition:transform .12s,border-color .12s}.kgo:hover{transform:translateY(-2px);border-color:var(--ac)}
 .kpi.kgo::after{content:"ver →";position:absolute;right:14px;bottom:12px;font-size:12px;color:var(--tx3)}.fx.kgo{border-radius:8px;padding:2px 4px;margin-left:-4px;border:1px solid transparent}
-.hdrHome{display:inline-flex;margin-right:4px;border-radius:10px;flex:none}.hdrHome img{width:38px;height:38px;border-radius:10px;display:block;box-shadow:0 0 12px rgba(59,130,246,.45);transition:transform .15s}.hdrHome:hover img{transform:scale(1.08)}
+.hdrHome{display:inline-flex;margin-right:4px;border-radius:10px;flex:none}.hdrHome img{width:40px;height:40px;border-radius:10px;display:block;box-shadow:0 0 12px rgba(59,130,246,.45);transition:transform .15s}.hdrHome:hover img{transform:scale(1.08)}
 .brandLk{display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none}.brandLk img{width:40px;height:40px;border-radius:10px}.brandLk small{display:block}
 .dashMarca{display:flex;justify-content:center;margin:28px 0 8px}.dashMarca img{width:min(340px,80%);height:auto;filter:drop-shadow(0 8px 24px rgba(0,0,0,.45))}
 body.tv .dashMarca img{width:min(260px,40%)}
@@ -246,7 +246,7 @@ body.tv .msTit{font-size:30px}
 .sinoI small{display:block;color:var(--tx2);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sinoIc{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:none;background:var(--card2)}.sinoIc.bad{background:rgba(239,68,68,.18)}.sinoIc.warn{background:rgba(245,158,11,.18)}.sinoIc.ac{background:rgba(59,130,246,.18)}
 .conChip{display:inline-flex;align-items:center;gap:6px;margin-right:8px;font-weight:700}
-.onU{align-items:center;gap:6px;height:38px;width:128px;padding:2px 10px 2px 2px;border:1px solid var(--line);border-radius:999px;background:var(--card);box-sizing:border-box}.onU .av{width:32px;height:32px}.onNm{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.onU{align-items:center;gap:6px;height:40px;width:132px;padding:2px 10px 2px 2px;border:1px solid var(--line);border-radius:999px;background:var(--card);box-sizing:border-box}.onU .av{width:34px;height:34px}.onNm{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .avs .onU+.onU{margin-left:0}.avs .onU .av{margin-left:0!important}
 header{flex-wrap:wrap;row-gap:6px}.onBar{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.onBar:empty{display:none}
 /* atualização */
@@ -712,11 +712,11 @@ function renderNav() {
   $("#modo").innerHTML = (API === Supa ? "● Conectado ao banco online" : "● Modo local (só neste navegador)") + "<br><span style=\"opacity:.7\">Desenvolvido por </span><b style=\"color:#fff\">Andrade</b><span style=\"opacity:.7\"> · <a href=\"#\" onclick=\"mostrarNovidades(true);return false\" style=\"color:inherit\">novidades</a></span>";
 }
 function renderHeader() {
-  const onl = S.me ? Object.keys(S.online).filter(id => id !== S.me.id).map(userById).filter(Boolean) : [];
+  const onl = S.me ? [userById(S.me.id) || S.me, ...Object.keys(S.online).filter(id => id !== S.me.id).map(userById).filter(Boolean)] : [];
   const nCon = Object.keys(S.online).length + (S.visOn || []).length;
   $("#hdrOnline").innerHTML = onl.slice(0, 6).map(u => `<span class="avBtn onU" data-perfil="${esc(u.id)}" title="${esc(u.nome)} — online">${av(u)}<span class="onNm">${esc(String(u.nome || "").split(" ")[0])}</span></span>`).join("") + (onl.length > 6 ? `<span class="muted" style="margin-left:6px">+${onl.length - 6}</span>` : "");
   $("#hdrUser").innerHTML = S.me
-    ? `<div style="display:flex;align-items:center;gap:8px"><span class="avBtn" data-perfil="${esc(S.me.id)}" title="Meu perfil">${av(userById(S.me.id) || S.me)}</span><span class="hidesm" style="font-weight:600">${esc(S.me.nome.split(" ")[0])}</span></div>`
+    ? ""
     : `<button class="btn pri sm" id="bEntrar">Entrar</button>`;
   $("#hdrSair").innerHTML = S.me ? `<button class="btn sm" id="bSair">Sair</button>` : "";
   $("#bSair") && ($("#bSair").onclick = sair);
