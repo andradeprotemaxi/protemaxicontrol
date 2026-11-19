@@ -236,6 +236,7 @@ body.tv .dashMarca img{width:min(260px,40%)}
 .msBt{display:flex;gap:8px;flex-wrap:wrap}.msBt .btn{padding:12px 16px;font-size:15px;font-weight:700}
 body.tv .msTit{font-size:30px}
 .aoVivo{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--tx2);margin:-4px 0 12px}.dotV{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(34,197,94,.6);animation:pulse 2s infinite}
+.avBox{grid-column:1/-1;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px}#avL{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}.avIt{display:flex;gap:4px;align-items:center}.avIt .in{width:130px}
 /* atualização */
 .upd ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
 .updBar{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:70;background:var(--card2);border:1px solid var(--ac);border-radius:12px;padding:10px 14px;display:flex;gap:12px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.5);flex-wrap:wrap;max-width:calc(100% - 24px)}
@@ -836,7 +837,8 @@ function abrirMissao(id, base = {}) {
       <label class="full">Cliente (opcional)<input class="in" name="cliente" list="dlMc" value="${esc(m.cliente || "")}" placeholder="ex.: Instituto…"></label>
       <label>Data<input class="in" type="date" name="data" value="${esc(m.data || hoje())}"></label>
       <label>Horário<input class="in" type="time" name="hora" value="${esc(m.hora || "08:00")}"></label>
-      <label class="full">Horários do aviso na tela (pop-up)<div class="opRow">${[0, 1, 2, 3].map(i => `<input class="in" type="time" name="av${i}" value="${esc((m.avisos || ["08:00", "14:00"])[i] || "")}">`).join("")}</div><small class="muted">No dia da missão o 1º aviso sai no horário dela; nos dias seguintes, nestes horários. Deixe vazio o que não quiser.</small></label>
+      <div class="full avBox"><div style="font-weight:600;margin-bottom:6px">🔔 Horários do aviso na tela (pop-up) — escolha quantos quiser</div><div id="avL">${(m.avisos || []).map(h => `<span class="avIt"><input class="in" type="time" data-av value="${esc(h)}"><button type="button" class="btn sm" data-avrm title="Tirar">✕</button></span>`).join("")}</div>
+        <button type="button" class="btn sm" id="avAdd">+ Adicionar horário</button><small class="muted" style="display:block;margin-top:6px">Sem nenhum horário, o aviso sai todo dia no horário da missão.</small></div>
       <label>Lembrar até<select class="in" name="lembrar">${[["0", "Até realizar"], ["1", "1 dia depois"], ["2", "2 dias depois"], ["3", "3 dias depois"], ["7", "7 dias depois"], ["-1", "Só no dia"]].map(([v, l]) => `<option value="${v}" ${String(m.lembrar ?? "0") === v ? "selected" : ""}>${l}</option>`).join("")}</select></label>
       <label>Repetir<select class="in" name="repete">${Object.entries(REPETE).map(([k, l]) => `<option value="${k}" ${m.repete === k ? "selected" : ""}>${l}</option>`).join("")}</select></label>
       <label>Situação<select class="in" name="ativo"><option value="1">Ativa</option><option value="0" ${m.ativo === false ? "selected" : ""}>Pausada</option></select></label>
@@ -848,12 +850,15 @@ function abrirMissao(id, base = {}) {
       ...(id ? [{ txt: "Excluir", cls: "bad", fn: async () => { if (!await confirma("Excluir esta missão?")) return false; await excluir("missao", id); } }] : []),
       { txt: "Salvar missão", cls: "pri", fn: async r => {
         const g = n => r.querySelector(`[name=${n}]`).value.trim();
-        const d = { ...m, titulo: g("titulo"), cliente: g("cliente"), data: g("data"), hora: g("hora") || "08:00", repete: g("repete"), ativo: g("ativo") === "1", obs: g("obs"), avisos: [0, 1, 2, 3].map(i => g("av" + i)).filter(Boolean).sort(), lembrar: +g("lembrar"), por: m.por || S.me.nome, criado: m.criado || new Date().toISOString() };
+        const d = { ...m, titulo: g("titulo"), cliente: g("cliente"), data: g("data"), hora: g("hora") || "08:00", repete: g("repete"), ativo: g("ativo") === "1", obs: g("obs"), avisos: [...new Set($$("[data-av]", r).map(i => i.value).filter(Boolean))].sort(), lembrar: +g("lembrar"), por: m.por || S.me.nome, criado: m.criado || new Date().toISOString() };
         if (!d.titulo) throw new Error("Escreva o que precisa ser feito"); if (!d.data) throw new Error("Escolha a data");
         if (id && (d.data !== T("missao")[id].data || d.repete !== T("missao")[id].repete)) { d.feito = false; }
         delete d.id; await salvar("missao", id || "m_" + uid(), d); toast("Missão salva", "ok"); setTimeout(checarMissoes, 300);
       } }]
   });
+  const avL = $("#avL"); const liga = () => $$("[data-avrm]", avL).forEach(b => b.onclick = () => b.parentElement.remove());
+  $("#avAdd").onclick = () => { const sp = document.createElement("span"); sp.className = "avIt"; sp.innerHTML = `<input class="in" type="time" data-av><button type="button" class="btn sm" data-avrm title="Tirar">✕</button>`; avL.appendChild(sp); liga(); sp.querySelector("input").focus(); };
+  liga();
 }
 async function realizarMissao(id) {
   if (!podeMissao()) return toast("Só o administrador (ou quem ele autorizar) marca como realizado.", "bad");
@@ -865,7 +870,7 @@ async function realizarMissao(id) {
 function linhaMissao(m, comBotoes) {
   const oc = ocorrencia(m); const venc = missaoVencida(m, oc); const atr = oc ? diasEntre(oc, hoje()) : 0;
   const st = !oc ? (m.ativo === false ? '<span class="pill">Pausada</span>' : '<span class="pill concluida">Concluída</span>') : venc ? `<span class="pill cancelada">${atr > 0 ? "Atrasada " + atr + " dia" + (atr > 1 ? "s" : "") : "Hoje"}</span>` : oc === hoje() ? `<span class="pill aberta">Hoje ${esc(m.hora || "")}</span>` : `<span class="pill">${br(oc)} ${esc(m.hora || "")}</span>`;
-  return `<div class="msL ${venc ? "venc" : ""}" ${podeMissao() && m.id ? `data-med="${esc(m.id)}"` : ""}><div style="flex:1;min-width:0"><b>📌 ${esc(m.titulo)}</b><div class="muted" style="font-size:12.5px">${m.cliente ? esc(m.cliente) + " · " : ""}${REPETE[m.repete || "nao"]}${oc ? " · " + br(oc) + " às " + esc(m.hora || "") : ""} · 🔔 ${esc((m.avisos && m.avisos.length ? m.avisos : ["08:00", "14:00"]).join(", "))}</div></div>${st}${comBotoes && venc && podeMissao() ? `<button class="btn sm ok" data-mok="${esc(m.id)}">✅ Realizado</button>` : ""}</div>`;
+  return `<div class="msL ${venc ? "venc" : ""}" ${podeMissao() && m.id ? `data-med="${esc(m.id)}"` : ""}><div style="flex:1;min-width:0"><b>📌 ${esc(m.titulo)}</b><div class="muted" style="font-size:12.5px">${m.cliente ? esc(m.cliente) + " · " : ""}${REPETE[m.repete || "nao"]}${oc ? " · " + br(oc) + " às " + esc(m.hora || "") : ""} · 🔔 ${esc((m.avisos && m.avisos.length ? m.avisos : [m.hora || ""]).join(", "))}</div></div>${st}${comBotoes && venc && podeMissao() ? `<button class="btn sm ok" data-mok="${esc(m.id)}">✅ Realizado</button>` : ""}</div>`;
 }
 function ligarMissoes(root) {
   $$("[data-med]", root).forEach(d => d.onclick = e => { if (e.target.closest("button")) return; abrirMissao(d.dataset.med); });
@@ -878,8 +883,8 @@ function slotAtual(m, oc = ocorrencia(m)) {
   if (!oc || !missaoVencida(m, oc)) return null;
   const atr = diasEntre(oc, hoje()), lim = +(m.lembrar ?? 0);
   if (lim === -1 && atr > 0) return null; if (lim > 0 && atr > lim) return null;
-  const av = (m.avisos && m.avisos.length ? m.avisos : ["08:00", "14:00"]).slice().sort();
-  const slots = atr === 0 ? [m.hora || "00:00", ...av.filter(h => h > (m.hora || "00:00"))] : av;
+  const av = (m.avisos && m.avisos.length ? m.avisos : [m.hora || "08:00"]).slice().sort();
+  const slots = atr === 0 ? [...new Set([m.hora || "00:00", ...av.filter(h => h > (m.hora || "00:00"))])] : av;
   const agora = agoraHM(); const val = slots.filter(h => h <= agora);
   return val.length ? val[val.length - 1] : (atr > 0 ? "ontem" : null);   // antes do 1º horário de hoje: vale o lembrete pendente de ontem
 }
@@ -2034,7 +2039,7 @@ function checarLembretes() {
    ============================================================ */
 const APP_VERSAO = "2026.11.19-5";
 const NOVIDADES = [
-  { v: "2026.11.19-5", data: "19/11/2026", itens: ["🔔 Você escolhe os horários de cada aviso de missão e até quando lembrar", "🟢 Dashboard ao vivo: atualiza sozinho a cada 20 s e na hora em que alguém muda algo", "📺 Modo TV fica lembrado e a tela não apaga"] },
+  { v: "2026.11.19-5", data: "19/11/2026", itens: ["🔔 Horários do aviso livres: adicione quantos quiser em cada missão", "🟢 Dashboard ao vivo: atualiza sozinho a cada 20 s e na hora em que alguém muda algo", "📺 Modo TV fica lembrado e a tela não apaga"] },
   { v: "2026.11.19-4", data: "19/11/2026", itens: ["📌 Missões: em cada cliente (ou livres), com data, horário e repetição", "📣 Aviso grande na tela para todos, de manhã e à tarde, até ser realizado", "✅ Só o administrador (ou quem ele autorizar) marca como realizado; os outros podem dar Ciente"] },
   { v: "2026.11.19-3", data: "19/11/2026", itens: ["🔔 Pop-up de atrasos: quantos clientes estão atrasados e há quantos dias (ao abrir, depois de importar e quando mudar)", "⚠️ Depois de importar as OS, o app abre o Dashboard com quem está atrasado e há quantos dias", "📅 Tempo em aberto agora conversa com o atraso: sem data de abertura no Inside, ela é estimada pela data de entrega"] },
   { v: "2026.11.19-2", data: "19/11/2026", itens: ["💬 Chat da equipe: botão flutuante que você arrasta para onde quiser", "📝 Anotações dentro do chat (só suas ou compartilhadas com a equipe)", "🚀 Este aviso: sempre que sair uma atualização, todo mundo vê o que mudou", "🟢🟡🔴 Dias em aberto de cada OS em destaque: verde até 2 dias, amarelo de 3 a 4, vermelho acima de 4", "🥈 Cliente que não é ouro agora é prata (bronze saiu)", "📷 Fotos da equipe: clique na foto para trocar, enquadrar o rosto, dar zoom e girar", "👤 Clique na sua bolinha (ou na de quem está online) para ver o perfil e trocar a foto", "📊 Novo Dashboard com gráficos: quem tem só o link vê apenas ele; o resto exige login", "🔐 Pedido de acesso: quem quiser entrar pede, e o administrador autoriza ou recusa", "🏗️ Atalho Projetos no menu, que abre o app de projetos", "👆 Os cartões (OS abertas, em execução, concluídas, atrasadas, ouro/prata e faixas de dias) são clicáveis e abrem a lista certa", "🔷 Nova logo BASE: clique nela (no topo) para voltar à página principal", "🦅 Marca Protemaxi Segurança no Dashboard", "⚠️ Depois de importar as OS, o app abre o Dashboard com a lista de quem está atrasado e há quantos dias", "💻 Cada computador ou celular precisa ser autorizado pelo administrador; em Admin → Máquinas você vê quem está logado e em qual máquina"] },
