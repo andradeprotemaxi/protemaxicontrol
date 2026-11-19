@@ -80,6 +80,14 @@ tr.click{cursor:pointer} tr.click:hover td{background:var(--card2)}
 .pill.ouro{background:rgba(245,197,66,.16);color:var(--ouro)}
 .pill.prata{background:rgba(201,210,223,.14);color:var(--prata)}
 .pill.bronze{background:rgba(208,138,78,.16);color:var(--bronze)}
+.dias{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:54px;padding:5px 8px;border-radius:10px;font-variant-numeric:tabular-nums;line-height:1.05;border:2px solid transparent}
+.dias b{font-size:22px;font-weight:900}.dias small{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;opacity:.9}
+.dias.dv{background:rgba(34,197,94,.18);border-color:#22c55e;color:#86efac}
+.dias.da{background:rgba(245,158,11,.2);border-color:#f59e0b;color:#fcd34d}
+.dias.dr{background:#dc2626;border-color:#ef4444;color:#fff;box-shadow:0 0 0 3px rgba(239,68,68,.25)}
+.dias.sm{min-width:0;padding:1px 7px;font-size:12px;font-weight:800;border-width:1px;border-radius:7px;flex-direction:row;box-shadow:none}
+.legDias{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12.5px;color:var(--tx2);margin:-4px 0 10px}
+body.tv .dias b{font-size:30px}
 .late{display:inline-grid;place-items:center;min-width:44px;padding:4px 8px;border-radius:8px;font-weight:800;font-variant-numeric:tabular-nums;font-size:13px}
 .late.l0{background:rgba(34,197,94,.14);color:#86efac}
 .late.l1{background:rgba(245,158,11,.18);color:#fcd34d}
@@ -128,7 +136,7 @@ textarea.in{width:100%;min-height:120px;resize:vertical}
 .form .in{width:100%}
 .chks{display:flex;flex-wrap:wrap;gap:8px}
 .chks label{flex-direction:row;align-items:center;gap:6px;background:var(--card);padding:6px 10px;border-radius:8px;border:1px solid var(--line);color:var(--tx)}
-.toast{position:fixed;right:18px;bottom:18px;z-index:60;display:flex;flex-direction:column;gap:8px}
+.toast{position:fixed;right:18px;bottom:92px;z-index:60;display:flex;flex-direction:column;gap:8px}
 .toast div{background:var(--card2);border:1px solid var(--line);border-left:4px solid var(--ac);padding:12px 14px;border-radius:10px;max-width:360px;box-shadow:0 10px 30px rgba(0,0,0,.4)}
 .toast div.bad{border-left-color:var(--bad)} .toast div.ok{border-left-color:var(--ok)}
 /* calendário */
@@ -186,6 +194,54 @@ body.tv .kpi .v{font-size:60px}
   .form{grid-template-columns:1fr}
   .hidesm{display:none}
 }
+
+/* editor de foto */
+.fotoOv{z-index:80}
+.fotoStage{position:relative;width:min(300px,78vw);aspect-ratio:1;border-radius:14px;overflow:hidden;touch-action:none;background:#000}
+.fotoStage canvas{width:100%;height:100%;display:block;cursor:grab}.fotoStage canvas:active{cursor:grabbing}
+.fotoMask{position:absolute;inset:0;pointer-events:none;border-radius:50%;box-shadow:0 0 0 999px rgba(2,6,15,.6);outline:2px dashed rgba(255,255,255,.7);outline-offset:-2px}
+.avEd{position:relative;cursor:pointer;display:inline-flex}.avEd i{position:absolute;right:-4px;bottom:-4px;font-style:normal;font-size:12px;background:var(--card2);border:1px solid var(--line);border-radius:50%;width:22px;height:22px;display:grid;place-items:center}
+.avEd:hover .av{outline:2px solid var(--ac)}
+.dChart{width:100%;height:auto;display:block}.dAx{fill:var(--tx3);font-size:11px}.dBar:hover rect[fill="transparent"]{fill:rgba(255,255,255,.04)}
+.lgSw{display:inline-block;width:10px;height:10px;border-radius:3px}
+.fx{display:grid;grid-template-columns:56px 110px 1fr;align-items:center;gap:8px;margin-bottom:10px}.fxL{color:var(--tx2);font-size:13px}
+.fxB{height:10px;background:var(--bg2);border-radius:6px;overflow:hidden}.fxB i{display:block;height:100%;border-radius:6px}
+.fx .dias.sm{justify-content:center;font-size:15px;padding:3px 8px}
+.pedBox{border-color:var(--warn);margin-bottom:14px}.ped{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.avBtn{cursor:pointer;display:inline-flex;border-radius:50%}.avBtn:hover .av{outline:2px solid var(--ac)}
+.avXL{position:relative;width:110px;height:110px;border-radius:50%;background:var(--card2);display:grid;place-items:center;font-size:36px;font-weight:800;border:3px solid var(--line)}
+.avXL img{width:100%;height:100%;border-radius:50%;object-fit:cover}.avXL .dot{position:absolute;right:6px;bottom:6px;width:20px;height:20px;border-radius:50%;border:3px solid var(--bg2);background:#64748b}.avXL .dot.on{background:var(--ok)}
+.kgo{cursor:pointer;transition:transform .12s,border-color .12s}.kgo:hover{transform:translateY(-2px);border-color:var(--ac)}
+.kpi.kgo::after{content:"ver →";position:absolute;right:14px;bottom:12px;font-size:12px;color:var(--tx3)}.fx.kgo{border-radius:8px;padding:2px 4px;margin-left:-4px;border:1px solid transparent}
+/* atualização */
+.upd ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.updBar{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:70;background:var(--card2);border:1px solid var(--ac);border-radius:12px;padding:10px 14px;display:flex;gap:12px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.5);flex-wrap:wrap;max-width:calc(100% - 24px)}
+.updBar span{color:var(--tx2);font-size:13px}
+/* chat flutuante */
+#chatFab{position:fixed;right:22px;bottom:22px;z-index:65;touch-action:none;user-select:none}
+#chatFab .fabBtn{width:58px;height:58px;border-radius:50%;border:0;background:var(--ac);color:#fff;font-size:26px;cursor:grab;box-shadow:0 8px 24px rgba(0,0,0,.45);display:grid;place-items:center}
+#chatFab .fabBtn:active{cursor:grabbing}#chatFab.on .fabBtn{background:var(--ac2)}
+#chatFab .fabN{position:absolute;top:-4px;right:-4px;background:var(--bad);color:#fff;border-radius:999px;font-size:12px;font-weight:700;padding:2px 7px;border:2px solid var(--bg);pointer-events:none}
+#chatPan{position:fixed;z-index:66;width:min(380px,calc(100vw - 16px));height:min(540px,calc(100vh - 16px));background:var(--bg2);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.55);display:flex;flex-direction:column;overflow:hidden}
+#chatPan[hidden]{display:none}
+.chHd{display:flex;align-items:center;gap:8px;padding:10px;border-bottom:1px solid var(--line);cursor:move;touch-action:none;user-select:none;background:var(--card)}
+.chTabs{display:flex;gap:4px}.chTabs button{background:none;border:1px solid transparent;color:var(--tx2);padding:6px 10px;border-radius:9px;font-weight:600;cursor:pointer;font:inherit;font-size:13px}
+.chTabs button.on{background:var(--card2);color:var(--tx);border-color:var(--line)}
+.chOn{font-size:12px;color:var(--ok);white-space:nowrap}
+.chBd{flex:1;display:flex;flex-direction:column;min-height:0}
+.chList{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px;min-height:0}
+.chDia{text-align:center;font-size:11.5px;color:var(--tx3);text-transform:capitalize;margin:4px 0}
+.chM{display:flex;gap:8px;align-items:flex-end;max-width:88%}.chM.eu{align-self:flex-end;flex-direction:row-reverse}
+.chB{background:var(--card2);border:1px solid var(--line);border-radius:12px 12px 12px 4px;padding:7px 10px;min-width:0}
+.chM.eu .chB{background:#1d3a6e;border-color:#2a4f8f;border-radius:12px 12px 4px 12px}
+.chN{font-size:11.5px;color:var(--tx3);margin-bottom:3px;display:flex;align-items:center;gap:4px}
+.chT{word-break:break-word;font-size:14px;line-height:1.4}
+.chDel{background:none;border:0;cursor:pointer;opacity:.45;font-size:12px;padding:0 2px}.chDel:hover{opacity:1}
+.chIn{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}.chIn textarea{flex:1;resize:none;min-height:40px;max-height:120px}
+.notaNova{padding:10px;border-bottom:1px solid var(--line)}
+.nota{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:10px;padding:8px 10px}.nota.fixa{border-left-color:var(--ac)}
+.nota .sp{flex:1}
+@media (max-width:560px){#chatPan{width:calc(100vw - 16px);height:calc(100vh - 90px)}}
 </style>
 </head>
 <body>
@@ -261,6 +317,8 @@ function toast(msg, tipo = "") {
 }
 function ico(n) {
   const p = {
+    dashboard: '<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>',
+    projetos: '<path d="M3 21h18"/><path d="M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/>',
     painel: '<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
     os: '<path d="M9 4h6M9 4a2 2 0 0 0-2 2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-1a2 2 0 0 0-2-2"/><path d="M8 12h8M8 16h5"/>',
     clientes: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 20a6.5 6.5 0 0 0-3-5.5"/>',
@@ -283,6 +341,18 @@ const S = {
   route: "painel",
 };
 const T = tipo => (S.db[tipo] ||= {});
+/* identidade desta máquina (computador/celular) */
+const DEV = (() => {
+  let d = null; try { d = JSON.parse(localStorage.getItem("pm_maquina") || "null"); } catch {}
+  if (!d || !d.id || d.id.length < 8) {
+    const ua = navigator.userAgent; const so = /Windows/.test(ua) ? "Windows" : /Android/.test(ua) ? "Android" : /iPhone|iPad/.test(ua) ? "iPhone/iPad" : /Mac/.test(ua) ? "Mac" : /Linux/.test(ua) ? "Linux" : "Aparelho";
+    const nav = /Edg\//.test(ua) ? "Edge" : /OPR\//.test(ua) ? "Opera" : /Chrome\//.test(ua) ? "Chrome" : /Firefox\//.test(ua) ? "Firefox" : /Safari\//.test(ua) ? "Safari" : "Navegador";
+    d = { id: "m" + Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2, "0")).join(""), nome: so + " · " + nav };
+    try { localStorage.setItem("pm_maquina", JSON.stringify(d)); } catch {}
+  }
+  return d;
+})();
+const pinDev = () => S.pin + "|" + DEV.id;
 const lista = tipo => Object.entries(T(tipo)).map(([id, d]) => ({ id, ...d }));
 const cfg = () => ({ sla: 3, empresa: CONFIG.empresa || "Empresa", ...(T("config").geral || {}) });
 const isAdmin = () => S.me?.papel === "admin";
@@ -308,8 +378,12 @@ const Local = {
   async save(tipo, id, dados) { const d = this.data(); (d.registros[tipo] ||= {})[id] = dados; if (!LS.set(this.key, d)) throw new Error("Armazenamento local cheio"); },
   async saveMany(itens) { const d = this.data(); for (const it of itens) (d.registros[it.tipo] ||= {})[it.id] = it.dados; if (!LS.set(this.key, d)) throw new Error("Armazenamento local cheio"); },
   async del(tipo, id) { const d = this.data(); if (d.registros[tipo]) delete d.registros[tipo][id]; LS.set(this.key, d); },
-  async saveUser(u) { const d = this.data(); const i = d.usuarios.findIndex(x => x.id === u.id); const old = i >= 0 ? d.usuarios[i] : {}; const n = { ...old, ...u, pin: u.pin || old.pin }; if (i >= 0) d.usuarios[i] = n; else d.usuarios.push(n); LS.set(this.key, d); },
+  async saveUser(u) { const d = this.data(); const i = d.usuarios.findIndex(x => x.id === u.id); const old = i >= 0 ? d.usuarios[i] : {}; const n = { ...old, ...u, pin: u.pin || old.pin, pendente: !!u.pendente }; if (i >= 0) d.usuarios[i] = n; else d.usuarios.push(n); LS.set(this.key, d); },
   async delUser(id) { const d = this.data(); d.usuarios = d.usuarios.filter(x => x.id !== id); LS.set(this.key, d); },
+  async maquinas() { return [{ id: DEV.id, user: S.me.id, pessoa: S.me.nome, nome: DEV.nome, status: "autorizado", visto: new Date().toISOString() }]; },
+  async maquinaStatus() {},
+  async minhaFoto(foto) { const d = this.data(); const u = d.usuarios.find(x => x.id === S.me.id); if (u) u.foto = foto; LS.set(this.key, d); },
+  async solicitar(x) { const d = this.data(); if (d.usuarios.some(u => norm(u.login) === norm(x.login))) throw new Error("Esse usuário já existe. Escolha outro."); d.usuarios.push({ id: "u_" + uid(), nome: x.nome, login: x.login.toLowerCase(), pin: x.pin, papel: "visitante", permissoes: [], foto: "", ativo: false, pendente: true, obs: x.obs || "" }); LS.set(this.key, d); },
   async upload(file) {
     if (file.size > 2.5 * 1048576) throw new Error("No modo local o limite é 2,5 MB por arquivo. Conecte o Supabase para enviar arquivos maiores.");
     return await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsDataURL(file); });
@@ -332,23 +406,36 @@ const Supa = {
     await new Promise((ok, no) => { const s = document.createElement("script"); s.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"; s.onload = ok; s.onerror = () => no(new Error("Não foi possível carregar o Supabase")); document.head.appendChild(s); });
     this.sb = supabase.createClient(SB.url, SB.key, { auth: { persistSession: false } });
   },
+  syncAt: null,
   async loadAll() {
-    const regs = {}; let from = 0;
-    while (true) {
-      const { data, error } = await this.sb.from("registros").select("tipo,id,dados").range(from, from + 999);
-      if (error) throw error;
-      for (const r of data) (regs[r.tipo] ||= {})[r.id] = r.dados;
-      if (data.length < 1000) break; from += 1000;
-    }
-    const { data: us, error: e2 } = await this.sb.rpc("rpc_usuarios"); if (e2) throw e2;
+    if (!S.me || !S.pin) { const { data, error } = await this.sb.rpc("rpc_publico"); if (error) throw error; S.pub = data; return { users: [], regs: {} }; }
+    const { data, error } = await this.sb.rpc("rpc_sync", { p_login: S.me.login, p_pin: pinDev(), p_desde: null }); if (error) throw error;
+    const regs = {}; for (const r of data.regs) (regs[r.tipo] ||= {})[r.id] = r.dados; this.syncAt = data.agora;
+    const { data: us, error: e2 } = await this.sb.rpc("rpc_usuarios", { p_login: S.me.login, p_pin: pinDev() }); if (e2) throw e2;
     return { users: us || [], regs };
   },
-  async login(login, pin) { const { data, error } = await this.sb.rpc("rpc_login", { p_login: login, p_pin: pin }); if (error) throw error; return data; },
-  async save(tipo, id, dados) { const { error } = await this.sb.rpc("rpc_salvar", { p_login: S.me.login, p_pin: S.pin, p_tipo: tipo, p_id: id, p_dados: dados }); if (error) throw new Error(error.message.includes("permiss") ? "Você não tem permissão para isso." : error.message); },
-  async saveMany(itens) { for (let i = 0; i < itens.length; i += 200) { const { error } = await this.sb.rpc("rpc_salvar_lote", { p_login: S.me.login, p_pin: S.pin, p_itens: itens.slice(i, i + 200) }); if (error) throw new Error(error.message); } },
-  async del(tipo, id) { const { error } = await this.sb.rpc("rpc_excluir", { p_login: S.me.login, p_pin: S.pin, p_tipo: tipo, p_id: id }); if (error) throw new Error(error.message); },
-  async saveUser(u) { const { error } = await this.sb.rpc("rpc_usuario_salvar", { p_login: S.me.login, p_pin: S.pin, p_user: u }); if (error) throw new Error(error.message); },
-  async delUser(id) { const { error } = await this.sb.rpc("rpc_usuario_excluir", { p_login: S.me.login, p_pin: S.pin, p_id: id }); if (error) throw new Error(error.message); },
+  async sync() {
+    if (!S.me || !this.syncAt || this._sy) return; this._sy = true;
+    try {
+      const { data, error } = await this.sb.rpc("rpc_sync", { p_login: S.me.login, p_pin: pinDev(), p_desde: this.syncAt }); if (error) throw error;
+      this.syncAt = data.agora; const tipos = new Set();
+      for (const r of data.regs) { const old = T(r.tipo)[r.id]; if (JSON.stringify(old) !== JSON.stringify(r.dados)) { T(r.tipo)[r.id] = r.dados; tipos.add(r.tipo); } }
+      for (const r of data.dels) if (T(r.tipo)[r.id]) { delete T(r.tipo)[r.id]; tipos.add(r.tipo); }
+      if (tipos.has("chat")) chatMudou("chat"); if (tipos.has("nota")) chatMudou("nota");
+      if ([...tipos].some(t => t !== "chat" && t !== "nota" && t !== "sessao")) softRender();
+    } catch {} finally { this._sy = false; }
+  },
+  ping() { try { this.pc?.send({ type: "broadcast", event: "mudou", payload: { t: Date.now() } }); } catch {} setTimeout(() => this.sync(), 400); },
+  async minhaFoto(foto) { const { error } = await this.sb.rpc("rpc_minha_foto", { p_login: S.me.login, p_pin: pinDev(), p_foto: foto }); if (error) throw new Error(error.message); },
+  async solicitar(d) { const { error } = await this.sb.rpc("rpc_solicitar", { p_nome: d.nome, p_login: d.login, p_pin: d.pin, p_obs: d.obs }); if (error) throw new Error(/existe/.test(error.message) ? "Esse usuário já existe. Escolha outro." : /pin/.test(error.message) ? "O PIN precisa ter de 4 a 8 números." : /invalid/.test(error.message) ? "Confira o nome e o usuário (só letras minúsculas, números, ponto ou traço)." : /muitos/.test(error.message) ? "Há muitos pedidos aguardando. Fale com o administrador." : error.message); },
+  async login(login, pin) { const { data, error } = await this.sb.rpc("rpc_login", { p_login: login, p_pin: pin + "|" + DEV.id, p_maquina: DEV.nome }); if (error) throw error; return data; },
+  async maquinas() { const { data, error } = await this.sb.rpc("rpc_dispositivos", { p_login: S.me.login, p_pin: pinDev() }); if (error) throw new Error(error.message); return data || []; },
+  async maquinaStatus(id, user, status) { const { error } = await this.sb.rpc("rpc_dispositivo_status", { p_login: S.me.login, p_pin: pinDev(), p_id: id, p_user: user, p_status: status }); if (error) throw new Error(error.message); },
+  async save(tipo, id, dados) { const { error } = await this.sb.rpc("rpc_salvar", { p_login: S.me.login, p_pin: pinDev(), p_tipo: tipo, p_id: id, p_dados: dados }); if (error) throw new Error(error.message.includes("permiss") ? "Você não tem permissão para isso." : error.message); if (tipo !== "sessao") this.ping(); },
+  async saveMany(itens) { for (let i = 0; i < itens.length; i += 200) { const { error } = await this.sb.rpc("rpc_salvar_lote", { p_login: S.me.login, p_pin: pinDev(), p_itens: itens.slice(i, i + 200) }); if (error) throw new Error(error.message); } this.ping(); },
+  async del(tipo, id) { const { error } = await this.sb.rpc("rpc_excluir", { p_login: S.me.login, p_pin: pinDev(), p_tipo: tipo, p_id: id }); if (error) throw new Error(error.message); this.ping(); },
+  async saveUser(u) { const { error } = await this.sb.rpc("rpc_usuario_salvar", { p_login: S.me.login, p_pin: pinDev(), p_user: u }); if (error) throw new Error(error.message); },
+  async delUser(id) { const { error } = await this.sb.rpc("rpc_usuario_excluir", { p_login: S.me.login, p_pin: pinDev(), p_id: id }); if (error) throw new Error(error.message); },
   async upload(file) {
     const path = Date.now() + "_" + file.name.replace(/[^\w.\-]+/g, "_");
     const { error } = await this.sb.storage.from("arquivos").upload(path, file, { contentType: file.type || "application/octet-stream" });
@@ -356,20 +443,19 @@ const Supa = {
     return this.sb.storage.from("arquivos").getPublicUrl(path).data.publicUrl;
   },
   start() {
-    this.sb.channel("pm-db").on("postgres_changes", { event: "*", schema: "public", table: "registros" }, p => {
-      const r = p.new && p.new.tipo ? p.new : p.old;
-      if (p.eventType === "DELETE") { if (p.old?.tipo) delete T(p.old.tipo)[p.old.id]; else reload(); }
-      else (S.db[r.tipo] ||= {})[r.id] = r.dados;
-      softRender();
-    }).subscribe();
-    const key = S.me ? S.me.id : "v_" + uid();
+    this.pc = this.sb.channel("pm-sync").on("broadcast", { event: "mudou" }, () => { if (S.me) this.sync(); else this.publico(); }).subscribe();
+    setInterval(() => { if (S.me) this.sync(); else this.publico(); }, S.me ? 30000 : 60000);
+    const key = S.me ? S.me.id + ":" + DEV.id : "v_" + uid();
     this.ch = this.sb.channel("pm-online", { config: { presence: { key } } });
     this.ch.on("presence", { event: "sync" }, () => {
-      const st = this.ch.presenceState(); S.online = {};
-      for (const k in st) { const m = st[k][0]; if (m && m.id) S.online[m.id] = m; }
+      const st = this.ch.presenceState(); S.online = {}; S.maqOn = [];
+      for (const k in st) for (const m of st[k]) if (m && m.id) { S.maqOn.push(m); if (!S.online[m.id] || m.desde < S.online[m.id].desde) S.online[m.id] = m; }
       renderHeader(); softRender();
-    }).subscribe(async s => { if (s === "SUBSCRIBED" && S.me) await this.ch.track({ id: S.me.id, nome: S.me.nome, desde: Date.now() }); });
-    setInterval(async () => { try { const { data } = await this.sb.rpc("rpc_usuarios"); if (data) { S.users = data; renderHeader(); } } catch {} }, 60000);
+    }).subscribe(async s => { if (s === "SUBSCRIBED" && S.me) await this.ch.track({ id: S.me.id, nome: S.me.nome, desde: Date.now(), dev: DEV.id, maq: DEV.nome }); });
+    if (isAdmin()) { const pm = async () => { try { S.maquinas = await this.maquinas(); checarPedidos(); if (S.route === "admin" && admTab === "maquinas") softRender(); } catch {} }; pm(); setInterval(pm, 30000); }
+    if (S.me) setInterval(async () => { try { const { data } = await this.sb.rpc("rpc_usuarios", { p_login: S.me.login, p_pin: pinDev() }); if (data) { S.users = data; renderHeader(); checarPedidos(); if (S.route === "admin") softRender(); } } catch {} }, 45000);
+  },
+  async publico() { try { const { data } = await this.sb.rpc("rpc_publico"); if (data) { S.pub = data; if (S.route === "dashboard") softRender(); } } catch {}
   },
   presence: {
     async track() { if (Supa.ch) { try { await Supa.ch.untrack(); } catch {} location.reload(); } },
@@ -414,6 +500,12 @@ const ativa = o => o.status === "aberta" || o.status === "execucao";
 const prazoEf = o => o.prazo || (o.abertura ? addDias(o.abertura, +cfg().sla || 3) : "");
 function atraso(o) { if (!ativa(o)) return null; const p = prazoEf(o); if (!p) return null; return diasEntre(p, hoje()); }
 const diasAberta = o => o.abertura ? Math.max(0, diasEntre(o.abertura, ativa(o) ? hoje() : (o.conclusao || hoje()))) : null;
+const corDias = d => d <= 2 ? "dv" : d <= 4 ? "da" : "dr";
+function badgeDias(o) {
+  const d = diasAberta(o); if (d == null) return '<span class="muted">—</span>';
+  return `<span class="dias ${corDias(d)}" title="${d <= 2 ? "Até 2 dias" : d <= 4 ? "De 3 a 4 dias" : "Mais de 4 dias"} aberta"><b>${d}</b><small>${d === 1 ? "dia" : "dias"}</small></span>`;
+}
+const legendaDias = () => `<span class="legDias"><span class="dias dv sm">≤2</span> até 2 dias <span class="dias da sm">3–4</span> 3 a 4 dias <span class="dias dr sm">5+</span> mais de 4 dias</span>`;
 function badgeAtraso(o) {
   const a = atraso(o);
   if (a === null) return ativa(o) ? '<span class="muted">—</span>' : '<span class="muted">ok</span>';
@@ -465,6 +557,7 @@ function iniciarSessao() {
 async function entrar(login, pin) {
   const u = await API.login(login, pin);
   if (!u) throw new Error("Usuário ou PIN incorretos.");
+  if (u.maquina) { LS.set("pm_login", { login, pin }); setTimeout(() => aguardarMaquina(login, pin, u), 30); return; }
   S.me = u; S.pin = pin;
   LS.set("pm_login", { login, pin });
   if (API === Supa) { API.presence.track(); return; } // recarrega para entrar na presença
@@ -474,8 +567,8 @@ function sair() {
   API.presence.leave(); LS.del("pm_login");
   if (S.sessaoId) API.save("sessao", S.sessaoId, { ...T("sessao")[S.sessaoId], fim: Date.now() }).catch(() => {});
   S.me = null; S.pin = null; clearInterval(S._sessT);
-  if (API === Supa) { location.hash = "painel"; location.reload(); return; }
-  go("painel"); renderAll();
+  if (API === Supa) { location.hash = "dashboard"; location.reload(); return; }
+  go("dashboard"); renderAll();
 }
 
 /* ---------------- gravação com atualização local ---------------- */
@@ -521,16 +614,19 @@ function abrirLogin() {
     corpo: `${API === Local ? `<div class="hint warn">Modo local (demonstração): usuário <b>andrade</b>, PIN <b>1234</b>. Troque o PIN na área Admin.</div>` : ""}
       <div class="form"><label class="full">Usuário<input class="in" name="login" autocomplete="username" autocapitalize="none"></label>
       <label class="full">PIN<input class="in" name="pin" type="password" inputmode="numeric" autocomplete="current-password"></label></div>
-      <p class="muted" style="margin:12px 0 0">Sem login você vê o painel. Para editar, o administrador precisa liberar sua permissão.</p>`,
-    botoes: [{ txt: "Entrar", cls: "pri", fn: async r => { await entrar(r.querySelector("[name=login]").value.trim(), r.querySelector("[name=pin]").value.trim()); toast("Bem-vindo, " + S.me.nome + "!", "ok"); } }]
+      <p class="muted" style="margin:12px 0 0">Sem login você vê só o dashboard. Ainda não tem acesso? <a href="#" id="lSol">Solicitar acesso</a></p>`,
+    botoes: [{ txt: "Entrar", cls: "pri", fn: async r => { await entrar(r.querySelector("[name=login]").value.trim(), r.querySelector("[name=pin]").value.trim()); if (S.me) toast("Bem-vindo, " + S.me.nome + "!", "ok"); } }]
   });
   setTimeout(() => $("#modalRoot [name=login]")?.focus(), 50);
+  $("#lSol").onclick = e => { e.preventDefault(); fechaModal(); setTimeout(abrirSolicitar, 30); };
   $("#modalRoot [name=pin]").addEventListener("keydown", e => { if (e.key === "Enter") $("#modalRoot [data-b='0']").click(); });
 }
 
 /* ---------------- navegação ---------------- */
+const LINK_PROJETOS = "https://andradeprotemaxi.github.io/protemaxiprojetos/";
 const ROTAS = [
-  ["painel", "Painel", true],
+  ["dashboard", "Dashboard", true],
+  ["painel", "Painel", false],
   ["os", "Ordens de serviço", false],
   ["clientes", "Clientes", false],
   ["importar", "Importar Inside / Segware", false],
@@ -539,7 +635,7 @@ const ROTAS = [
   ["admin", "Admin", false],
 ];
 function permitido(r) {
-  if (r === "painel") return true;
+  if (r === "dashboard") return true;
   if (!S.me) return false;
   if (r === "admin") return isAdmin();
   if (r === "coordenador") return pode("coordenador") || S.me.papel === "coordenador";
@@ -548,29 +644,36 @@ function permitido(r) {
 }
 function go(r) { if (location.hash !== "#" + r) location.hash = r; else route(); }
 function route() {
-  let r = (location.hash || "#painel").slice(1) || "painel";
-  if (!ROTAS.some(x => x[0] === r)) r = "painel";
-  if (!permitido(r)) { if (!S.me && r !== "painel") { setTimeout(abrirLogin, 50); } r = "painel"; }
+  let r = (location.hash || "").slice(1) || (S.me ? "painel" : "dashboard");
+  if (!ROTAS.some(x => x[0] === r)) r = S.me ? "painel" : "dashboard";
+  if (!permitido(r)) { if (!S.me) setTimeout(abrirLogin, 50); r = S.me ? "painel" : "dashboard"; }
   S.route = r; renderAll();
 }
 addEventListener("hashchange", route);
 
 function renderNav() {
-  $("#nav").innerHTML = ROTAS.filter(([r]) => r === "painel" || !S.me || permitido(r)).map(([r, l]) =>
-    `<a href="#${r}" class="${S.route === r ? "on" : ""}">${ico(r)}<span>${l.replace(" Inside / Segware", "")}</span>${!S.me && r !== "painel" ? '<span class="lock">🔒</span>' : ""}</a>`).join("");
+  $("#nav").innerHTML = ROTAS.filter(([r]) => S.me ? permitido(r) : r === "dashboard").map(([r, l]) =>
+    `<a href="#${r}" class="${S.route === r ? "on" : ""}">${ico(r)}<span>${l.replace(" Inside / Segware", "")}</span></a>`).join("")
+    + (S.me ? `<a href="${LINK_PROJETOS}" target="_blank" rel="noopener">${ico("projetos")}<span>Projetos</span><span class="lock">↗</span></a>` : `<a href="#" id="navLogin">${ico("admin")}<span>Entrar</span></a>`);
+  $("#navLogin") && ($("#navLogin").onclick = e => { e.preventDefault(); abrirLogin(); });
   $("#brand").innerHTML = `${esc(cfg().empresa.toUpperCase())}<small>Central Operacional</small>`;
-  $("#modo").innerHTML = (API === Supa ? "● Conectado ao banco online" : "● Modo local (só neste navegador)") + "<br><span style=\"opacity:.7\">Desenvolvido por Andrade</span>";
+  $("#modo").innerHTML = (API === Supa ? "● Conectado ao banco online" : "● Modo local (só neste navegador)") + "<br><span style=\"opacity:.7\">Desenvolvido por </span><b style=\"color:#fff\">Andrade</b><span style=\"opacity:.7\"> · <a href=\"#\" onclick=\"mostrarNovidades(true);return false\" style=\"color:inherit\">novidades</a></span>";
 }
 function renderHeader() {
-  const onl = Object.keys(S.online).map(userById).filter(Boolean);
-  $("#hdrOnline").innerHTML = onl.slice(0, 6).map(u => av(u)).join("") + (onl.length > 6 ? `<span class="muted" style="margin-left:6px">+${onl.length - 6}</span>` : "");
+  const onl = S.me ? Object.keys(S.online).filter(id => id !== S.me.id).map(userById).filter(Boolean) : [];
+  $("#hdrOnline").innerHTML = onl.slice(0, 6).map(u => `<span class="avBtn" data-perfil="${esc(u.id)}">${av(u)}</span>`).join("") + (onl.length > 6 ? `<span class="muted" style="margin-left:6px">+${onl.length - 6}</span>` : "");
   $("#hdrUser").innerHTML = S.me
-    ? `<div style="display:flex;align-items:center;gap:8px">${av(userById(S.me.id) || S.me)}<span class="hidesm" style="font-weight:600">${esc(S.me.nome.split(" ")[0])}</span><button class="btn sm" id="bSair">Sair</button></div>`
+    ? `<div style="display:flex;align-items:center;gap:8px"><span class="avBtn" data-perfil="${esc(S.me.id)}" title="Meu perfil">${av(userById(S.me.id) || S.me)}</span><span class="hidesm" style="font-weight:600">${esc(S.me.nome.split(" ")[0])}</span><button class="btn sm" id="bSair">Sair</button></div>`
     : `<button class="btn pri sm" id="bEntrar">Entrar</button>`;
   $("#bSair") && ($("#bSair").onclick = sair);
+  $$("[data-perfil]").forEach(b => b.onclick = () => abrirPerfil(b.dataset.perfil));
   $("#bEntrar") && ($("#bEntrar").onclick = abrirLogin);
+  typeof atualizarFab === "function" && atualizarFab();
 }
+/* regra: cliente que não é ouro é prata */
+function normalizarClientes() { for (const c of Object.values(T("cliente"))) if (c && c.categoria !== "ouro" && c.categoria !== "prata") c.categoria = "prata"; }
 function renderAll() {
+  normalizarClientes();
   renderNav(); renderHeader();
   $("#ttl").textContent = ROTAS.find(x => x[0] === S.route)[1];
   const fn = VIEWS[S.route]; $("#main").innerHTML = ""; fn($("#main"));
@@ -585,13 +688,138 @@ function softRender(force) {
     const y = scrollY; renderAll(); scrollTo(0, y);
   }, 120);
 }
-async function reload() { try { const { users, regs } = await API.loadAll(); S.users = users; S.db = regs; softRender(); } catch (e) { toast("Erro ao carregar: " + e.message, "bad"); } }
+async function reload() { try { const { users, regs } = await API.loadAll(); S.users = users; S.db = regs; softRender(); typeof chatMudou === "function" && chatMudou("chat"); } catch (e) { toast("Erro ao carregar: " + e.message, "bad"); } }
 
 /* ============================================================
    VIEWS
    ============================================================ */
 const VIEWS = {};
 const F = { busca: "", status: "ativas", origem: "", tier: "" };
+
+/* cartões clicáveis: levam para a área certa já filtrada */
+document.addEventListener("click", e => {
+  const k = e.target.closest("#main [data-kgo], #main [data-kcli]"); if (!k) return;
+  if (!S.me) { toast("Entre com seu usuário para ver os detalhes"); return abrirLogin(); }
+  if (k.dataset.kgo) { F.status = k.dataset.kgo; F.busca = ""; go("os"); } else { FC.tier = k.dataset.kcli; FC.busca = ""; go("clientes"); }
+});
+/* ---------- Dashboard (público: só números e gráficos) ---------- */
+function dadosDash() {
+  if (!S.me && API === Supa) return S.pub;
+  const os = lista("os"), at = os.filter(ativa), cl = lista("cliente"), h = hoje(), seg = segunda();
+  const serie = []; for (let i = 13; i >= 0; i--) { const d = addDias(h, -i); serie.push({ d, abertas: os.filter(o => (o.abertura || "").slice(0, 10) === d).length, concluidas: os.filter(o => (o.conclusao || "").slice(0, 10) === d).length }); }
+  const da = o => diasAberta(o);
+  return {
+    hoje: h, abertas: os.filter(o => o.status === "aberta").length, execucao: os.filter(o => o.status === "execucao").length,
+    semana: os.filter(o => o.status === "concluida" && o.conclusao && o.conclusao >= seg).length, atrasadas: os.filter(o => (atraso(o) ?? -1) > 0).length,
+    d_verde: at.filter(o => da(o) != null && da(o) <= 2).length, d_amarelo: at.filter(o => da(o) != null && da(o) >= 3 && da(o) <= 4).length, d_vermelho: at.filter(o => da(o) != null && da(o) >= 5).length,
+    ouro: new Set(cl.filter(c => c.categoria === "ouro").map(c => c.grupo || c.id)).size, prata: new Set(cl.filter(c => c.categoria !== "ouro").map(c => c.grupo || c.id)).size, contas: cl.length, serie
+  };
+}
+VIEWS.dashboard = el => {
+  const k = dadosDash();
+  if (!k) { el.innerHTML = '<div class="empty">Carregando o dashboard…</div>'; API === Supa && Supa.publico(); return; }
+  const faixas = [["d_verde", "Até 2 dias", "dv", "#22c55e"], ["d_amarelo", "3 a 4 dias", "da", "#f59e0b"], ["d_vermelho", "Mais de 4 dias", "dr", "#ef4444"]];
+  const totF = faixas.reduce((a, [f]) => a + (+k[f] || 0), 0);
+  const ser = k.serie || []; const mx = Math.max(1, ...ser.map(x => Math.max(+x.abertas, +x.concluidas)));
+  const W = 700, H = 220, pl = 28, pb = 26, pt = 10, bw = (W - pl) / Math.max(1, ser.length);
+  const y = v => pt + (H - pt - pb) * (1 - v / mx);
+  const ticks = [...new Set([0, Math.round(mx / 2), mx])];
+  const dm = d => String(d).slice(8, 10) + "/" + String(d).slice(5, 7);
+  el.innerHTML = `
+  <div class="kpis">
+    <div class="kpi k1 kgo" data-kgo="aberta" title="Ver estas OS"><div class="l">OS abertas</div><div class="v">${k.abertas}</div><div class="s">Serviços pendentes</div></div>
+    <div class="kpi k2 kgo" data-kgo="execucao" title="Ver estas OS"><div class="l">Em execução</div><div class="v">${k.execucao}</div><div class="s">Em andamento agora</div></div>
+    <div class="kpi k3 kgo" data-kgo="semana" title="Ver estas OS"><div class="l">Concluídas na semana</div><div class="v">${k.semana}</div><div class="s">Desde segunda-feira</div></div>
+    <div class="kpi k4 kgo" data-kgo="atrasadas" title="Ver estas OS"><div class="l">Atrasadas</div><div class="v">${k.atrasadas}</div><div class="s">Passaram do prazo</div></div>
+  </div>
+  <div class="row" style="margin-top:16px">
+    <div class="card"><h2>Abertas × concluídas · últimos 14 dias</h2>
+      <div class="legDias" style="margin:0 0 6px"><span class="lgSw" style="background:#38bdf8"></span> Abertas <span class="lgSw" style="background:#a78bfa;margin-left:10px"></span> Concluídas</div>
+      <svg viewBox="0 0 ${W} ${H}" class="dChart" role="img" aria-label="OS abertas e concluídas por dia">
+        ${ticks.map(t => `<line x1="${pl}" x2="${W}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)" stroke-width="1"/><text x="${pl - 6}" y="${y(t) + 4}" text-anchor="end" class="dAx">${t}</text>`).join("")}
+        ${ser.map((x, i) => { const x0 = pl + i * bw + bw * .18, w = bw * .3; return `<g class="dBar"><title>${dm(x.d)}: ${x.abertas} aberta(s), ${x.concluidas} concluída(s)</title><rect x="${pl + i * bw}" y="${pt}" width="${bw}" height="${H - pt - pb}" fill="transparent"/>
+          <rect x="${x0}" y="${y(+x.abertas)}" width="${w}" height="${Math.max(0, H - pb - y(+x.abertas))}" rx="3" fill="#38bdf8"/><rect x="${x0 + w + 2}" y="${y(+x.concluidas)}" width="${w}" height="${Math.max(0, H - pb - y(+x.concluidas))}" rx="3" fill="#a78bfa"/>
+          ${i % 2 === ser.length % 2 ? "" : `<text x="${pl + i * bw + bw / 2}" y="${H - 8}" text-anchor="middle" class="dAx">${dm(x.d)}</text>`}</g>`; }).join("")}
+      </svg></div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card"><h2>Tempo em aberto das OS pendentes</h2>
+        ${faixas.map(([f, l, c, cor]) => `<div class="fx kgo" data-kgo="${c}" title="Ver estas OS"><span class="dias ${c} sm">${k[f]}</span><span class="fxL">${l}</span><div class="fxB"><i style="width:${totF ? (k[f] / totF * 100) : 0}%;background:${cor}"></i></div></div>`).join("")}
+        <small class="muted">${totF} OS pendentes com data de abertura</small></div>
+      <div class="card"><h2>Clientes</h2>
+        <div class="mini" style="grid-template-columns:1fr 1fr;margin:0">
+          <div class="m kgo" data-kcli="ouro"><span class="medal ouro"></span><b>${k.ouro}</b><span>Ouro</span></div>
+          <div class="m kgo" data-kcli="prata"><span class="medal prata"></span><b>${k.prata}</b><span>Prata</span></div>
+        </div><small class="muted">${k.contas} contas cadastradas</small></div>
+    </div>
+  </div>
+  ${!S.me ? `<div class="hint" style="margin-top:16px">🔒 A parte interna (ordens de serviço, clientes, arquivos) é só para quem tem acesso. <a href="#" id="dEnt">Entrar</a> · <a href="#" id="dSol">Solicitar acesso</a></div>` : ""}`;
+  $("#dEnt") && ($("#dEnt").onclick = e => { e.preventDefault(); abrirLogin(); });
+  $("#dSol") && ($("#dSol").onclick = e => { e.preventDefault(); abrirSolicitar(); });
+};
+
+/* ---------- perfil (clique na bolinha) ---------- */
+function abrirPerfil(id) {
+  const u = userById(id) || (S.me && S.me.id === id ? S.me : null); if (!u) return;
+  const on = S.online[u.id], eu = S.me && u.id === S.me.id, d0 = new Date(); d0.setHours(0, 0, 0, 0);
+  const ua = ultimoAcesso(u.id); const podeFoto = eu || isAdmin();
+  modal({
+    titulo: eu ? "Meu perfil" : "Perfil",
+    corpo: `<div style="display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
+      <span class="avXL">${u.foto ? `<img src="${esc(u.foto)}" alt="">` : esc(iniciais(u.nome))}<i class="dot ${on ? "on" : ""}"></i></span>
+      <div><div style="font-size:19px;font-weight:800">${esc(u.nome)}</div><div class="muted">@${esc(u.login || "")} · ${PAPEIS[u.papel] || u.papel || ""}</div></div>
+      <div>${on ? `<b style="color:var(--ok)">● Online há ${fmtTempo(Date.now() - on.desde)}</b>` : `<span class="muted">○ Offline${ua ? " · visto " + new Date(ua).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}</span>`}</div>
+      <div class="muted" style="font-size:13px">Tempo logado hoje: <b style="color:var(--tx)">${fmtTempo(tempoDesde(u.id, +d0))}</b></div>
+      <div class="muted" style="font-size:13px">${u.papel === "admin" ? "Acesso total" : (u.permissoes || []).length ? "Pode: " + (u.permissoes || []).map(p => (PERMS.find(x => x[0] === p) || [p, p])[1]).join(" · ") : "Somente visualizar"}</div>
+    </div>`,
+    botoes: [...(podeFoto ? [{ txt: "📷 " + (u.foto ? "Alterar foto" : "Colocar foto"), fn: () => { setTimeout(() => editarFotoUsuario(u.id), 30); } }] : []), ...(isAdmin() && !eu ? [{ txt: "Editar usuário", fn: () => { setTimeout(() => abrirUsuario(u.id), 30); } }] : []), { txt: "Fechar", cls: "pri" }]
+  });
+}
+/* ---------- pedidos de acesso ---------- */
+function abrirSolicitar() {
+  modal({
+    titulo: "Solicitar acesso",
+    corpo: `<p class="muted" style="margin-top:0">Seu pedido vai para o administrador. Você só entra depois que ele autorizar, e no começo só pode visualizar.</p>
+      <div class="form"><label class="full">Seu nome<input class="in" name="nome" autocomplete="name"></label>
+      <label>Usuário (para entrar)<input class="in" name="login" autocapitalize="none" placeholder="ex.: wesley"></label>
+      <label>Função / setor<input class="in" name="obs" placeholder="ex.: técnico externo"></label>
+      <label>PIN (4 a 8 números)<input class="in" name="pin" type="password" inputmode="numeric"></label>
+      <label>Repita o PIN<input class="in" name="pin2" type="password" inputmode="numeric"></label></div>`,
+    botoes: [{ txt: "Enviar pedido", cls: "pri", fn: async r => {
+      const g = n => r.querySelector(`[name=${n}]`).value.trim();
+      const d = { nome: g("nome"), login: g("login").toLowerCase(), pin: g("pin"), obs: g("obs") };
+      if (d.nome.length < 2) throw new Error("Escreva seu nome");
+      if (!/^[a-z0-9._-]{3,40}$/.test(d.login)) throw new Error("Usuário: só letras minúsculas, números, ponto ou traço (mínimo 3)");
+      if (!/^[0-9]{4,8}$/.test(d.pin)) throw new Error("O PIN precisa ter de 4 a 8 números");
+      if (d.pin !== g("pin2")) throw new Error("Os PINs não são iguais");
+      await API.solicitar(d);
+      setTimeout(() => modal({ titulo: "✅ Pedido enviado", corpo: `<p>Pronto, <b>${esc(d.nome)}</b>. Assim que o administrador autorizar, você entra com o usuário <b>${esc(d.login)}</b> e o PIN que escolheu.</p>`, botoes: [{ txt: "Ok", cls: "pri" }] }), 30);
+    } }]
+  });
+}
+const pedidos = () => S.users.filter(u => u.pendente);
+const _pedVistos = new Set();
+function checarPedidos() {
+  if (!isAdmin()) return;
+  const novos = [...pedidos().map(u => "u" + u.id), ...maqPend().map(m => "m" + m.id + m.user)].filter(k => !_pedVistos.has(k));
+  if (!novos.length || $("#modalRoot").innerHTML) return;
+  novos.forEach(k => _pedVistos.add(k));
+  abrirPedidos();
+}
+function pedidosHTML() {
+  const ps = pedidos(); if (!ps.length) return "";
+  return `<div class="card pedBox"><h2>🔔 Pedidos de acesso <span class="pill">${ps.length}</span></h2>${ps.map(u => `<div class="ped"><div style="flex:1"><b>${esc(u.nome)}</b> <span class="muted">@${esc(u.login)}</span>${u.obs ? `<br><small class="muted">${esc(u.obs)}</small>` : ""}</div><button class="btn sm pri" data-paut="${esc(u.id)}">✓ Autorizar</button><button class="btn sm bad" data-precu="${esc(u.id)}">Recusar</button></div>`).join("")}<small class="muted">Quem você autoriza entra só para visualizar. Para liberar edição, abra o usuário e marque as permissões.</small></div>`;
+}
+function ligarPedidos(root, depois) {
+  $$("[data-paut]", root).forEach(b => b.onclick = async () => { const u = userById(b.dataset.paut); b.disabled = true; try { await API.saveUser({ id: u.id, nome: u.nome, login: u.login, papel: "visitante", permissoes: [], foto: u.foto || "", ativo: true, pendente: false, pin: "" }); await reload(); toast(u.nome + " autorizado(a)", "ok"); depois?.(); } catch (e) { toast(e.message, "bad"); b.disabled = false; } });
+  $$("[data-precu]", root).forEach(b => b.onclick = async () => { const u = userById(b.dataset.precu); if (!await confirma("Recusar o pedido de " + u.nome + "?")) return; try { await API.delUser(u.id); await reload(); toast("Pedido recusado", "ok"); depois?.(); } catch (e) { toast(e.message, "bad"); } });
+}
+function abrirPedidos() {
+  if (!pedidos().length && !maqPend().length) return;
+  const html = () => pedidosHTML() + maquinasPendHTML();
+  const r = modal({ titulo: "🔔 Alguém quer entrar no aplicativo", corpo: `<div id="pedM">${html()}</div>`, botoes: [{ txt: "Decidir depois" }] });
+  const atual = () => { const m = $("#pedM"); if (!m) return; if (!pedidos().length && !maqPend().length) return fechaModal(); m.innerHTML = html(); ligarPedidos(m, atual); ligarMaquinas(m, atual); };
+  ligarPedidos(r, atual); ligarMaquinas(r, atual);
+}
 
 /* ---------- Painel ---------- */
 VIEWS.painel = el => {
@@ -603,19 +831,18 @@ VIEWS.painel = el => {
   el.innerHTML = `
   ${cfg().exemplo && isAdmin() ? `<div class="hint warn">Estes são dados de exemplo. Quando mandar seus clientes e OS, apague-os em <a href="#admin">Admin → Configurações</a>.</div>` : ""}
   <div class="kpis">
-    <div class="kpi k1"><div class="l">OS abertas</div><div class="v">${k.abertas}</div><div class="s">Serviços pendentes</div></div>
-    <div class="kpi k2"><div class="l">Em execução</div><div class="v">${k.execucao}</div><div class="s">${k.tecnicos} técnico(s) trabalhando</div></div>
-    <div class="kpi k3"><div class="l">Concluídas na semana</div><div class="v">${k.semana}</div><div class="s">Serviços finalizados desde segunda</div></div>
-    <div class="kpi k4"><div class="l">Atrasadas</div><div class="v">${k.atrasadas}</div><div class="s">Necessitam de atenção</div></div>
+    <div class="kpi k1 kgo" data-kgo="aberta" title="Ver estas OS"><div class="l">OS abertas</div><div class="v">${k.abertas}</div><div class="s">Serviços pendentes</div></div>
+    <div class="kpi k2 kgo" data-kgo="execucao" title="Ver estas OS"><div class="l">Em execução</div><div class="v">${k.execucao}</div><div class="s">${k.tecnicos} técnico(s) trabalhando</div></div>
+    <div class="kpi k3 kgo" data-kgo="semana" title="Ver estas OS"><div class="l">Concluídas na semana</div><div class="v">${k.semana}</div><div class="s">Serviços finalizados desde segunda</div></div>
+    <div class="kpi k4 kgo" data-kgo="atrasadas" title="Ver estas OS"><div class="l">Atrasadas</div><div class="v">${k.atrasadas}</div><div class="s">Necessitam de atenção</div></div>
   </div>
   <div class="mini">
-    <div class="m"><span class="medal ouro"></span><b>${cnt("ouro")}</b><span>Clientes ouro${ctas("ouro") !== cnt("ouro") ? `<br><small class="muted">${ctas("ouro")} contas</small>` : ""}</span></div>
-    <div class="m"><span class="medal prata"></span><b>${cnt("prata")}</b><span>Clientes prata${ctas("prata") !== cnt("prata") ? `<br><small class="muted">${ctas("prata")} contas</small>` : ""}</span></div>
-    <div class="m"><span class="medal bronze"></span><b>${cnt("bronze")}</b><span>Clientes bronze${ctas("bronze") !== cnt("bronze") ? `<br><small class="muted">${ctas("bronze")} contas</small>` : ""}</span></div>
+    <div class="m kgo" data-kcli="ouro"><span class="medal ouro"></span><b>${cnt("ouro")}</b><span>Clientes ouro${ctas("ouro") !== cnt("ouro") ? `<br><small class="muted">${ctas("ouro")} contas</small>` : ""}</span></div>
+    <div class="m kgo" data-kcli="prata"><span class="medal prata"></span><b>${cnt("prata")}</b><span>Clientes prata${ctas("prata") !== cnt("prata") ? `<br><small class="muted">${ctas("prata")} contas</small>` : ""}</span></div>
     <div class="m"><span class="medal" style="background:var(--info)"></span><b>${seg?.total ?? (cl.length || "—")}</b><span>${seg?.total != null ? "Clientes no Segware" : "Contas cadastradas"}${seg?.em ? `<br><small class="muted">atualizado ${br(seg.em.slice(0, 10))}</small>` : ""}</span></div>
   </div>
   <div class="row">
-    <div class="card"><h2>OS pendentes por atraso<span class="sp"></span><span class="muted" style="font-weight:500;font-size:12px">prazo padrão: ${cfg().sla} dia(s) após a abertura</span></h2><div id="pTbl"></div></div>
+    <div class="card"><h2>OS pendentes por atraso<span class="sp"></span><span class="muted" style="font-weight:500;font-size:12px">prazo padrão: ${cfg().sla} dia(s) após a abertura</span></h2>${legendaDias()}<div id="pTbl"></div></div>
     <div style="display:flex;flex-direction:column;gap:16px">
       <div class="card"><h2>Online agora <span class="pill">${Object.keys(S.online).length}</span></h2><div class="onl" id="pOnl"></div></div>
       <div class="card"><h2>Clientes com mais atraso</h2><div id="pTop"></div></div>
@@ -633,8 +860,8 @@ VIEWS.painel = el => {
 
 function tabelaOS(arr, compacto) {
   if (!arr.length) return '<div class="empty">Nenhuma OS aqui.</div>';
-  return `<div class="tbl"><table><thead><tr><th>Atraso</th><th>Nº</th><th>Cliente</th><th>Serviço</th>${compacto ? "" : "<th class='hidesm'>Técnico</th>"}<th class="hidesm">Abertura</th><th class="hidesm">Prazo / entrega</th><th>Status</th>${compacto ? "<th class='hidesm'>Técnico</th>" : "<th class='hidesm'>Origem</th>"}</tr></thead><tbody>
-  ${arr.map(o => `<tr class="click" data-os="${esc(o.id)}"><td>${badgeAtraso(o)}</td><td><b>${esc(o.numero || "—")}</b></td><td>${esc(o.cliente || "—")} ${pillTier(tierDe(o.cliente))}</td><td>${o.prioridade === "alta" || o.prioridade === "urgente" ? `<span class="pill" style="background:rgba(239,68,68,.15);color:#fca5a5">${o.prioridade}</span> ` : ""}${esc(o.servico || "")}</td>${compacto ? "" : `<td class="hidesm">${esc(o.tecnico || "—")}</td>`}<td class="hidesm">${o.abertura ? br(o.abertura) : o.visto ? `<small class="muted">visto ${br(o.visto)}</small>` : "—"}${diasAberta(o) != null ? `<br><small class="muted">${diasAberta(o)}d aberta</small>` : ""}</td><td class="hidesm">${br(prazoEf(o))}${o.prazo ? "" : '<br><small class="muted">padrão</small>'}</td><td><span class="pill ${o.status}">${STATUS[o.status] || o.status}</span></td>${compacto ? `<td class="hidesm">${esc(o.tecnico || "—")}</td>` : `<td class="hidesm muted">${esc(o.origem || "")}</td>`}</tr>`).join("")}
+  return `<div class="tbl"><table><thead><tr><th>Aberta há</th><th>Atraso</th><th>Nº</th><th>Cliente</th><th>Serviço</th>${compacto ? "" : "<th class='hidesm'>Técnico</th>"}<th class="hidesm">Abertura</th><th class="hidesm">Prazo / entrega</th><th>Status</th>${compacto ? "<th class='hidesm'>Técnico</th>" : "<th class='hidesm'>Origem</th>"}</tr></thead><tbody>
+  ${arr.map(o => `<tr class="click" data-os="${esc(o.id)}"><td>${badgeDias(o)}</td><td>${badgeAtraso(o)}</td><td><b>${esc(o.numero || "—")}</b></td><td>${esc(o.cliente || "—")} ${pillTier(tierDe(o.cliente))}</td><td>${o.prioridade === "alta" || o.prioridade === "urgente" ? `<span class="pill" style="background:rgba(239,68,68,.15);color:#fca5a5">${o.prioridade}</span> ` : ""}${esc(o.servico || "")}</td>${compacto ? "" : `<td class="hidesm">${esc(o.tecnico || "—")}</td>`}<td class="hidesm">${o.abertura ? br(o.abertura) : o.visto ? `<small class="muted">visto ${br(o.visto)}</small>` : "—"}</td><td class="hidesm">${br(prazoEf(o))}${o.prazo ? "" : '<br><small class="muted">padrão</small>'}</td><td><span class="pill ${o.status}">${STATUS[o.status] || o.status}</span></td>${compacto ? `<td class="hidesm">${esc(o.tecnico || "—")}</td>` : `<td class="hidesm muted">${esc(o.origem || "")}</td>`}</tr>`).join("")}
   </tbody></table></div>`;
 }
 function ligaTabelaOS(root) { $$("[data-os]", root).forEach(tr => tr.onclick = () => abrirOS(tr.dataset.os)); }
@@ -688,15 +915,15 @@ function confirma(msg) {
 }
 VIEWS.os = el => {
   const todas = lista("os");
-  let arr = todas.filter(o => (F.status === "ativas" ? ativa(o) : F.status === "atrasadas" ? (atraso(o) ?? -1) > 0 : F.status ? o.status === F.status : true)
+  let arr = todas.filter(o => (F.status === "ativas" ? ativa(o) : F.status === "atrasadas" ? (atraso(o) ?? -1) > 0 : F.status === "semana" ? o.status === "concluida" && o.conclusao && o.conclusao >= segunda() : /^d[var]$/.test(F.status) ? ativa(o) && diasAberta(o) != null && corDias(diasAberta(o)) === F.status : F.status ? o.status === F.status : true)
     && (!F.origem || o.origem === F.origem) && (!F.tier || tierDe(o.cliente) === F.tier)
     && (!F.busca || norm([o.numero, o.cliente, o.servico, o.tecnico].join(" ")).includes(norm(F.busca))));
   arr.sort((a, b) => (atraso(b) ?? -999) - (atraso(a) ?? -999) || String(b.abertura).localeCompare(String(a.abertura)));
   el.innerHTML = `<div class="tools">
     <input class="in" id="fB" placeholder="Buscar nº, cliente, serviço, técnico…" value="${esc(F.busca)}" style="flex:1;min-width:200px">
-    <select class="in" id="fS">${[["ativas", "Pendentes (abertas + execução)"], ["atrasadas", "Só atrasadas"], ["aberta", "Abertas"], ["execucao", "Em execução"], ["concluida", "Concluídas"], ["cancelada", "Canceladas"], ["", "Todas"]].map(([v, l]) => `<option value="${v}" ${F.status === v ? "selected" : ""}>${l}</option>`).join("")}</select>
+    <select class="in" id="fS">${[["ativas", "Pendentes (abertas + execução)"], ["atrasadas", "Só atrasadas"], ["dv", "🟢 Abertas até 2 dias"], ["da", "🟡 Abertas de 3 a 4 dias"], ["dr", "🔴 Abertas há mais de 4 dias"], ["aberta", "Abertas"], ["execucao", "Em execução"], ["semana", "Concluídas na semana"], ["concluida", "Concluídas"], ["cancelada", "Canceladas"], ["", "Todas"]].map(([v, l]) => `<option value="${v}" ${F.status === v ? "selected" : ""}>${l}</option>`).join("")}</select>
     <select class="in" id="fO"><option value="">Todas as origens</option>${["Inside", "Segware", "Manual"].map(v => `<option ${F.origem === v ? "selected" : ""}>${v}</option>`).join("")}</select>
-    <select class="in" id="fT"><option value="">Todas as categorias</option>${["ouro", "prata", "bronze"].map(v => `<option value="${v}" ${F.tier === v ? "selected" : ""}>${v[0].toUpperCase() + v.slice(1)}</option>`).join("")}</select>
+    <select class="in" id="fT"><option value="">Todas as categorias</option>${["ouro", "prata"].map(v => `<option value="${v}" ${F.tier === v ? "selected" : ""}>${v[0].toUpperCase() + v.slice(1)}</option>`).join("")}</select>
     ${pode("os") ? `<button class="btn pri" id="bNova">+ Nova OS</button>` : ""}
   </div>
   <div class="stats"><div class="s"><b>${arr.length}</b>listadas</div><div class="s"><b>${todas.length}</b>no total</div></div>
@@ -712,7 +939,7 @@ VIEWS.os = el => {
 /* ---------- Clientes ---------- */
 const CLF = [
   { k: "nome", l: "Nome do cliente", full: true },
-  { k: "categoria", l: "Categoria", t: "select", op: [["", "Sem categoria"], ["ouro", "Ouro"], ["prata", "Prata"], ["bronze", "Bronze"]] },
+  { k: "categoria", l: "Categoria", t: "select", op: [["prata", "Prata"], ["ouro", "Ouro"]] },
   { k: "grupo", l: "Grupo (junta várias contas)", list: "dlGrp", ph: "ex.: Capelas" }, { k: "responsavel", l: "Responsável (contato do cliente)" },
   { k: "codigo", l: "Conta Segware" }, { k: "cnpj", l: "CNPJ" }, { k: "telefone", l: "Telefone" }, { k: "contato", l: "Outro contato" },
   { k: "servicos", l: "Serviços (CFTV, alarme, cerca…)" }, { k: "cidade", l: "Cidade" }, { k: "bairro", l: "Bairro" }, { k: "endereco", l: "Endereço", full: true },
@@ -724,7 +951,7 @@ VIEWS.clientes = el => {
   const arr = cl.filter(c => (FC.tier === "todos" || (c.categoria || "") === FC.tier) && (!FC.busca || norm([c.nome, c.codigo, c.grupo, c.responsavel, c.cidade, c.bairro, c.endereco].join(" ")).includes(norm(FC.busca))))
     .sort((a, b) => ({ ouro: 0, prata: 1, bronze: 2 }[a.categoria] ?? 3) - ({ ouro: 0, prata: 1, bronze: 2 }[b.categoria] ?? 3) || a.nome.localeCompare(b.nome));
   const ed = pode("clientes");
-  el.innerHTML = `<div class="tabs">${[["todos", "Todos", cl.length], ["ouro", "🥇 Ouro"], ["prata", "🥈 Prata"], ["bronze", "🥉 Bronze"], ["", "Sem categoria"]].map(([v, l, n]) => `<button class="tab ${FC.tier === v ? "on" : ""}" data-t="${v}">${l}<span class="c">${n ?? cl.filter(c => (c.categoria || "") === v).length}</span></button>`).join("")}</div>
+  el.innerHTML = `<div class="tabs">${[["todos", "Todos", cl.length], ["ouro", "🥇 Ouro"], ["prata", "🥈 Prata"]].map(([v, l, n]) => `<button class="tab ${FC.tier === v ? "on" : ""}" data-t="${v}">${l}<span class="c">${n ?? cl.filter(c => (c.categoria || "") === v).length}</span></button>`).join("")}</div>
   <div class="tools"><input class="in" id="cB" placeholder="Buscar cliente…" value="${esc(FC.busca)}" style="flex:1">${ed ? `<button class="btn" id="cImp">Colar lista de clientes</button><button class="btn pri" id="cNovo">+ Novo cliente</button>` : ""}</div>
   ${arr.length ? `<div class="grid">${arr.map(c => { const p = os.filter(o => norm(o.cliente) === norm(c.nome)); const at = p.filter(o => atraso(o) > 0).length; return `<div class="item click" data-c="${esc(c.id)}"><div class="t"><span class="medal ${c.categoria}" style="${c.categoria ? "" : "background:var(--line)"}"></span>${esc(c.nome)}</div><div class="k">${pillTier(c.categoria)} ${c.codigo ? "· conta " + esc(c.codigo) : ""}${c.grupo ? " · " + esc(c.grupo) : ""}</div>${c.responsavel || c.cidade ? `<div class="k">${c.responsavel ? "Resp.: <b>" + esc(c.responsavel) + "</b>" : ""}${c.responsavel && c.cidade ? " · " : ""}${esc(c.cidade || "")}${c.bairro ? " / " + esc(c.bairro) : ""}</div>` : ""}<div class="k">${p.length} OS pendente(s)${at ? ` · <b style="color:#fca5a5">${at} atrasada(s)</b>` : ""}</div>${c.telefone ? `<div class="k">${esc(c.telefone)}</div>` : ""}</div>`; }).join("")}</div>` : '<div class="empty">Nenhum cliente. Use “Colar lista de clientes” para importar todos de uma vez.</div>'}`;
   $$("[data-t]", el).forEach(b => b.onclick = () => { FC.tier = b.dataset.t; renderAll(); });
@@ -734,7 +961,7 @@ VIEWS.clientes = el => {
   $("#cImp") && ($("#cImp").onclick = () => { IMP.destino = "cliente"; go("importar"); });
 };
 function abrirCliente(id) {
-  const c = id ? T("cliente")[id] : { categoria: "" };
+  const c = id ? T("cliente")[id] : { categoria: "prata" };
   const ed = pode("clientes");
   const hist = id ? lista("os").filter(o => norm(o.cliente) === norm(c.nome)).sort((a, b) => String(b.abertura).localeCompare(String(a.abertura))) : [];
   modal({
@@ -861,7 +1088,7 @@ function montarItens() {
       const nome = g(r, "nome"); if (!nome || nome.length < 2) return null;
       const old = exist[norm(nome)];
       const catTxt = norm(g(r, "categoria") || r.join(" "));
-      const categoria = /ouro|gold/.test(catTxt) ? "ouro" : /prata|silver/.test(catTxt) ? "prata" : /bronze/.test(catTxt) ? "bronze" : (old?.categoria || "");
+      const categoria = /ouro|gold/.test(catTxt) ? "ouro" : /prata|silver|bronze/.test(catTxt) ? "prata" : (old?.categoria === "ouro" ? "ouro" : "prata");
       const d = { ...(old || {}), nome, categoria };
       ["codigo", "telefone", "contato", "endereco", "cnpj", "cidade", "bairro", "responsavel", "grupo"].forEach(k => { const v = g(r, k); if (v) d[k] = v; });
       delete d.exemplo; const id = old?.id || "c_" + uid();
@@ -1347,7 +1574,7 @@ function imprimirRel(texto) {
 /* ---------- Admin ---------- */
 let admTab = "checklist", calMes = null, calSel = null;
 VIEWS.admin = el => {
-  el.innerHTML = `<div class="tabs">${[["checklist", "✅ Checklist diário"], ["usuarios", "👥 Usuários e permissões"], ["tempo", "⏱️ Tempo logado"], ["config", "⚙️ Configurações"]].map(([k, l]) => `<button class="tab ${admTab === k ? "on" : ""}" data-at="${k}">${l}</button>`).join("")}</div><div id="admB"></div>`;
+  el.innerHTML = `<div class="tabs">${[["checklist", "✅ Checklist diário"], ["usuarios", "👥 Usuários e permissões"], ["maquinas", "💻 Máquinas" + (maqPend().length ? " 🔴" + maqPend().length : "")], ["tempo", "⏱️ Tempo logado"], ["config", "⚙️ Configurações"]].map(([k, l]) => `<button class="tab ${admTab === k ? "on" : ""}" data-at="${k}">${l}</button>`).join("")}</div><div id="admB"></div>`;
   $$("[data-at]", el).forEach(b => b.onclick = () => { admTab = b.dataset.at; renderAll(); });
   ADM[admTab]($("#admB"));
 };
@@ -1398,9 +1625,11 @@ function abrirTarefa(id) {
   });
 }
 ADM.usuarios = el => {
-  el.innerHTML = `<div class="tools"><span class="muted">Só o administrador altera dados. Os demais só veem — a não ser que você libere uma permissão.</span><span class="sp"></span><button class="btn pri" id="uN">+ Novo usuário</button></div>
-  <div class="grid">${S.users.map(u => `<div class="item click" data-u="${esc(u.id)}"><div class="t">${av(u, true)}<div><div>${esc(u.nome)}</div><small class="muted" style="font-weight:500">@${esc(u.login)} · ${PAPEIS[u.papel] || u.papel}</small></div></div><div class="k">${u.papel === "admin" ? "Acesso total" : (u.permissoes || []).length ? (u.permissoes || []).map(p => (PERMS.find(x => x[0] === p) || [p, p])[1]).join(" · ") : "Somente visualizar"}</div><div class="k">${S.online[u.id] ? '<b style="color:var(--ok)">● Online</b>' : "○ Offline"}${u.ativo === false ? " · <b style='color:#fca5a5'>bloqueado</b>" : ""}</div></div>`).join("")}</div>`;
+  el.innerHTML = pedidosHTML() + `<div class="tools"><span class="muted">Só o administrador altera dados. Os demais só veem — a não ser que você libere uma permissão.</span><span class="sp"></span><button class="btn pri" id="uN">+ Novo usuário</button></div>
+  <div class="grid">${S.users.filter(u => !u.pendente).map(u => `<div class="item click" data-u="${esc(u.id)}"><div class="t"><span class="avEd" data-uf="${esc(u.id)}" title="${u.foto ? "Ajustar ou trocar foto" : "Colocar foto"}">${av(u, true)}<i>📷</i></span><div><div>${esc(u.nome)}</div><small class="muted" style="font-weight:500">@${esc(u.login)} · ${PAPEIS[u.papel] || u.papel}</small></div></div><div class="k">${u.papel === "admin" ? "Acesso total" : (u.permissoes || []).length ? (u.permissoes || []).map(p => (PERMS.find(x => x[0] === p) || [p, p])[1]).join(" · ") : "Somente visualizar"}</div><div class="k">${S.online[u.id] ? '<b style="color:var(--ok)">● Online</b>' : "○ Offline"}${u.ativo === false ? " · <b style='color:#fca5a5'>bloqueado</b>" : ""}</div></div>`).join("")}</div>`;
+  ligarPedidos(el);
   $$("[data-u]", el).forEach(d => d.onclick = () => abrirUsuario(d.dataset.u));
+  $$("[data-uf]", el).forEach(b => b.onclick = e => { e.stopPropagation(); editarFotoUsuario(b.dataset.uf); });
   $("#uN").onclick = () => abrirUsuario(null);
 };
 function abrirUsuario(id) {
@@ -1408,7 +1637,7 @@ function abrirUsuario(id) {
   let foto = u.foto || "";
   modal({
     titulo: id ? "Editar usuário" : "Novo usuário",
-    corpo: `<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px"><span id="fPrev">${av({ ...u, nome: u.nome || "?", foto, id: id || "x" }, true)}</span><button class="btn sm" id="fBtn">Escolher foto</button>${foto ? '<button class="btn sm" id="fDel">Remover</button>' : ""}<input type="file" id="fF" accept="image/*" hidden></div>
+    corpo: `<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px"><span id="fPrev">${av({ ...u, nome: u.nome || "?", foto, id: id || "x" }, true)}</span><button class="btn sm" id="fBtn">📁 Escolher foto</button><button class="btn sm" id="fAj" ${foto ? "" : "hidden"}>✂️ Ajustar rosto</button><button class="btn sm" id="fDel" ${foto ? "" : "hidden"}>Remover</button><input type="file" id="fF" accept="image/*" hidden></div>
     <div class="form"><label>Nome<input class="in" name="nome" value="${esc(u.nome || "")}"></label><label>Usuário (para entrar)<input class="in" name="login" value="${esc(u.login || "")}" autocapitalize="none"></label>
     <label>${id ? "Novo PIN (vazio = manter)" : "PIN"}<input class="in" name="pin" inputmode="numeric" placeholder="ex.: 4 a 6 números"></label>
     <label>Função<select class="in" name="papel">${Object.entries(PAPEIS).map(([k, v]) => `<option value="${k}" ${u.papel === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
@@ -1432,11 +1661,126 @@ function abrirUsuario(id) {
     ]
   });
   $("#fBtn").onclick = () => $("#fF").click();
-  $("#fDel") && ($("#fDel").onclick = () => { foto = ""; $("#fPrev").innerHTML = av({ ...u, nome: u.nome || "?", foto: "", id: id || "x" }, true); });
-  $("#fF").onchange = async e => { const f = e.target.files[0]; if (!f) return; foto = await reduzirFoto(f); $("#fPrev").innerHTML = av({ ...u, nome: u.nome || "?", foto, id: id || "x" }, true); };
+  const mostra = () => { $("#fPrev").innerHTML = av({ ...u, nome: u.nome || "?", foto, id: id || "x" }, true); $("#fAj").hidden = $("#fDel").hidden = !foto; };
+  $("#fDel").onclick = () => { foto = ""; mostra(); };
+  $("#fAj").onclick = async () => { const n = await editorFoto(foto, "Ajustar foto"); if (n) { foto = n; mostra(); } };
+  $("#fF").onchange = async e => { const f = e.target.files[0]; e.target.value = ""; if (!f) return; const n = await editorFoto(URL.createObjectURL(f), "Ajustar foto"); if (n) { foto = n; mostra(); } };
+}
+/* ---------- editor de foto: enquadrar o rosto, zoom e girar ---------- */
+function editorFoto(src, titulo = "Ajustar foto") {
+  return new Promise(ok => {
+    const S0 = 300, OUT = 256;
+    const ov = document.createElement("div"); ov.className = "ov fotoOv";
+    ov.innerHTML = `<div class="md" style="width:min(400px,100%)"><div class="hd">📷 ${esc(titulo)}<span class="sp"></span><button class="btn sm" data-fx>✕</button></div>
+      <div class="bd" style="display:flex;flex-direction:column;align-items:center;gap:12px">
+        <div class="fotoStage"><canvas width="${S0 * 2}" height="${S0 * 2}"></canvas><div class="fotoMask"></div></div>
+        <div class="muted" style="font-size:12.5px;text-align:center">Arraste a foto para centralizar o rosto no círculo. Use o zoom ou a rodinha do mouse.</div>
+        <label style="width:100%;display:flex;align-items:center;gap:10px">🔍<input type="range" min="1" max="4" step="0.01" value="1" data-fz style="flex:1"></label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center"><button class="btn sm" data-fr>↻ Girar</button><button class="btn sm" data-fc>⟲ Centralizar</button><button class="btn sm" data-ft>📁 Trocar imagem</button><input type="file" accept="image/*" hidden data-ff></div>
+      </div><div class="ft"><button class="btn" data-fx>Cancelar</button><button class="btn pri" data-fo>Usar foto</button></div></div>`;
+    document.body.appendChild(ov);
+    const cv = ov.querySelector("canvas"), cx = cv.getContext("2d"), zr = ov.querySelector("[data-fz]");
+    let img = null, rot = 0, z = 1, ox = 0, oy = 0;
+    const base = () => { const w = rot % 180 ? img.height : img.width, h = rot % 180 ? img.width : img.height; return { w, h, k: Math.max(S0 / w, S0 / h) }; };
+    const limita = () => { const { w, h, k } = base(); const mx = Math.max(0, (w * k * z - S0) / 2), my = Math.max(0, (h * k * z - S0) / 2); ox = Math.min(mx, Math.max(-mx, ox)); oy = Math.min(my, Math.max(-my, oy)); };
+    const pinta = (ctx, tam) => { const f = tam / S0; const { k } = base(); ctx.save(); ctx.fillStyle = "#13203a"; ctx.fillRect(0, 0, tam, tam); ctx.translate(tam / 2 + ox * f, tam / 2 + oy * f); ctx.rotate(rot * Math.PI / 180); const s = k * z * f; ctx.drawImage(img, -img.width * s / 2, -img.height * s / 2, img.width * s, img.height * s); ctx.restore(); };
+    const desenha = () => { if (!img) return; limita(); pinta(cx, S0 * 2); };
+    const carrega = u => { const i = new Image(); i.crossOrigin = "anonymous"; i.onload = () => { img = i; rot = 0; z = 1; ox = oy = 0; zr.value = 1; desenha(); }; i.onerror = () => toast("Não consegui abrir essa imagem", "bad"); i.src = u; };
+    carrega(src);
+    let arr = null;
+    cv.addEventListener("pointerdown", e => { arr = { x: e.clientX, y: e.clientY, ox, oy }; cv.setPointerCapture(e.pointerId); });
+    cv.addEventListener("pointermove", e => { if (!arr) return; const f = S0 / cv.getBoundingClientRect().width; ox = arr.ox + (e.clientX - arr.x) * f; oy = arr.oy + (e.clientY - arr.y) * f; desenha(); });
+    cv.addEventListener("pointerup", () => arr = null); cv.addEventListener("pointercancel", () => arr = null);
+    cv.addEventListener("wheel", e => { e.preventDefault(); z = Math.min(4, Math.max(1, z * (e.deltaY < 0 ? 1.08 : 1 / 1.08))); zr.value = z; desenha(); }, { passive: false });
+    zr.oninput = () => { z = +zr.value; desenha(); };
+    ov.querySelector("[data-fr]").onclick = () => { rot = (rot + 90) % 360; desenha(); };
+    ov.querySelector("[data-fc]").onclick = () => { z = 1; ox = oy = 0; zr.value = 1; desenha(); };
+    const ff = ov.querySelector("[data-ff]");
+    ov.querySelector("[data-ft]").onclick = () => ff.click();
+    ff.onchange = () => { const f = ff.files[0]; if (f) carrega(URL.createObjectURL(f)); };
+    const fecha = v => { ov.remove(); ok(v); };
+    ov.querySelectorAll("[data-fx]").forEach(b => b.onclick = () => fecha(null));
+    ov.querySelector("[data-fo]").onclick = () => { if (!img) return; const c = document.createElement("canvas"); c.width = c.height = OUT; pinta(c.getContext("2d"), OUT); try { fecha(c.toDataURL("image/jpeg", .85)); } catch { toast("Essa imagem não pode ser editada. Escolha outra em 📁 Trocar imagem.", "bad"); } };
+  });
+}
+const escolherArquivo = () => new Promise(ok => { const i = document.createElement("input"); i.type = "file"; i.accept = "image/*"; i.onchange = () => ok(i.files[0] || null); i.click(); });
+async function editarFotoUsuario(id) {
+  const u = S.users.find(x => x.id === id) || (S.me?.id === id ? S.me : null); if (!u) return;
+  let src = u.foto; if (!src) { const f = await escolherArquivo(); if (!f) return; src = URL.createObjectURL(f); }
+  const foto = await editorFoto(src, "Foto de " + u.nome); if (!foto) return;
+  try { if (isAdmin()) await API.saveUser({ id: u.id, nome: u.nome, login: u.login, papel: u.papel, permissoes: u.permissoes || [], ativo: u.ativo !== false, foto, pin: "" }); else if (id === S.me.id) await API.minhaFoto(foto); else throw new Error("Só o administrador troca a foto de outra pessoa."); if (id === S.me.id) S.me.foto = foto; await reload(); toast("Foto atualizada", "ok"); }
+  catch (e) { toast(e.message, "bad"); }
 }
 function reduzirFoto(file) {
   return new Promise((ok, no) => { const img = new Image(); img.onload = () => { const s = 192, c = document.createElement("canvas"); c.width = c.height = s; const x = c.getContext("2d"); const m = Math.min(img.width, img.height); x.drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, s, s); ok(c.toDataURL("image/jpeg", .82)); URL.revokeObjectURL(img.src); }; img.onerror = no; img.src = URL.createObjectURL(file); });
+}
+/* ---------- máquinas: autorização de cada computador/celular ---------- */
+function aguardarMaquina(login, pin, info) {
+  const bloq = info.maquina === "bloqueado";
+  modal({
+    titulo: bloq ? "⛔ Máquina bloqueada" : "🔐 Solicitar autorização desta máquina",
+    corpo: bloq ? `<p>O administrador bloqueou o acesso por esta máquina. Fale com ele se precisar entrar daqui.</p>`
+      : `<p>Olá, <b>${esc(info.nome || "")}</b>. Seu usuário e PIN estão certos, mas esta máquina ainda não foi autorizada.</p>
+      <p class="muted">O pedido já foi para o administrador. Assim que ele autorizar, o sistema abre sozinho.</p>
+      <div class="form"><label class="full">Nome desta máquina (ajuda o admin a reconhecer)<input class="in" name="maq" value="${esc(DEV.nome)}" placeholder="ex.: PC da recepção"></label></div>
+      <p class="muted" id="maqSt" style="margin-bottom:0">⏳ Aguardando autorização…</p>`,
+    botoes: bloq ? [{ txt: "Ok", cls: "pri", fn: () => LS.del("pm_login") }] : [
+      { txt: "Cancelar", fn: () => { clearInterval(S._maqT); LS.del("pm_login"); } },
+      { txt: "Atualizar nome", cls: "pri", fn: async r => { const v = r.querySelector("[name=maq]").value.trim(); if (v) { DEV.nome = v.slice(0, 120); LS.set("pm_maquina", DEV); await API.login(login, pin).catch(() => {}); toast("Nome enviado ao administrador", "ok"); } return false; } }]
+  });
+  clearInterval(S._maqT);
+  if (!bloq) S._maqT = setInterval(async () => {
+    if (!$("#maqSt")) return clearInterval(S._maqT);
+    try { const u = await API.login(login, pin); if (u && !u.maquina) { clearInterval(S._maqT); $("#maqSt").textContent = "✅ Autorizado! Entrando…"; setTimeout(() => location.reload(), 800); } else if (u?.maquina === "bloqueado") { clearInterval(S._maqT); fechaModal(); aguardarMaquina(login, pin, u); } } catch {}
+  }, 8000);
+}
+function avisoRestrito() {
+  sessionStorage.setItem("pm_aviso", "1");
+  if ($("#modalRoot").innerHTML) return;
+  modal({
+    titulo: "🔐 Acesso restrito",
+    corpo: `<p>Este sistema é de uso interno. Sem login você vê só o <b>Dashboard</b> com os números gerais.</p><p class="muted" style="margin-bottom:0">Para entrar, use seu usuário e PIN. Se ainda não tem acesso, peça autorização ao administrador.</p>`,
+    botoes: [{ txt: "Só ver o dashboard" }, { txt: "Solicitar autorização", fn: () => { setTimeout(abrirSolicitar, 30); } }, { txt: "Entrar", cls: "pri", fn: () => { setTimeout(abrirLogin, 30); } }]
+  });
+}
+const maqPend = () => (S.maquinas || []).filter(m => m.status === "pendente");
+function maquinasPendHTML() {
+  const ms = maqPend(); if (!ms.length) return "";
+  return `<div class="card pedBox"><h2>💻 Máquinas pedindo autorização <span class="pill">${ms.length}</span></h2>${ms.map(m => `<div class="ped"><div style="flex:1"><b>${esc(m.pessoa)}</b> <span class="muted">em</span> <b>${esc(m.nome || "Máquina sem nome")}</b><br><small class="muted">pediu ${new Date(m.visto).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · código ${esc(m.id.slice(1, 7))}</small></div><button class="btn sm pri" data-maut="${esc(m.id)}|${esc(m.user)}">✓ Autorizar</button><button class="btn sm bad" data-mblq="${esc(m.id)}|${esc(m.user)}">Bloquear</button></div>`).join("")}</div>`;
+}
+function ligarMaquinas(root, depois) {
+  const acao = (sel, st, msg) => $$(sel, root).forEach(b => b.onclick = async () => { const [id, user] = b.getAttribute(sel.slice(1, -1)).split("|"); if (st === "excluir" && !await confirma("Remover esta máquina? Se a pessoa tentar entrar de novo por ela, vai precisar de nova autorização.")) return; b.disabled = true; try { await API.maquinaStatus(id, user, st); S.maquinas = await API.maquinas(); toast(msg, "ok"); depois?.(); softRender(true); } catch (e) { toast(e.message, "bad"); b.disabled = false; } });
+  acao("[data-maut]", "autorizado", "Máquina autorizada"); acao("[data-mblq]", "bloqueado", "Máquina bloqueada"); acao("[data-mdel]", "excluir", "Máquina removida");
+}
+ADM.maquinas = el => {
+  const on = (S.maqOn || []).slice().sort((a, b) => a.desde - b.desde);
+  const ms = S.maquinas || [];
+  const stP = { autorizado: '<span class="pill concluida">Autorizada</span>', pendente: '<span class="pill aberta">Aguardando</span>', bloqueado: '<span class="pill cancelada">Bloqueada</span>' };
+  el.innerHTML = maquinasPendHTML() + `<div class="card" style="margin-bottom:14px"><h2>🟢 Logados agora <span class="pill">${on.length}</span></h2>
+    ${on.length ? `<div class="tbl"><table><thead><tr><th>Pessoa</th><th>Máquina</th><th>Online há</th></tr></thead><tbody>${on.map(m => `<tr><td><div style="display:flex;align-items:center;gap:8px">${av(userById(m.id) || m)}<b>${esc(m.nome)}</b></div></td><td>${esc(m.maq || "—")}${m.dev === DEV.id ? ' <span class="pill">esta</span>' : ""}</td><td>${fmtTempo(Date.now() - m.desde)}</td></tr>`).join("")}</tbody></table></div>` : '<div class="empty">Ninguém logado agora.</div>'}</div>
+  <div class="card"><h2>💻 Todas as máquinas</h2><p class="muted" style="margin-top:0">Cada computador ou celular precisa da sua autorização antes de entrar. As suas (admin) são liberadas na hora.</p>
+    ${ms.length ? `<div class="tbl"><table><thead><tr><th>Pessoa</th><th>Máquina</th><th>Situação</th><th class="hidesm">Último acesso</th><th></th></tr></thead><tbody>${ms.map(m => { const k = esc(m.id) + "|" + esc(m.user); const agora = (S.maqOn || []).some(x => x.dev === m.id && x.id === m.user); return `<tr><td><b>${esc(m.pessoa)}</b></td><td>${esc(m.nome || "—")}${agora ? ' <b style="color:var(--ok)">● online</b>' : ""}<br><small class="muted">código ${esc(m.id.slice(1, 7))}</small></td><td>${stP[m.status] || esc(m.status)}</td><td class="hidesm muted">${new Date(m.visto).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" })}</td><td style="white-space:nowrap">${m.status !== "autorizado" ? `<button class="btn sm pri" data-maut="${k}">Autorizar</button> ` : ""}${m.status !== "bloqueado" && m.user !== S.me.id ? `<button class="btn sm" data-mblq="${k}">Bloquear</button> ` : ""}${m.user !== S.me.id || m.id !== DEV.id ? `<button class="btn sm bad" data-mdel="${k}" title="Remover">🗑</button>` : ""}</td></tr>`; }).join("")}</tbody></table></div>` : '<div class="empty">Nenhuma máquina registrada ainda.</div>'}</div>`;
+  ligarMaquinas(el);
+};
+/* ---------- levar os dados que ficaram no modo local para o banco online ---------- */
+function dadosLocais() {
+  const d = LS.get("pm_local_v1", null); if (!d || !d.registros) return [];
+  const itens = [];
+  for (const [tipo, m] of Object.entries(d.registros)) { if (tipo === "sessao" || tipo === "chat") continue; for (const [id, x] of Object.entries(m || {})) if (x && !x.exemplo) { const { exemplo, ...dd } = x; itens.push({ tipo, id, dados: dd }); } }
+  return itens;
+}
+async function enviarLocais() {
+  const itens = dadosLocais(); if (!itens.length) return toast("Não há dados locais neste navegador", "bad");
+  const novos = itens.filter(it => JSON.stringify(T(it.tipo)[it.id]) !== JSON.stringify(it.dados));
+  if (!novos.length) return toast("Os dados deste navegador já estão no banco online", "ok");
+  if (!await confirma(`Enviar ${novos.length} registro(s) deste navegador para o banco online? (clientes, funcionários, listas, tarefas…)`)) return;
+  await salvarVarios(novos); LS.set("pm_local_migrado", Date.now()); toast(novos.length + " registro(s) enviados ao banco online", "ok");
+}
+function ofereceMigrar() {
+  if (API !== Supa || !isAdmin() || LS.get("pm_local_migrado", 0) || $("#modalRoot").innerHTML) return;
+  const n = dadosLocais().filter(it => !T(it.tipo)[it.id]).length; if (!n) return;
+  modal({ titulo: "☁️ Dados salvos só neste navegador", corpo: `<p>Achei <b>${n}</b> registro(s) que foram salvos neste navegador enquanto o sistema estava em modo local (clientes, funcionários, cargos, escalas…).</p><p class="muted" style="margin-bottom:0">Quer enviar para o banco online? Assim toda a equipe passa a ver.</p>`,
+    botoes: [{ txt: "Agora não", fn: () => LS.set("pm_local_migrado", -1) }, { txt: "Enviar para o banco", cls: "pri", fn: async () => { setTimeout(enviarLocais, 30); } }] });
 }
 ADM.tempo = el => {
   const now = Date.now(); const d0 = new Date(); d0.setHours(0, 0, 0, 0);
@@ -1447,7 +1791,7 @@ ADM.tempo = el => {
 };
 ADM.config = el => {
   const c = cfg();
-  el.innerHTML = `<div class="row" style="grid-template-columns:1fr 1fr;margin-top:0">
+  el.innerHTML = pedidosHTML() + (API === Supa && dadosLocais().length ? `<div class="hint" style="margin-bottom:14px">☁️ Este navegador tem dados do modo local. <button class="btn sm pri" id="cMig">Enviar para o banco online</button></div>` : "") + `<div class="row" style="grid-template-columns:1fr 1fr;margin-top:0">
   <div class="card"><h2>Geral</h2><div class="form"><label class="full">Nome da empresa<input class="in" id="cE" value="${esc(c.empresa)}"></label><label>Prazo padrão das OS (dias após abertura)<input class="in" id="cS" type="number" min="0" value="${esc(c.sla)}"></label><label>&nbsp;<button class="btn pri" id="cSv">Salvar</button></label></div>
     ${c.exemplo ? `<div class="hint warn" style="margin-top:16px">Há dados de exemplo no app. <button class="btn sm bad" id="cEx">Apagar dados de exemplo</button></div>` : ""}</div>
   <div class="card"><h2>Banco de dados online (Supabase)</h2>
@@ -1457,6 +1801,8 @@ ADM.config = el => {
   <div class="card"><h2>Carteira de clientes</h2><p class="muted" style="margin-top:0">${CARTEIRA.length} contas da planilha do Segware (18/11/2026), com os ouros e seus responsáveis já marcados. Clientes que já existem não são duplicados.</p><button class="btn pri" id="cCart">Carregar carteira</button></div>
   <div class="card"><h2>Backup</h2><p class="muted" style="margin-top:0">Copie todos os dados (OS, clientes, tarefas, coordenação) para guardar.</p><div class="tools"><button class="btn" id="bkC">Copiar backup</button><button class="btn" id="bkR">Restaurar backup</button></div></div>
   </div>`;
+  ligarPedidos(el);
+  $("#cMig") && ($("#cMig").onclick = () => enviarLocais().catch(e => toast(e.message, "bad")));
   $("#cSv").onclick = async () => { try { const d = { ...(T("config").geral || {}), empresa: $("#cE").value.trim() || "Empresa", sla: Math.max(0, +$("#cS").value || 0) }; await salvar("config", "geral", d); toast("Configurações salvas", "ok"); } catch (e) { toast(e.message, "bad"); } };
   $("#cEx") && ($("#cEx").onclick = async () => {
     if (!await confirma("Apagar todos os dados de exemplo (clientes, OS, técnicos, motos…)? Suas tarefas ficam.")) return;
@@ -1499,6 +1845,177 @@ function checarLembretes() {
   LS.set("pm_avisados", avisados);
 }
 
+
+/* ============================================================
+   ATUALIZAÇÕES — pop-up de novidades para toda a equipe
+   (a cada versão nova: troque APP_VERSAO e acrescente no topo de NOVIDADES)
+   ============================================================ */
+const APP_VERSAO = "2026.11.19-2";
+const NOVIDADES = [
+  { v: "2026.11.19-2", data: "19/11/2026", itens: ["💬 Chat da equipe: botão flutuante que você arrasta para onde quiser", "📝 Anotações dentro do chat (só suas ou compartilhadas com a equipe)", "🚀 Este aviso: sempre que sair uma atualização, todo mundo vê o que mudou", "🟢🟡🔴 Dias em aberto de cada OS em destaque: verde até 2 dias, amarelo de 3 a 4, vermelho acima de 4", "🥈 Cliente que não é ouro agora é prata (bronze saiu)", "📷 Fotos da equipe: clique na foto para trocar, enquadrar o rosto, dar zoom e girar", "👤 Clique na sua bolinha (ou na de quem está online) para ver o perfil e trocar a foto", "📊 Novo Dashboard com gráficos: quem tem só o link vê apenas ele; o resto exige login", "🔐 Pedido de acesso: quem quiser entrar pede, e o administrador autoriza ou recusa", "🏗️ Atalho Projetos no menu, que abre o app de projetos", "👆 Os cartões (OS abertas, em execução, concluídas, atrasadas, ouro/prata e faixas de dias) são clicáveis e abrem a lista certa", "💻 Cada computador ou celular precisa ser autorizado pelo administrador; em Admin → Máquinas você vê quem está logado e em qual máquina"] },
+  { v: "2026.11.19-1", data: "19/11/2026", itens: ["🏷️ Cargo virou lista para selecionar, com edição (✎) para renomear e acrescentar", "🗓️ Novo campo Escala, com lista editável e cartões mostrando quem está em cada escala", "🔎 Filtros por cargo e por escala no quadro de funcionários"] },
+];
+function mostrarNovidades(forcar) {
+  const visto = LS.get("pm_versao_vista", "");
+  if (!forcar && visto === APP_VERSAO) return;
+  const novas = forcar || !visto ? NOVIDADES.slice(0, 1) : NOVIDADES.slice(0, Math.max(1, NOVIDADES.findIndex(n => n.v === visto) === -1 ? 1 : NOVIDADES.findIndex(n => n.v === visto)));
+  modal({
+    titulo: "🚀 Atualização do sistema",
+    corpo: novas.map(n => `<div class="upd"><div class="muted" style="margin-bottom:6px">Versão de ${esc(n.data)}</div><ul>${n.itens.map(i => `<li>${esc(i)}</li>`).join("")}</ul></div>`).join(""),
+    botoes: [{ txt: "Entendi", cls: "pri", fn: () => LS.set("pm_versao_vista", APP_VERSAO) }]
+  });
+  $("#modalRoot [data-x]").addEventListener("click", () => LS.set("pm_versao_vista", APP_VERSAO));
+}
+/* confere se subiu versão nova enquanto o app está aberto (TV, PCs da equipe) */
+let _novaVersao = null;
+async function checarVersao() {
+  if (location.protocol !== "https:" || _novaVersao) return;
+  try {
+    const t = await (await fetch(location.pathname + "?v=" + Date.now(), { cache: "no-store" })).text();
+    const m = t.match(/const APP_VERSAO = "([^"]+)"/);
+    if (m && m[1] !== APP_VERSAO) { _novaVersao = m[1]; avisarNovaVersao(); }
+  } catch {}
+}
+function avisarNovaVersao() {
+  let s = 60;
+  const bar = document.createElement("div"); bar.className = "updBar";
+  bar.innerHTML = `<b>🚀 Nova atualização disponível</b><span id="updS">O sistema vai atualizar em ${s}s</span><button class="btn sm pri" id="updOk">Atualizar agora</button>`;
+  document.body.appendChild(bar);
+  const ir = () => { location.replace(location.pathname + "?v=" + Date.now() + location.hash); };
+  bar.querySelector("#updOk").onclick = ir;
+  const tm = setInterval(() => {
+    const a = document.activeElement; const digitando = a && /INPUT|TEXTAREA|SELECT/.test(a.tagName) && a.value;
+    if (digitando || $("#modalRoot").innerHTML) { $("#updS").textContent = "Atualize quando terminar o que está fazendo"; return; }
+    s--; $("#updS").textContent = `O sistema vai atualizar em ${s}s`;
+    if (s <= 0) { clearInterval(tm); ir(); }
+  }, 1000);
+}
+
+/* ============================================================
+   CHAT + ANOTAÇÕES (flutuante, arrastável)
+   ============================================================ */
+const CH = { aberto: false, aba: "chat", fab: LS.get("pm_chat_fab", null), pan: LS.get("pm_chat_pan", null) };
+const chatMsgs = () => lista("chat").filter(m => m.txt).sort((a, b) => a.ts - b.ts).slice(-300);
+const chatLido = () => S.me ? LS.get("pm_chat_lido_" + S.me.id, 0) : 0;
+const chatNaoLidas = () => S.me ? chatMsgs().filter(m => m.de !== S.me.id && m.ts > chatLido()).length : 0;
+const hhmm = ts => { const d = new Date(ts), h = new Date(); const t = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }); return d.toDateString() === h.toDateString() ? t : d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) + " " + t; };
+const clampXY = (x, y, w, h) => [Math.min(Math.max(8, x), innerWidth - w - 8), Math.min(Math.max(8, y), innerHeight - h - 8)];
+
+function arrastavel(el, alca, aoSoltar) {
+  let ini = null, mexeu = false;
+  const mv = e => {
+    if (!ini) return; const dx = e.clientX - ini.x, dy = e.clientY - ini.y;
+    if (!mexeu && Math.hypot(dx, dy) < 6) return; mexeu = true; e.preventDefault();
+    const [x, y] = clampXY(ini.l + dx, ini.t + dy, el.offsetWidth, el.offsetHeight);
+    el.style.left = x + "px"; el.style.top = y + "px"; el.style.right = el.style.bottom = "auto";
+  };
+  const up = () => { removeEventListener("pointermove", mv); removeEventListener("pointerup", up); removeEventListener("pointercancel", up); if (!ini) return; ini = null; if (mexeu) { aoSoltar?.(parseFloat(el.style.left), parseFloat(el.style.top)); setTimeout(() => mexeu = false, 0); } };
+  alca.addEventListener("pointerdown", e => {
+    if (e.button !== 0 || e.target.closest("button:not(.fabBtn),input,textarea,select,label")) return;
+    const r = el.getBoundingClientRect(); ini = { x: e.clientX, y: e.clientY, l: r.left, t: r.top }; mexeu = false;
+    addEventListener("pointermove", mv); addEventListener("pointerup", up); addEventListener("pointercancel", up);
+  });
+  alca.addEventListener("click", e => { if (mexeu) { e.stopImmediatePropagation(); e.preventDefault(); mexeu = false; } }, true);
+}
+function montarChat() {
+  if ($("#chatFab")) return;
+  const fab = document.createElement("div"); fab.id = "chatFab"; fab.className = "notv";
+  fab.innerHTML = `<button class="fabBtn" title="Chat da equipe (arraste para mover)">💬</button><span class="fabN" hidden></span>`;
+  const pan = document.createElement("div"); pan.id = "chatPan"; pan.hidden = true;
+  document.body.append(fab, pan);
+  posFab();
+  arrastavel(fab, fab, (x, y) => { CH.fab = { x, y }; LS.set("pm_chat_fab", CH.fab); });
+  fab.querySelector(".fabBtn").onclick = () => abrirChat(!CH.aberto);
+  addEventListener("resize", () => { posFab(); if (CH.aberto) posPan(); });
+}
+function posFab() {
+  const f = $("#chatFab"); if (!f) return;
+  if (CH.fab) { const [x, y] = clampXY(CH.fab.x, CH.fab.y, 58, 58); f.style.left = x + "px"; f.style.top = y + "px"; f.style.right = f.style.bottom = "auto"; }
+}
+function posPan() {
+  const p = $("#chatPan"), f = $("#chatFab"); const w = p.offsetWidth, h = p.offsetHeight;
+  let x, y;
+  if (CH.pan) [x, y] = [CH.pan.x, CH.pan.y];
+  else { const r = f.getBoundingClientRect(); x = r.left + r.width / 2 > innerWidth / 2 ? r.right - w : r.left; y = r.top + r.height / 2 > innerHeight / 2 ? r.top - h - 10 : r.bottom + 10; }
+  [x, y] = clampXY(x, y, w, h); p.style.left = x + "px"; p.style.top = y + "px";
+}
+function abrirChat(v) {
+  CH.aberto = v; const p = $("#chatPan"); p.hidden = !v;
+  if (v) { desenharPainelChat(); posPan(); if (CH.aba === "chat") marcarLido(); setTimeout(() => $("#chIn")?.focus(), 30); }
+  atualizarFab();
+}
+function marcarLido() { if (!S.me) return; const ult = chatMsgs().slice(-1)[0]; if (ult) LS.set("pm_chat_lido_" + S.me.id, Math.max(ult.ts, chatLido())); atualizarFab(); }
+function atualizarFab() {
+  const f = $("#chatFab"); if (!f) return;
+  f.style.display = S.me ? "" : "none"; if (!S.me && CH.aberto) { CH.aberto = false; $("#chatPan").hidden = true; }
+  const n = chatNaoLidas(); const b = f.querySelector(".fabN"); b.hidden = !n; b.textContent = n > 99 ? "99+" : n;
+  f.classList.toggle("on", CH.aberto);
+}
+function desenharPainelChat() {
+  const p = $("#chatPan");
+  const onl = Object.keys(S.online).map(userById).filter(Boolean);
+  p.innerHTML = `<div class="chHd" id="chHd"><div class="chTabs"><button class="${CH.aba === "chat" ? "on" : ""}" data-cha="chat">💬 Chat</button><button class="${CH.aba === "notas" ? "on" : ""}" data-cha="notas">📝 Anotações</button></div><span class="sp"></span><span class="chOn" title="${esc(onl.map(u => u.nome).join(", "))}">● ${onl.length} online</span><button class="btn sm" id="chX" title="Fechar">✕</button></div><div class="chBd" id="chBd"></div>`;
+  arrastavel(p, $("#chHd"), (x, y) => { CH.pan = { x, y }; LS.set("pm_chat_pan", CH.pan); });
+  $$("[data-cha]", p).forEach(b => b.onclick = () => { CH.aba = b.dataset.cha; desenharPainelChat(); if (CH.aba === "chat") marcarLido(); });
+  $("#chX").onclick = () => abrirChat(false);
+  CH.aba === "chat" ? desenharMsgs() : desenharNotas();
+}
+function desenharMsgs(manterTexto) {
+  const bd = $("#chBd"); if (!bd) return;
+  const txt = manterTexto ?? $("#chIn")?.value ?? "";
+  const ms = chatMsgs(); let dia = "";
+  bd.innerHTML = `<div class="chList" id="chList">${ms.length ? ms.map(m => {
+    const u = userById(m.de) || { id: m.de, nome: m.nome || "?" }; const eu = m.de === S.me.id;
+    const d = new Date(m.ts).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" }); const sep = d !== dia ? `<div class="chDia">${esc(d)}</div>` : ""; dia = d;
+    return `${sep}<div class="chM ${eu ? "eu" : ""}">${eu ? "" : av(u)}<div class="chB"><div class="chN">${eu ? "Você" : esc(u.nome)} · ${hhmm(m.ts)}${eu || isAdmin() ? ` <button class="chDel" data-chdel="${esc(m.id)}" title="Apagar">🗑</button>` : ""}</div><div class="chT">${esc(m.txt).replace(/\n/g, "<br>")}</div></div></div>`;
+  }).join("") : `<div class="empty" style="margin:auto">Nenhuma mensagem ainda. Diga um oi para a equipe 👋</div>`}</div>
+  <div class="chIn"><textarea id="chIn" class="in" rows="1" placeholder="Escreva uma mensagem… (Enter envia, Shift+Enter quebra linha)"></textarea><button class="btn pri" id="chEnv">➤</button></div>`;
+  const ta = $("#chIn"); ta.value = txt;
+  const l = $("#chList"); l.scrollTop = l.scrollHeight;
+  const enviar = async () => {
+    const v = ta.value.trim(); if (!v) return; ta.value = ""; const ts = Date.now(); const id = S.me.id + ":" + ts.toString(36) + uid().slice(-4);
+    try { await API.save("chat", id, { de: S.me.id, nome: S.me.nome, txt: v.slice(0, 2000), ts }); T("chat")[id] = { de: S.me.id, nome: S.me.nome, txt: v.slice(0, 2000), ts }; marcarLido(); desenharMsgs(""); }
+    catch (e) { ta.value = v; toast(e.message, "bad"); }
+  };
+  ta.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); enviar(); } });
+  $("#chEnv").onclick = enviar;
+  $$("[data-chdel]", bd).forEach(b => b.onclick = async () => { try { await API.del("chat", b.dataset.chdel); delete T("chat")[b.dataset.chdel]; desenharMsgs(); } catch (e) { toast(e.message, "bad"); } });
+}
+let notaEd = null;
+function desenharNotas() {
+  const bd = $("#chBd"); if (!bd) return;
+  const minhas = lista("nota").filter(n => n.dono === S.me.id), equipe = lista("nota").filter(n => n.dono !== S.me.id && n.equipe);
+  const ord = a => a.sort((x, y) => (y.fixa ? 1 : 0) - (x.fixa ? 1 : 0) || y.ts - x.ts);
+  const ed = notaEd ? T("nota")[notaEd] || {} : {};
+  const card = (n, minha) => `<div class="nota ${n.fixa ? "fixa" : ""}"><div class="chN">${n.fixa ? "📌 " : ""}${minha ? (n.equipe ? "👥 Compartilhada" : "🔒 Só você") : "👥 " + esc(userById(n.dono)?.nome || n.nome || "")} · ${hhmm(n.ts)}${minha ? `<span class="sp"></span><button class="chDel" data-nfix="${esc(n.id)}" title="Fixar no topo">📌</button><button class="chDel" data-ned="${esc(n.id)}" title="Editar">✎</button><button class="chDel" data-ndel="${esc(n.id)}" title="Apagar">🗑</button>` : ""}</div><div class="chT">${esc(n.txt).replace(/\n/g, "<br>")}</div></div>`;
+  bd.innerHTML = `<div class="notaNova"><textarea id="ntIn" class="in" rows="3" placeholder="Nova anotação… (não coloque senhas)">${esc(ed.txt || "")}</textarea>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:6px"><label class="muted" style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="ntEq" ${ed.equipe ? "checked" : ""}> Compartilhar com a equipe</label><span class="sp"></span>${notaEd ? `<button class="btn sm" id="ntCanc">Cancelar</button>` : ""}<button class="btn sm pri" id="ntSv">${notaEd ? "Salvar" : "+ Anotar"}</button></div></div>
+    <div class="chList">${ord(minhas).map(n => card(n, true)).join("")}${equipe.length ? `<div class="chDia">Da equipe</div>${ord(equipe).map(n => card(n, false)).join("")}` : ""}${!minhas.length && !equipe.length ? `<div class="empty">Suas anotações ficam aqui.</div>` : ""}</div>`;
+  $("#ntSv").onclick = async () => {
+    const txt = $("#ntIn").value.trim(); if (!txt) return;
+    const id = notaEd || S.me.id + ":" + uid(); const d = { ...(T("nota")[id] || {}), dono: S.me.id, nome: S.me.nome, txt: txt.slice(0, 5000), equipe: $("#ntEq").checked, ts: Date.now() };
+    try { await API.save("nota", id, d); T("nota")[id] = d; notaEd = null; desenharNotas(); toast("Anotação salva", "ok"); } catch (e) { toast(e.message, "bad"); }
+  };
+  $("#ntCanc") && ($("#ntCanc").onclick = () => { notaEd = null; desenharNotas(); });
+  $$("[data-ned]", bd).forEach(b => b.onclick = () => { notaEd = b.dataset.ned; desenharNotas(); $("#ntIn").focus(); });
+  $$("[data-nfix]", bd).forEach(b => b.onclick = async () => { const id = b.dataset.nfix; const d = { ...T("nota")[id], fixa: !T("nota")[id].fixa }; try { await API.save("nota", id, d); T("nota")[id] = d; desenharNotas(); } catch (e) { toast(e.message, "bad"); } });
+  $$("[data-ndel]", bd).forEach(b => b.onclick = async () => { if (!await confirma("Apagar esta anotação?")) return; try { await API.del("nota", b.dataset.ndel); delete T("nota")[b.dataset.ndel]; if (notaEd === b.dataset.ndel) notaEd = null; desenharNotas(); } catch (e) { toast(e.message, "bad"); } });
+}
+/* chamado quando chega dado novo de chat/nota (tempo real) */
+let _chatUlt = 0;
+function chatMudou(tipo) {
+  if (!S.me) return;
+  if (tipo === "chat") {
+    const ult = chatMsgs().slice(-1)[0];
+    if (ult && ult.ts > _chatUlt && ult.de !== S.me.id && _chatUlt) {
+      if (!(CH.aberto && CH.aba === "chat") || document.hidden) { toast(`💬 ${ult.nome || "Equipe"}: ${ult.txt.slice(0, 80)}`); notificar("💬 " + (ult.nome || "Chat da equipe"), ult.txt.slice(0, 120)); }
+    }
+    if (ult) _chatUlt = Math.max(_chatUlt, ult.ts);
+  }
+  if (CH.aberto) { if (CH.aba === "chat" && tipo === "chat") { const a = document.activeElement; desenharMsgs(); if (a?.id === "chIn") $("#chIn").focus(); marcarLido(); } else if (CH.aba === "notas" && tipo === "nota" && !notaEd && !$("#ntIn")?.value) desenharNotas(); }
+  atualizarFab();
+}
+
 /* ---------------- inicialização ---------------- */
 function relogio() { const d = new Date(); $("#clock").textContent = d.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" }) + " · " + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }); }
 $("#btnTv").onclick = async () => { document.body.classList.toggle("tv"); try { if (document.body.classList.contains("tv")) await document.documentElement.requestFullscreen(); else if (document.fullscreenElement) await document.exitFullscreen(); } catch {} };
@@ -1509,13 +2026,21 @@ addEventListener("keydown", e => { if (e.key === "Escape") { document.body.class
   $("#main").innerHTML = '<div class="empty">Carregando…</div>';
   try { if (API === Supa) await Supa.init(); }
   catch (e) { toast(e.message + " — usando modo local.", "bad"); API = Local; }
-  try { const { users, regs } = await API.loadAll(); S.users = users; S.db = regs; }
-  catch (e) { toast("Erro ao conectar: " + e.message + " — usando modo local.", "bad"); API = Local; const { users, regs } = await API.loadAll(); S.users = users; S.db = regs; }
   const sv = LS.get("pm_login", null);
-  if (sv) { try { const u = await API.login(sv.login, sv.pin); if (u) { S.me = u; S.pin = sv.pin; } else LS.del("pm_login"); } catch {} }
+  let maqPend = null;
+  if (sv) { try { const u = await API.login(sv.login, sv.pin); if (u?.maquina) maqPend = [sv.login, sv.pin, u]; else if (u) { S.me = u; S.pin = sv.pin; } else LS.del("pm_login"); } catch {} }
+  try { const { users, regs } = await API.loadAll(); S.users = users; S.db = regs; }
+  catch (e) { toast("Erro ao conectar: " + e.message, "bad"); }
   API.start();
   if (S.me) iniciarSessao();
   route();
+  if (S.me) { setTimeout(checarPedidos, 1500); setTimeout(ofereceMigrar, 2500); }
+  if (maqPend) setTimeout(() => aguardarMaquina(...maqPend), 600);
+  else if (!S.me && API === Supa && !sessionStorage.getItem("pm_aviso")) setTimeout(avisoRestrito, 700);
+  montarChat(); _chatUlt = (chatMsgs().slice(-1)[0] || {}).ts || 0; atualizarFab();
+  setTimeout(() => { if (!$("#modalRoot").innerHTML) mostrarNovidades(); }, 900);
+  setInterval(checarVersao, 120000); setTimeout(checarVersao, 20000);
+  addEventListener("visibilitychange", () => { if (!document.hidden) checarVersao(); });
   setInterval(checarLembretes, 30000); setTimeout(checarLembretes, 3000);
   setInterval(() => { if (S.route === "painel") softRender(); }, 60000); // atualiza contadores de atraso
   if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
