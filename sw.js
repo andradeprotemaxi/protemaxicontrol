@@ -1,6 +1,6 @@
 // Service worker: deixa o app instalável e abre o app ao tocar na notificação.
-const CACHE = "central-v1";
-self.addEventListener("install", e => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then(c => c.addAll(["./", "index.html", "manifest.json", "icon.svg"]).catch(() => {}))); });
+const CACHE = "central-v2";
+self.addEventListener("install", e => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then(c => c.addAll(["./", "index.html", "manifest.json", "logo-192.png", "logo-96.png", "protemaxi.png"]).catch(() => {}))); });
 self.addEventListener("activate", e => e.waitUntil(self.clients.claim()));
 self.addEventListener("fetch", e => {
   const u = new URL(e.request.url);

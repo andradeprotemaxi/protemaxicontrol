@@ -3,9 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Central Operacional</title>
+<title>BASE · Protemaxi</title>
 <meta name="theme-color" content="#0b1220">
 <link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="logo-96.png">
+<link rel="apple-touch-icon" href="logo-192.png">
 <style>
 :root{
   --bg:#0b1220; --bg2:#0f1a2e; --card:#13203a; --card2:#182845; --line:#22355a;
@@ -213,6 +215,10 @@ body.tv .kpi .v{font-size:60px}
 .avXL img{width:100%;height:100%;border-radius:50%;object-fit:cover}.avXL .dot{position:absolute;right:6px;bottom:6px;width:20px;height:20px;border-radius:50%;border:3px solid var(--bg2);background:#64748b}.avXL .dot.on{background:var(--ok)}
 .kgo{cursor:pointer;transition:transform .12s,border-color .12s}.kgo:hover{transform:translateY(-2px);border-color:var(--ac)}
 .kpi.kgo::after{content:"ver →";position:absolute;right:14px;bottom:12px;font-size:12px;color:var(--tx3)}.fx.kgo{border-radius:8px;padding:2px 4px;margin-left:-4px;border:1px solid transparent}
+.hdrHome{display:inline-flex;margin-right:4px;border-radius:10px;flex:none}.hdrHome img{width:38px;height:38px;border-radius:10px;display:block;box-shadow:0 0 12px rgba(59,130,246,.45);transition:transform .15s}.hdrHome:hover img{transform:scale(1.08)}
+.brandLk{display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none}.brandLk img{width:40px;height:40px;border-radius:10px}.brandLk small{display:block}
+.dashMarca{display:flex;justify-content:center;margin:28px 0 8px}.dashMarca img{width:min(340px,80%);height:auto;filter:drop-shadow(0 8px 24px rgba(0,0,0,.45))}
+body.tv .dashMarca img{width:min(260px,40%)}
 /* atualização */
 .upd ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
 .updBar{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:70;background:var(--card2);border:1px solid var(--ac);border-radius:12px;padding:10px 14px;display:flex;gap:12px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.5);flex-wrap:wrap;max-width:calc(100% - 24px)}
@@ -253,6 +259,7 @@ body.tv .kpi .v{font-size:60px}
   </aside>
   <main>
     <header>
+      <a href="#" id="hdrHome" class="hdrHome" title="Ir para a página principal"><img src="logo-96.png" alt="BASE"></a>
       <h1 id="ttl">Painel</h1>
       <span class="clock" id="clock"></span>
       <span class="sp"></span>
@@ -656,7 +663,7 @@ function renderNav() {
     `<a href="#${r}" class="${S.route === r ? "on" : ""}">${ico(r)}<span>${l.replace(" Inside / Segware", "")}</span></a>`).join("")
     + (S.me ? `<a href="${LINK_PROJETOS}" target="_blank" rel="noopener">${ico("projetos")}<span>Projetos</span><span class="lock">↗</span></a>` : `<a href="#" id="navLogin">${ico("admin")}<span>Entrar</span></a>`);
   $("#navLogin") && ($("#navLogin").onclick = e => { e.preventDefault(); abrirLogin(); });
-  $("#brand").innerHTML = `${esc(cfg().empresa.toUpperCase())}<small>Central Operacional</small>`;
+  $("#brand").innerHTML = `<a href="#" class="brandLk" title="Página principal"><img src="logo-96.png" alt=""><span>BASE<small>${esc(cfg().empresa)} Eletrônica</small></span></a>`;
   $("#modo").innerHTML = (API === Supa ? "● Conectado ao banco online" : "● Modo local (só neste navegador)") + "<br><span style=\"opacity:.7\">Desenvolvido por </span><b style=\"color:#fff\">Andrade</b><span style=\"opacity:.7\"> · <a href=\"#\" onclick=\"mostrarNovidades(true);return false\" style=\"color:inherit\">novidades</a></span>";
 }
 function renderHeader() {
@@ -696,6 +703,8 @@ async function reload() { try { const { users, regs } = await API.loadAll(); S.u
 const VIEWS = {};
 const F = { busca: "", status: "ativas", origem: "", tier: "" };
 
+/* logo: volta para a página principal */
+document.addEventListener("click", e => { if (!e.target.closest("#hdrHome, .brandLk")) return; e.preventDefault(); go(S.me ? "painel" : "dashboard"); scrollTo(0, 0); });
 /* cartões clicáveis: levam para a área certa já filtrada */
 document.addEventListener("click", e => {
   const k = e.target.closest("#main [data-kgo], #main [data-kcli]"); if (!k) return;
@@ -752,6 +761,7 @@ VIEWS.dashboard = el => {
         </div><small class="muted">${k.contas} contas cadastradas</small></div>
     </div>
   </div>
+  <div class="dashMarca"><img src="protemaxi.png" alt="Protemaxi Segurança"></div>
   ${!S.me ? `<div class="hint" style="margin-top:16px">🔒 A parte interna (ordens de serviço, clientes, arquivos) é só para quem tem acesso. <a href="#" id="dEnt">Entrar</a> · <a href="#" id="dSol">Solicitar acesso</a></div>` : ""}`;
   $("#dEnt") && ($("#dEnt").onclick = e => { e.preventDefault(); abrirLogin(); });
   $("#dSol") && ($("#dSol").onclick = e => { e.preventDefault(); abrirSolicitar(); });
@@ -1829,7 +1839,7 @@ async function notificar(titulo, corpo) {
   try {
     if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
     const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
-    if (reg) reg.showNotification(titulo, { body: corpo, icon: "icon.svg", badge: "icon.svg", tag: titulo, requireInteraction: true, data: { url: location.href.split("#")[0] + "#admin" } });
+    if (reg) reg.showNotification(titulo, { body: corpo, icon: "logo-192.png", badge: "logo-96.png", tag: titulo, requireInteraction: true, data: { url: location.href.split("#")[0] + "#admin" } });
     else new Notification(titulo, { body: corpo });
   } catch {}
 }
@@ -1852,7 +1862,7 @@ function checarLembretes() {
    ============================================================ */
 const APP_VERSAO = "2026.11.19-2";
 const NOVIDADES = [
-  { v: "2026.11.19-2", data: "19/11/2026", itens: ["💬 Chat da equipe: botão flutuante que você arrasta para onde quiser", "📝 Anotações dentro do chat (só suas ou compartilhadas com a equipe)", "🚀 Este aviso: sempre que sair uma atualização, todo mundo vê o que mudou", "🟢🟡🔴 Dias em aberto de cada OS em destaque: verde até 2 dias, amarelo de 3 a 4, vermelho acima de 4", "🥈 Cliente que não é ouro agora é prata (bronze saiu)", "📷 Fotos da equipe: clique na foto para trocar, enquadrar o rosto, dar zoom e girar", "👤 Clique na sua bolinha (ou na de quem está online) para ver o perfil e trocar a foto", "📊 Novo Dashboard com gráficos: quem tem só o link vê apenas ele; o resto exige login", "🔐 Pedido de acesso: quem quiser entrar pede, e o administrador autoriza ou recusa", "🏗️ Atalho Projetos no menu, que abre o app de projetos", "👆 Os cartões (OS abertas, em execução, concluídas, atrasadas, ouro/prata e faixas de dias) são clicáveis e abrem a lista certa", "💻 Cada computador ou celular precisa ser autorizado pelo administrador; em Admin → Máquinas você vê quem está logado e em qual máquina"] },
+  { v: "2026.11.19-2", data: "19/11/2026", itens: ["💬 Chat da equipe: botão flutuante que você arrasta para onde quiser", "📝 Anotações dentro do chat (só suas ou compartilhadas com a equipe)", "🚀 Este aviso: sempre que sair uma atualização, todo mundo vê o que mudou", "🟢🟡🔴 Dias em aberto de cada OS em destaque: verde até 2 dias, amarelo de 3 a 4, vermelho acima de 4", "🥈 Cliente que não é ouro agora é prata (bronze saiu)", "📷 Fotos da equipe: clique na foto para trocar, enquadrar o rosto, dar zoom e girar", "👤 Clique na sua bolinha (ou na de quem está online) para ver o perfil e trocar a foto", "📊 Novo Dashboard com gráficos: quem tem só o link vê apenas ele; o resto exige login", "🔐 Pedido de acesso: quem quiser entrar pede, e o administrador autoriza ou recusa", "🏗️ Atalho Projetos no menu, que abre o app de projetos", "👆 Os cartões (OS abertas, em execução, concluídas, atrasadas, ouro/prata e faixas de dias) são clicáveis e abrem a lista certa", "🔷 Nova logo BASE: clique nela (no topo) para voltar à página principal", "🦅 Marca Protemaxi Segurança no Dashboard", "💻 Cada computador ou celular precisa ser autorizado pelo administrador; em Admin → Máquinas você vê quem está logado e em qual máquina"] },
   { v: "2026.11.19-1", data: "19/11/2026", itens: ["🏷️ Cargo virou lista para selecionar, com edição (✎) para renomear e acrescentar", "🗓️ Novo campo Escala, com lista editável e cartões mostrando quem está em cada escala", "🔎 Filtros por cargo e por escala no quadro de funcionários"] },
 ];
 function mostrarNovidades(forcar) {
