@@ -236,6 +236,12 @@ body.tv .dashMarca img{width:min(260px,40%)}
 .msBt{display:flex;gap:8px;flex-wrap:wrap}.msBt .btn{padding:12px 16px;font-size:15px;font-weight:700}
 body.tv .msTit{font-size:30px}
 .aoVivo{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--tx2);margin:-4px 0 12px}.dotV{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(34,197,94,.6);animation:pulse 2s infinite}
+.ppBox{grid-column:1/-1;margin-top:16px;background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:14px}.ppBox h3{margin:0 0 10px;font-size:15px;display:flex;align-items:center;gap:8px}
+.ppRow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}.ppRow>b{min-width:150px;font-size:13px;color:var(--tx2)}
+.ppDia{display:inline-flex;align-items:center;justify-content:center;min-width:46px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--card);cursor:pointer;font-weight:700;user-select:none}.ppDia.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.ppL{display:flex;flex-wrap:wrap;gap:8px}.ppL .avIt .in{width:130px}.ppL .avIt .in[type=date]{width:160px}
+.ppOff{opacity:.45;pointer-events:none}.ppRes{font-size:13px;color:var(--tx2);margin-top:6px}
+.pcCard{border-left-color:var(--bad)!important}.pcOs{margin-top:8px;display:flex;flex-direction:column;gap:4px;font-size:14px;color:var(--tx2)}
 .avBox{grid-column:1/-1;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px}#avL{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}.avIt{display:flex;gap:4px;align-items:center}.avIt .in{width:130px}
 .sinoW{position:relative}.sino{position:relative;font-size:16px;padding:6px 10px}.sino.tem{border-color:var(--warn);animation:sinoBalanca 2.5s infinite}
 @keyframes sinoBalanca{0%,90%,100%{transform:none}93%{transform:rotate(-12deg)}96%{transform:rotate(12deg)}}
@@ -507,7 +513,7 @@ const Supa = {
     if (isAdmin()) { const pm = async () => { try { S.maquinas = await this.maquinas(); checarPedidos(); if (S.route === "admin" && admTab === "maquinas") softRender(); } catch {} }; pm(); setInterval(pm, 30000); }
     if (S.me) setInterval(async () => { try { const { data } = await this.sb.rpc("rpc_usuarios", { p_login: S.me.login, p_pin: pinDev() }); if (data) { S.users = data; renderHeader(); checarPedidos(); if (S.route === "admin") softRender(); } } catch {} }, 45000);
   },
-  async publico() { try { const { data } = await this.sb.rpc("rpc_publico"); if (data) { this.aplicarPub(data); if (S.route === "dashboard" || S.route === "os") softRender(); checarMissoes(); } } catch {}
+  async publico() { try { const { data } = await this.sb.rpc("rpc_publico"); if (data) { this.aplicarPub(data); if (S.route === "dashboard" || S.route === "os") softRender(); checarMissoes(); checarPopupClientes(); } } catch {}
   },
   presence: {
     async track() { if (Supa.ch) { try { await Supa.ch.untrack(); } catch {} location.reload(); } },
@@ -940,7 +946,7 @@ function desenharPopMissoes(ms) {
 /* ---------- pop-up de clientes atrasados ---------- */
 function resumoAtrasos() {
   const g = {};
-  for (const o of lista("os")) { const a = atraso(o); if (!(a > 0)) continue; const c = o.cliente || "Sem cliente"; const x = g[c] ||= { cliente: c, n: 0, max: 0, aberta: 0 }; x.n++; x.max = Math.max(x.max, a); x.aberta = Math.max(x.aberta, diasAberta(o) ?? 0); }
+  for (const o of lista("os")) { const a = atraso(o); if (!(a > 0)) continue; const k = clienteDe(o.cliente); if (k && k.popup && k.popup.modo && k.popup.modo !== "padrao") continue; const c = o.cliente || "Sem cliente"; const x = g[c] ||= { cliente: c, n: 0, max: 0, aberta: 0 }; x.n++; x.max = Math.max(x.max, a); x.aberta = Math.max(x.aberta, diasAberta(o) ?? 0); }
   return Object.values(g).sort((a, b) => b.max - a.max || b.n - a.n);
 }
 let _atrT = null;
@@ -1197,7 +1203,7 @@ VIEWS.clientes = el => {
   const ed = pode("clientes");
   el.innerHTML = `<div class="tabs">${[["todos", "Todos", cl.length], ["ouro", "🥇 Ouro"], ["prata", "🥈 Prata"]].map(([v, l, n]) => `<button class="tab ${FC.tier === v ? "on" : ""}" data-t="${v}">${l}<span class="c">${n ?? cl.filter(c => (c.categoria || "") === v).length}</span></button>`).join("")}</div>
   <div class="tools"><input class="in" id="cB" placeholder="Buscar cliente…" value="${esc(FC.busca)}" style="flex:1">${ed ? `<button class="btn" id="cImp">Colar lista de clientes</button><button class="btn pri" id="cNovo">+ Novo cliente</button>` : ""}</div>
-  ${arr.length ? `<div class="grid">${arr.map(c => { const p = os.filter(o => norm(o.cliente) === norm(c.nome)); const at = p.filter(o => atraso(o) > 0).length; return `<div class="item click" data-c="${esc(c.id)}"><div class="t"><span class="medal ${c.categoria}" style="${c.categoria ? "" : "background:var(--line)"}"></span>${esc(c.nome)}</div><div class="k">${pillTier(c.categoria)} ${c.codigo ? "· conta " + esc(c.codigo) : ""}${c.grupo ? " · " + esc(c.grupo) : ""}</div>${c.responsavel || c.cidade ? `<div class="k">${c.responsavel ? "Resp.: <b>" + esc(c.responsavel) + "</b>" : ""}${c.responsavel && c.cidade ? " · " : ""}${esc(c.cidade || "")}${c.bairro ? " / " + esc(c.bairro) : ""}</div>` : ""}<div class="k">${p.length} OS pendente(s)${at ? ` · <b style="color:#fca5a5">${at} atrasada(s)</b>` : ""}</div>${c.telefone ? `<div class="k">${esc(c.telefone)}</div>` : ""}</div>`; }).join("")}</div>` : '<div class="empty">Nenhum cliente. Use “Colar lista de clientes” para importar todos de uma vez.</div>'}`;
+  ${arr.length ? `<div class="grid">${arr.map(c => { const p = os.filter(o => norm(o.cliente) === norm(c.nome)); const at = p.filter(o => atraso(o) > 0).length; return `<div class="item click" data-c="${esc(c.id)}"><div class="t"><span class="medal ${c.categoria}" style="${c.categoria ? "" : "background:var(--line)"}"></span>${esc(c.nome)}${c.popup && c.popup.modo === "personalizado" ? ' <span title="Popup personalizado">🔔</span>' : c.popup && c.popup.modo === "desligado" ? ' <span title="Popup desligado">🔕</span>' : ""}</div><div class="k">${pillTier(c.categoria)} ${c.codigo ? "· conta " + esc(c.codigo) : ""}${c.grupo ? " · " + esc(c.grupo) : ""}</div>${c.responsavel || c.cidade ? `<div class="k">${c.responsavel ? "Resp.: <b>" + esc(c.responsavel) + "</b>" : ""}${c.responsavel && c.cidade ? " · " : ""}${esc(c.cidade || "")}${c.bairro ? " / " + esc(c.bairro) : ""}</div>` : ""}<div class="k">${p.length} OS pendente(s)${at ? ` · <b style="color:#fca5a5">${at} atrasada(s)</b>` : ""}</div>${c.telefone ? `<div class="k">${esc(c.telefone)}</div>` : ""}</div>`; }).join("")}</div>` : '<div class="empty">Nenhum cliente. Use “Colar lista de clientes” para importar todos de uma vez.</div>'}`;
   $$("[data-t]", el).forEach(b => b.onclick = () => { FC.tier = b.dataset.t; renderAll(); });
   $("#cB").oninput = e => { FC.busca = e.target.value; clearTimeout(VIEWS._t); VIEWS._t = setTimeout(() => { renderAll(); const i = $("#cB"); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }, 250); };
   $$("[data-c]", el).forEach(d => d.onclick = () => abrirCliente(d.dataset.c));
@@ -1211,15 +1217,103 @@ function abrirCliente(id) {
   modal({
     titulo: id ? esc(c.nome) : "Novo cliente", wide: true,
     corpo: (ed ? campos(CLF, c) + datalist("dlGrp", lista("cliente").map(x => x.grupo)) : `<div class="form">${CLF.map(f => `<label class="${f.full ? "full" : ""}">${f.l}<div style="color:var(--tx);font-weight:500">${esc(c[f.k] || "—")}</div></label>`).join("")}</div>`)
+      + (ed ? popupForm(c.popup) : c.popup && c.popup.modo && c.popup.modo !== "padrao" ? `<div class="ppBox"><h3>🔔 Popup</h3><div class="ppRes">${esc(popupResumo(c.popup))}</div></div>` : "")
       + (id ? (() => { const ms = lista("missao").filter(m => norm(m.cliente) === norm(c.nome)); return `<h3 style="margin:18px 0 8px;font-size:14px;display:flex;align-items:center;gap:8px">📌 Missões / comandos deste cliente (${ms.length})<span class="sp" style="flex:1"></span>${podeMissao() ? `<button class="btn sm pri" id="cMsN" type="button">+ Adicionar comando</button>` : ""}</h3><div id="cMs">${ms.length ? ms.map(m => linhaMissao(m, true)).join("") : '<div class="muted">Nenhuma missão para este cliente. Ex.: manutenção mensal, teste de sensor de fumaça…</div>'}</div>`; })() : "")
       + (hist.length ? `<h3 style="margin:18px 0 8px;font-size:14px">Histórico de OS (${hist.length})</h3>${tabelaOS(hist.slice(0, 30))}` : ""),
     botoes: ed ? [
       ...(id ? [{ txt: "Excluir", cls: "bad", fn: async () => { if (!await confirma("Excluir o cliente " + c.nome + "?")) return false; await excluir("cliente", id); } }] : []),
-      { txt: "Salvar", cls: "pri", fn: async r => { const d = { ...c, ...ler(CLF, r) }; delete d.exemplo; if (!d.nome) throw new Error("Informe o nome"); await salvar("cliente", id || "c_" + uid(), d); toast("Cliente salvo", "ok"); } }
+      { txt: "Salvar", cls: "pri", fn: async r => { const d = { ...c, ...ler(CLF, r), popup: lerPopup(r) }; delete d.exemplo; if (!d.nome) throw new Error("Informe o nome"); if (d.popup.modo === "personalizado" && !d.popup.horarios.length) throw new Error("Popup: adicione pelo menos um horário"); if (d.popup.modo === "personalizado" && !d.popup.dias.length && !d.popup.datas.length) throw new Error("Popup: marque pelo menos um dia da semana ou uma data"); await salvar("cliente", id || "c_" + uid(), d); toast("Cliente salvo", "ok"); setTimeout(checarPopupClientes, 300); } }
     ] : []
   });
   $$("#modalRoot [data-os]").forEach(tr => tr.onclick = () => abrirOS(tr.dataset.os));
   $("#cMs") && ligarMissoes($("#cMs")); $("#cMsN") && ($("#cMsN").onclick = () => abrirMissao(null, { cliente: c.nome }));
+  $("#ppBox") && ligarPopupForm($("#ppBox"));
+}
+
+/* ---------- Popup por cliente (dias, datas, horários) ---------- */
+const PP_PAD = { modo: "padrao", dias: [1, 3, 5], datas: [], horarios: ["08:00", "13:00", "17:00"], minDias: 3, de: "", ate: "" };
+const ppCfg = p => ({ ...PP_PAD, ...(p || {}) });
+function popupResumo(p) {
+  p = ppCfg(p);
+  if (p.modo === "desligado") return "Desligado: este cliente não aparece em nenhum aviso de atraso.";
+  if (p.modo !== "personalizado") return "Padrão: entra no aviso geral de OS atrasadas.";
+  const d = p.dias.length === 7 ? "todos os dias" : p.dias.map(i => DIAS[i]).join(", ");
+  const x = [d && "toda " + d, p.datas.length ? "nas datas " + p.datas.map(br).join(", ") : ""].filter(Boolean).join(" e ");
+  return `Aparece ${p.horarios.length} vez${p.horarios.length > 1 ? "es" : ""} por dia (${p.horarios.join(", ")}), ${x}, quando houver OS aberta há ${p.minDias} dia${p.minDias == 1 ? "" : "s"} ou mais${p.de ? " · a partir de " + br(p.de) : ""}${p.ate ? " · até " + br(p.ate) : ""}.`;
+}
+function popupForm(p0) {
+  const p = ppCfg(p0); const it = (t, v) => `<span class="avIt"><input class="in" type="${t}" data-pp${t === "time" ? "h" : "d"} value="${esc(v || "")}"><button type="button" class="btn sm" data-pprm title="Tirar">✕</button></span>`;
+  return `<div class="ppBox" id="ppBox"><h3>🔔 Popup <span class="muted" style="font-weight:500;font-size:12.5px">aviso na tela dos dias em que este cliente está com OS aberta</span></h3>
+    <div class="ppRow"><b>Situação</b><select class="in" data-ppmodo style="max-width:330px">${[["padrao", "Padrão (aviso geral de atraso)"], ["personalizado", "Personalizado (escolho dias e horários)"], ["desligado", "Desligado (não avisar)"]].map(([v, l]) => `<option value="${v}" ${p.modo === v ? "selected" : ""}>${l}</option>`).join("")}</select></div>
+    <div data-ppcorpo class="${p.modo === "personalizado" ? "" : "ppOff"}">
+      <div class="ppRow"><b>Dias da semana</b>${DIAS.map((l, i) => `<span class="ppDia ${p.dias.includes(i) ? "on" : ""}" data-ppdia="${i}">${l}</span>`).join("")}</div>
+      <div class="ppRow"><b></b><button type="button" class="btn sm" data-pprap="1,3,5">Seg, Qua e Sex</button><button type="button" class="btn sm" data-pprap="2,4">Ter e Qui</button><button type="button" class="btn sm" data-pprap="1,2,3,4,5">Dias úteis</button><button type="button" class="btn sm" data-pprap="0,1,2,3,4,5,6">Todo dia</button><button type="button" class="btn sm" data-pprap="">Nenhum</button></div>
+      <div class="ppRow"><b>Datas avulsas</b><div class="ppL" data-ppdl>${p.datas.map(d => it("date", d)).join("")}</div><button type="button" class="btn sm" data-ppadd="date">+ Data</button></div>
+      <div class="ppRow"><b>Horários (vezes por dia)</b><div class="ppL" data-pphl>${p.horarios.map(h => it("time", h)).join("")}</div><button type="button" class="btn sm" data-ppadd="time">+ Horário</button></div>
+      <div class="ppRow"><b>Avisar com OS aberta há</b><input class="in" type="number" min="0" max="365" data-ppmin value="${esc(p.minDias)}" style="width:90px"> <span class="muted">dia(s) ou mais</span></div>
+      <div class="ppRow"><b>Período (opcional)</b><span class="muted">de</span><input class="in" type="date" data-ppde value="${esc(p.de)}" style="width:160px"><span class="muted">até</span><input class="in" type="date" data-ppate value="${esc(p.ate)}" style="width:160px"></div>
+      <div class="ppRes" data-ppres></div>
+    </div></div>`;
+}
+function lerPopup(r) {
+  const b = r.querySelector("#ppBox"); if (!b) return undefined;
+  return {
+    modo: b.querySelector("[data-ppmodo]").value,
+    dias: $$("[data-ppdia].on", b).map(x => +x.dataset.ppdia).sort(),
+    datas: [...new Set($$("[data-ppd]", b).map(i => i.value).filter(Boolean))].sort(),
+    horarios: [...new Set($$("[data-pph]", b).map(i => i.value).filter(Boolean))].sort(),
+    minDias: Math.max(0, +b.querySelector("[data-ppmin]").value || 0),
+    de: b.querySelector("[data-ppde]").value, ate: b.querySelector("[data-ppate]").value,
+  };
+}
+function ligarPopupForm(b) {
+  const res = () => { b.querySelector("[data-ppcorpo]").classList.toggle("ppOff", b.querySelector("[data-ppmodo]").value !== "personalizado"); b.querySelector("[data-ppres]").textContent = popupResumo(lerPopup(b.parentElement) || {}); };
+  const liga = () => { $$("[data-pprm]", b).forEach(x => x.onclick = () => { x.parentElement.remove(); res(); }); $$("[data-pph],[data-ppd]", b).forEach(i => i.onchange = res); };
+  b.querySelector("[data-ppmodo]").onchange = res;
+  $$("[data-ppdia]", b).forEach(x => x.onclick = () => { x.classList.toggle("on"); res(); });
+  $$("[data-pprap]", b).forEach(x => x.onclick = () => { const v = x.dataset.pprap.split(",").filter(Boolean); $$("[data-ppdia]", b).forEach(d => d.classList.toggle("on", v.includes(d.dataset.ppdia))); res(); });
+  $$("[data-ppadd]", b).forEach(x => x.onclick = () => { const t = x.dataset.ppadd; const sp = document.createElement("span"); sp.className = "avIt"; sp.innerHTML = `<input class="in" type="${t}" data-pp${t === "time" ? "h" : "d"}><button type="button" class="btn sm" data-pprm title="Tirar">✕</button>`; b.querySelector(t === "time" ? "[data-pphl]" : "[data-ppdl]").appendChild(sp); liga(); sp.querySelector("input").focus(); });
+  $$("[data-ppmin],[data-ppde],[data-ppate]", b).forEach(i => i.oninput = res);
+  liga(); res();
+}
+/* qual horário de aviso vale agora para o cliente (null = nada hoje/agora) */
+function ppSlot(p, agora = agoraHM()) {
+  const h = hoje(); if (p.de && h < p.de) return null; if (p.ate && h > p.ate) return null;
+  if (!p.dias.includes(new Date().getDay()) && !p.datas.includes(h)) return null;
+  const v = p.horarios.filter(x => x <= agora); return v.length ? v[v.length - 1] : null;
+}
+function ppAcks() { const a = LS.get("pm_pp_ack", {}); const lim = addDias(hoje(), -7); for (const k in a) if (a[k] < lim) delete a[k]; return a; }
+function ppAck(itens) { const a = ppAcks(); for (const x of itens) a[x.key] = hoje(); LS.set("pm_pp_ack", a); }
+function popupClientesAgora() {
+  const cls = lista("cliente").filter(c => c.popup && c.popup.modo === "personalizado"); if (!cls.length) return [];
+  const os = lista("os").filter(ativa); const a = ppAcks(); const out = [];
+  for (const c of cls) {
+    const p = ppCfg(c.popup); const sl = ppSlot(p); if (!sl) continue;
+    const key = c.id + "|" + hoje() + "|" + sl; if (a[key]) continue;
+    const lst = os.filter(o => { const k = clienteDe(o.cliente); return k && k.id === c.id; }).map(o => ({ o, d: diasAberta(o) ?? 0 })).filter(x => x.d >= p.minDias).sort((x, y) => y.d - x.d);
+    if (lst.length) out.push({ c, p, sl, key, lst });
+  }
+  return out.sort((x, y) => y.lst[0].d - x.lst[0].d);
+}
+function checarPopupClientes() {
+  const it = popupClientesAgora(); const root = $("#ppRoot");
+  if (!it.length) { root && root.remove(); return; }
+  if ($("#modalRoot").innerHTML || $("#missaoRoot")) return;   // não atrapalha quem está editando; tenta de novo no próximo minuto
+  desenharPopupClientes(it);
+}
+function desenharPopupClientes(it) {
+  let root = $("#ppRoot"); if (!root) { root = document.createElement("div"); root.id = "ppRoot"; document.body.appendChild(root); }
+  root.innerHTML = `<div class="msOv"><div class="msBox" style="border-color:var(--bad)"><button class="msX" data-ppx title="Fechar">✕</button>
+    <div class="msHd"><span class="msIco">🔔</span><div><div class="msT" style="color:#fca5a5">Cliente${it.length > 1 ? "s" : ""} com OS em aberto</div><div class="muted">Aviso das ${esc(it[0].sl)} · ${new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "2-digit" })}</div></div></div>
+    <div class="msLista">${it.map((x, i) => `<div class="msCard pcCard"><div class="msC1"><div class="msTit">🏢 ${esc(x.c.nome)} ${pillTier(x.c.categoria)}</div>
+      <div class="msQ"><b>${x.lst.length}</b> OS em aberto · a mais antiga há <span class="dias ${corDias(x.lst[0].d)} sm">${x.lst[0].d}d</span></div>
+      <div class="pcOs">${x.lst.slice(0, 5).map(y => `<div>• OS ${esc(y.o.numero || "")} — ${esc(y.o.servico || "")} · <span class="dias ${corDias(y.d)} sm">${y.d}d</span></div>`).join("")}${x.lst.length > 5 ? `<div>… e mais ${x.lst.length - 5}</div>` : ""}</div></div>
+      <div class="msBt"><button class="btn" data-ppok="${i}">👍 Ciente</button>${S.me ? `<button class="btn pri" data-ppver="${i}">Ver as OS</button>` : ""}</div></div>`).join("")}</div>
+    <div class="muted" style="text-align:center;font-size:12.5px;margin-top:10px">Ciente ou ✕ fecha até o próximo horário configurado no perfil do cliente.</div></div></div>`;
+  root.querySelector("[data-ppx]").onclick = () => { ppAck(it); root.remove(); };
+  $$("[data-ppok]", root).forEach(b => b.onclick = () => { ppAck([it[+b.dataset.ppok]]); checarPopupClientes(); });
+  $$("[data-ppver]", root).forEach(b => b.onclick = () => { const x = it[+b.dataset.ppver]; ppAck(it); root.remove(); F.status = "ativas"; F.busca = x.c.nome; go("os"); });
+  clearTimeout(root._t); if (document.body.classList.contains("tv")) root._t = setTimeout(() => { ppAck(it); root.remove(); }, 90000);   // na TV fecha sozinho
 }
 
 /* ---------- Importar (Inside / Segware / prints / colagem) ---------- */
@@ -2105,8 +2199,9 @@ function checarLembretes() {
    ATUALIZAÇÕES — pop-up de novidades para toda a equipe
    (a cada versão nova: troque APP_VERSAO e acrescente no topo de NOVIDADES)
    ============================================================ */
-const APP_VERSAO = "2026.11.19-6";
+const APP_VERSAO = "2026.11.19-7";
 const NOVIDADES = [
+  { v: "2026.11.19-7", data: "19/11/2026", itens: ["🔔 Popup em cada cliente: escolha os dias da semana (ex.: Seg, Qua e Sex), datas avulsas, os horários (quantas vezes por dia) e a partir de quantos dias em aberto o aviso aparece", "🔕 Dá para desligar o aviso de um cliente ou deixar no padrão (aviso geral de atraso)", "🏢 O aviso mostra o cliente, quantas OS estão em aberto e há quantos dias"] },
   { v: "2026.11.19-6", data: "19/11/2026", itens: ["👀 Sem login agora dá para ver o Dashboard completo e as Ordens de serviço (só consulta), tudo ao vivo"] },
   { v: "2026.11.19-5", data: "19/11/2026", itens: ["🗂️ Arquivos e Projetos agora só aparecem para o administrador", "🟢 No topo: quantos estão online, quem está logado e quantas telas veem o link", "🔔 Sino de notificações no topo (só para o administrador)", "🔔 Horários do aviso livres: adicione quantos quiser em cada missão", "🟢 Dashboard ao vivo: atualiza sozinho a cada 20 s e na hora em que alguém muda algo", "📺 Modo TV fica lembrado e a tela não apaga"] },
   { v: "2026.11.19-4", data: "19/11/2026", itens: ["📌 Missões: em cada cliente (ou livres), com data, horário e repetição", "📣 Aviso grande na tela para todos, de manhã e à tarde, até ser realizado", "✅ Só o administrador (ou quem ele autorizar) marca como realizado; os outros podem dar Ciente"] },
@@ -2302,6 +2397,7 @@ addEventListener("keydown", e => { if (e.key === "Escape") { document.body.class
   else if (!S.me && API === Supa && !sessionStorage.getItem("pm_aviso")) setTimeout(avisoRestrito, 700);
   if (!S.me) { setTimeout(() => alertaAtrasos(true), 4000); setInterval(() => alertaAtrasos(false), 10 * 60000); }
   setTimeout(checarMissoes, 4500); setInterval(checarMissoes, 60000);
+  setTimeout(checarPopupClientes, 6000); setInterval(checarPopupClientes, 60000);
   montarChat(); _chatUlt = (chatMsgs().slice(-1)[0] || {}).ts || 0; atualizarFab();
   setTimeout(() => { if (!$("#modalRoot").innerHTML) mostrarNovidades(); }, 900);
   setInterval(checarVersao, 120000); setTimeout(checarVersao, 20000);
