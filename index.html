@@ -246,6 +246,9 @@ body.tv .msTit{font-size:30px}
 .sinoI small{display:block;color:var(--tx2);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sinoIc{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:none;background:var(--card2)}.sinoIc.bad{background:rgba(239,68,68,.18)}.sinoIc.warn{background:rgba(245,158,11,.18)}.sinoIc.ac{background:rgba(59,130,246,.18)}
 .conChip{display:inline-flex;align-items:center;gap:6px;margin-right:8px;font-weight:700}
+.onU{align-items:center;gap:6px;padding:2px 10px 2px 2px;border:1px solid var(--line);border-radius:999px;background:var(--card);margin-right:6px}.onNm{font-weight:600;font-size:13px;white-space:nowrap}
+.avs .onU+.onU{margin-left:0}.avs .onU .av{margin-left:0!important}
+header{flex-wrap:wrap;row-gap:6px}.onBar{flex-basis:100%;display:flex;justify-content:flex-end;align-items:center;gap:6px;flex-wrap:wrap}.onBar:empty{display:none}
 /* atualização */
 .upd ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
 .updBar{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:70;background:var(--card2);border:1px solid var(--ac);border-radius:12px;padding:10px 14px;display:flex;gap:12px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.5);flex-wrap:wrap;max-width:calc(100% - 24px)}
@@ -290,11 +293,11 @@ body.tv .msTit{font-size:30px}
       <h1 id="ttl">Painel</h1>
       <span class="clock" id="clock"></span>
       <span class="sp"></span>
-      <div class="avs" id="hdrOnline" title="Online agora"></div>
       <div id="hdrUser"></div>
       <div class="sinoW"><button class="btn sm sino" id="btnSino" title="Notificações">🔔<span class="sinoN" id="sinoN" hidden></span></button><div class="sinoP" id="sinoP" hidden></div></div>
       <button class="btn sm notv hidem" id="btnTv" title="Modo TV (tela cheia)">⛶ TV</button>
       <div id="hdrSair"></div>
+      <div class="avs onBar" id="hdrOnline" title="Online agora"></div>
     </header>
     <div class="wrap" id="main"></div>
   </main>
@@ -711,7 +714,7 @@ function renderNav() {
 function renderHeader() {
   const onl = S.me ? Object.keys(S.online).filter(id => id !== S.me.id).map(userById).filter(Boolean) : [];
   const nCon = Object.keys(S.online).length + (S.visOn || []).length;
-  $("#hdrOnline").innerHTML = `<button class="btn sm conChip" id="conChip" title="Quem está conectado agora"><span class="dotV"></span> ${nCon || 1} online</button>` + onl.slice(0, 6).map(u => `<span class="avBtn" data-perfil="${esc(u.id)}">${av(u)}</span>`).join("") + (onl.length > 6 ? `<span class="muted" style="margin-left:6px">+${onl.length - 6}</span>` : "");
+  $("#hdrOnline").innerHTML = `<button class="btn sm conChip" id="conChip" title="Quem está conectado agora"><span class="dotV"></span> ${nCon || 1} online</button>` + onl.slice(0, 6).map(u => `<span class="avBtn onU" data-perfil="${esc(u.id)}" title="${esc(u.nome)} — online">${av(u)}<span class="onNm">${esc(String(u.nome || "").split(" ")[0])}</span></span>`).join("") + (onl.length > 6 ? `<span class="muted" style="margin-left:6px">+${onl.length - 6}</span>` : "");
   $("#hdrUser").innerHTML = S.me
     ? `<div style="display:flex;align-items:center;gap:8px"><span class="avBtn" data-perfil="${esc(S.me.id)}" title="Meu perfil">${av(userById(S.me.id) || S.me)}</span><span class="hidesm" style="font-weight:600">${esc(S.me.nome.split(" ")[0])}</span></div>`
     : `<button class="btn pri sm" id="bEntrar">Entrar</button>`;
