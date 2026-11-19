@@ -714,7 +714,7 @@ function renderNav() {
 function renderHeader() {
   const onl = S.me ? Object.keys(S.online).filter(id => id !== S.me.id).map(userById).filter(Boolean) : [];
   const nCon = Object.keys(S.online).length + (S.visOn || []).length;
-  $("#hdrOnline").innerHTML = `<button class="btn sm conChip" id="conChip" title="Quem está conectado agora"><span class="dotV"></span> ${nCon || 1} online</button>` + onl.slice(0, 6).map(u => `<span class="avBtn onU" data-perfil="${esc(u.id)}" title="${esc(u.nome)} — online">${av(u)}<span class="onNm">${esc(String(u.nome || "").split(" ")[0])}</span></span>`).join("") + (onl.length > 6 ? `<span class="muted" style="margin-left:6px">+${onl.length - 6}</span>` : "");
+  $("#hdrOnline").innerHTML = onl.slice(0, 6).map(u => `<span class="avBtn onU" data-perfil="${esc(u.id)}" title="${esc(u.nome)} — online">${av(u)}<span class="onNm">${esc(String(u.nome || "").split(" ")[0])}</span></span>`).join("") + (onl.length > 6 ? `<span class="muted" style="margin-left:6px">+${onl.length - 6}</span>` : "");
   $("#hdrUser").innerHTML = S.me
     ? `<div style="display:flex;align-items:center;gap:8px"><span class="avBtn" data-perfil="${esc(S.me.id)}" title="Meu perfil">${av(userById(S.me.id) || S.me)}</span><span class="hidesm" style="font-weight:600">${esc(S.me.nome.split(" ")[0])}</span></div>`
     : `<button class="btn pri sm" id="bEntrar">Entrar</button>`;
