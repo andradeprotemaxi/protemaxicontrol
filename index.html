@@ -219,6 +219,8 @@ body.tv .kpi .v{font-size:60px}
 .brandLk{display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none}.brandLk img{width:40px;height:40px;border-radius:10px}.brandLk small{display:block}
 .dashMarca{display:flex;justify-content:center;margin:28px 0 8px}.dashMarca img{width:min(340px,80%);height:auto;filter:drop-shadow(0 8px 24px rgba(0,0,0,.45))}
 body.tv .dashMarca img{width:min(260px,40%)}
+.atrTop{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}.atrTop div{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--bad);border-radius:12px;padding:10px 12px}
+.atrTop b{display:block;font-size:28px;font-weight:900;color:#fca5a5;line-height:1.1}.atrTop span{font-size:12px;color:var(--tx2)}
 /* atualização */
 .upd ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
 .updBar{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:70;background:var(--card2);border:1px solid var(--ac);border-radius:12px;padding:10px 14px;display:flex;gap:12px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.5);flex-wrap:wrap;max-width:calc(100% - 24px)}
@@ -771,7 +773,7 @@ VIEWS.dashboard = el => {
   </div>
   ${S.me ? (() => {
     const at = lista("os").filter(o => (atraso(o) ?? -1) > 0).sort((a, b) => atraso(b) - atraso(a) || (diasAberta(b) ?? 0) - (diasAberta(a) ?? 0));
-    return `<div class="card" style="margin-top:16px"><h2>⚠️ Quem está atrasado <span class="pill">${at.length}</span><span class="sp"></span><span class="muted" style="font-weight:500;font-size:12px">atualiza sozinho a cada importação</span></h2>${legendaDias()}
+    return `<div class="card" style="margin-top:16px"><h2>⚠️ Quem está atrasado <span class="pill">${at.length}</span>${at.length ? ` <button class="btn sm" onclick="alertaAtrasos(true)" style="margin-left:6px">🔔 Aviso</button>` : ""}<span class="sp"></span><span class="muted" style="font-weight:500;font-size:12px">atualiza sozinho a cada importação</span></h2>${legendaDias()}
       ${at.length ? `<div class="tbl"><table><thead><tr><th>Aberta há</th><th>Atraso</th><th>Nº</th><th>Cliente</th><th class="hidesm">Serviço</th><th class="hidesm">Técnico</th><th class="hidesm">Prazo</th></tr></thead><tbody>${at.slice(0, 40).map(o => `<tr class="click" data-os="${esc(o.id)}"><td>${badgeDias(o)}</td><td><span class="late ${atraso(o) > 3 ? "l3" : "l2"}">+${atraso(o)}d</span></td><td><b>${esc(o.numero || "—")}</b></td><td>${esc(o.cliente || "—")} ${pillTier(tierDe(o.cliente))}</td><td class="hidesm">${esc(o.servico || "")}</td><td class="hidesm">${esc(o.tecnico || "—")}</td><td class="hidesm">${br(prazoEf(o))}</td></tr>`).join("")}</tbody></table></div>${at.length > 40 ? `<p class="muted">+${at.length - 40} atrasadas… <a href="#" data-kgo="atrasadas">ver todas</a></p>` : ""}` : `<div class="empty">Nenhuma OS atrasada 👏</div>`}</div>`;
   })() : ""}
   <div class="dashMarca"><img src="protemaxi.png" alt="Protemaxi Segurança"></div>
@@ -781,6 +783,29 @@ VIEWS.dashboard = el => {
   $("#dSol") && ($("#dSol").onclick = e => { e.preventDefault(); abrirSolicitar(); });
 };
 
+/* ---------- pop-up de clientes atrasados ---------- */
+function resumoAtrasos() {
+  const g = {};
+  for (const o of lista("os")) { const a = atraso(o); if (!(a > 0)) continue; const c = o.cliente || "Sem cliente"; const x = g[c] ||= { cliente: c, n: 0, max: 0, aberta: 0 }; x.n++; x.max = Math.max(x.max, a); x.aberta = Math.max(x.aberta, diasAberta(o) ?? 0); }
+  return Object.values(g).sort((a, b) => b.max - a.max || b.n - a.n);
+}
+let _atrT = null;
+function alertaAtrasos(forcar) {
+  if (!S.me) return;
+  const r = resumoAtrasos(); if (!r.length) return;
+  const os = r.reduce((t, x) => t + x.n, 0), sig = r.length + ":" + os + ":" + r[0].max;
+  const ult = LS.get("pm_atr_ult", { sig: "", em: 0 });
+  if (!forcar && ult.sig === sig && Date.now() - ult.em < 30 * 60000) return;   // mesmo cenário: no máximo a cada 30 min
+  if ($("#modalRoot").innerHTML) { clearTimeout(_atrT); _atrT = setTimeout(() => alertaAtrasos(forcar), 8000); return; }
+  LS.set("pm_atr_ult", { sig, em: Date.now() });
+  modal({
+    titulo: `⚠️ ${r.length} cliente${r.length > 1 ? "s" : ""} com OS atrasada`,
+    corpo: `<div class="atrTop"><div><b>${r.length}</b><span>cliente${r.length > 1 ? "s" : ""}</span></div><div><b>${os}</b><span>OS atrasada${os > 1 ? "s" : ""}</span></div><div><b>${r[0].max}</b><span>dias no maior atraso</span></div></div>
+      <div class="tbl" style="max-height:46vh"><table><thead><tr><th>Cliente</th><th>OS</th><th>Atraso</th><th>Aberta há</th></tr></thead><tbody>${r.map(x => `<tr><td>${esc(x.cliente)} ${pillTier(tierDe(x.cliente))}</td><td>${x.n}</td><td><span class="late ${x.max > 3 ? "l3" : "l2"}">+${x.max} dia${x.max > 1 ? "s" : ""}</span></td><td><span class="dias ${corDias(x.aberta)} sm">${x.aberta}d</span></td></tr>`).join("")}</tbody></table></div>`,
+    botoes: [{ txt: "Fechar" }, { txt: "Ver as OS atrasadas", cls: "pri", fn: () => { F.status = "atrasadas"; F.busca = ""; setTimeout(() => go("os"), 30); } }]
+  });
+  if (document.body.classList.contains("tv")) setTimeout(() => { if ($("#modalRoot .atrTop")) fechaModal(); }, 45000);   // na TV fecha sozinho
+}
 /* ---------- perfil (clique na bolinha) ---------- */
 function abrirPerfil(id) {
   const u = userById(id) || (S.me && S.me.id === id ? S.me : null); if (!u) return;
@@ -1251,7 +1276,7 @@ function renderPrev() {
       if (!isCli) await salvar("importacao", uid(), { origem, qtd: its.length, por: S.me?.nome, em: new Date().toISOString() }).catch(() => {});
       toast(`${its.length} registro(s) importado(s)!`, "ok");
       IMP.linhas = null; IMP.texto = "";
-      if (isCli) go("clientes"); else { const at = lista("os").filter(o => (atraso(o) ?? -1) > 0).length; if (at) setTimeout(() => toast(`⚠️ ${at} OS atrasada(s) — veja no Dashboard`, "bad"), 600); go("dashboard"); }
+      if (isCli) go("clientes"); else { const at = lista("os").filter(o => (atraso(o) ?? -1) > 0).length; go("dashboard"); setTimeout(() => alertaAtrasos(true), 700); }
     } catch (err) { toast(err.message, "bad"); e.target.disabled = false; }
   };
 }
@@ -1280,7 +1305,7 @@ function renderPrevInside(box) {
       await salvarVarios(its);
       await salvar("importacao", uid(), { origem: "Inside", qtd: its.length, por: S.me?.nome, em: new Date().toISOString() }).catch(() => {});
       toast(`${its.length} OS atualizadas no painel!`, "ok");
-      IMP.linhas = null; IMP.inside = null; IMP.texto = ""; { const at = lista("os").filter(o => (atraso(o) ?? -1) > 0).length; if (at) setTimeout(() => toast(`⚠️ ${at} OS atrasada(s) — veja no Dashboard`, "bad"), 600); } go("dashboard");
+      IMP.linhas = null; IMP.inside = null; IMP.texto = ""; go("dashboard"); setTimeout(() => alertaAtrasos(true), 700);
     } catch (err) { toast(err.message, "bad"); e.target.disabled = false; }
   };
 }
@@ -1885,7 +1910,7 @@ function checarLembretes() {
    ============================================================ */
 const APP_VERSAO = "2026.11.19-3";
 const NOVIDADES = [
-  { v: "2026.11.19-3", data: "19/11/2026", itens: ["⚠️ Depois de importar as OS, o app abre o Dashboard com quem está atrasado e há quantos dias", "📅 Tempo em aberto agora conversa com o atraso: sem data de abertura no Inside, ela é estimada pela data de entrega"] },
+  { v: "2026.11.19-3", data: "19/11/2026", itens: ["🔔 Pop-up de atrasos: quantos clientes estão atrasados e há quantos dias (ao abrir, depois de importar e quando mudar)", "⚠️ Depois de importar as OS, o app abre o Dashboard com quem está atrasado e há quantos dias", "📅 Tempo em aberto agora conversa com o atraso: sem data de abertura no Inside, ela é estimada pela data de entrega"] },
   { v: "2026.11.19-2", data: "19/11/2026", itens: ["💬 Chat da equipe: botão flutuante que você arrasta para onde quiser", "📝 Anotações dentro do chat (só suas ou compartilhadas com a equipe)", "🚀 Este aviso: sempre que sair uma atualização, todo mundo vê o que mudou", "🟢🟡🔴 Dias em aberto de cada OS em destaque: verde até 2 dias, amarelo de 3 a 4, vermelho acima de 4", "🥈 Cliente que não é ouro agora é prata (bronze saiu)", "📷 Fotos da equipe: clique na foto para trocar, enquadrar o rosto, dar zoom e girar", "👤 Clique na sua bolinha (ou na de quem está online) para ver o perfil e trocar a foto", "📊 Novo Dashboard com gráficos: quem tem só o link vê apenas ele; o resto exige login", "🔐 Pedido de acesso: quem quiser entrar pede, e o administrador autoriza ou recusa", "🏗️ Atalho Projetos no menu, que abre o app de projetos", "👆 Os cartões (OS abertas, em execução, concluídas, atrasadas, ouro/prata e faixas de dias) são clicáveis e abrem a lista certa", "🔷 Nova logo BASE: clique nela (no topo) para voltar à página principal", "🦅 Marca Protemaxi Segurança no Dashboard", "⚠️ Depois de importar as OS, o app abre o Dashboard com a lista de quem está atrasado e há quantos dias", "💻 Cada computador ou celular precisa ser autorizado pelo administrador; em Admin → Máquinas você vê quem está logado e em qual máquina"] },
   { v: "2026.11.19-1", data: "19/11/2026", itens: ["🏷️ Cargo virou lista para selecionar, com edição (✎) para renomear e acrescentar", "🗓️ Novo campo Escala, com lista editável e cartões mostrando quem está em cada escala", "🔎 Filtros por cargo e por escala no quadro de funcionários"] },
 ];
@@ -2068,7 +2093,7 @@ addEventListener("keydown", e => { if (e.key === "Escape") { document.body.class
   API.start();
   if (S.me) iniciarSessao();
   route();
-  if (S.me) { setTimeout(checarPedidos, 1500); setTimeout(ofereceMigrar, 2500); }
+  if (S.me) { setTimeout(checarPedidos, 1500); setTimeout(ofereceMigrar, 2500); setTimeout(() => alertaAtrasos(true), 3500); setInterval(() => alertaAtrasos(false), 10 * 60000); }
   if (maqPend) setTimeout(() => aguardarMaquina(...maqPend), 600);
   else if (!S.me && API === Supa && !sessionStorage.getItem("pm_aviso")) setTimeout(avisoRestrito, 700);
   montarChat(); _chatUlt = (chatMsgs().slice(-1)[0] || {}).ts || 0; atualizarFab();
