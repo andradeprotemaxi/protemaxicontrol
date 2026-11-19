@@ -504,9 +504,10 @@ function seedDemo(r) {
 /* ---------------- OS: regras de atraso ---------------- */
 const STATUS = { aberta: "Aberta", execucao: "Em execução", concluida: "Concluída", cancelada: "Cancelada" };
 const ativa = o => o.status === "aberta" || o.status === "execucao";
-const prazoEf = o => o.prazo || (o.abertura ? addDias(o.abertura, +cfg().sla || 3) : "");
+const prazoEf = o => o.prazo || (abEf(o) ? addDias(abEf(o), +cfg().sla || 3) : "");
 function atraso(o) { if (!ativa(o)) return null; const p = prazoEf(o); if (!p) return null; return diasEntre(p, hoje()); }
-const diasAberta = o => o.abertura ? Math.max(0, diasEntre(o.abertura, ativa(o) ? hoje() : (o.conclusao || hoje()))) : null;
+const abEf = o => o.abertura || o.visto || (o.importado ? String(o.importado).slice(0, 10) : "");
+const diasAberta = o => abEf(o) ? Math.max(0, diasEntre(abEf(o), ativa(o) ? hoje() : (o.conclusao || hoje()))) : null;
 const corDias = d => d <= 2 ? "dv" : d <= 4 ? "da" : "dr";
 function badgeDias(o) {
   const d = diasAberta(o); if (d == null) return '<span class="muted">—</span>';
@@ -707,7 +708,7 @@ const F = { busca: "", status: "ativas", origem: "", tier: "" };
 document.addEventListener("click", e => { if (!e.target.closest("#hdrHome, .brandLk")) return; e.preventDefault(); go(S.me ? "painel" : "dashboard"); scrollTo(0, 0); });
 /* cartões clicáveis: levam para a área certa já filtrada */
 document.addEventListener("click", e => {
-  const k = e.target.closest("#main [data-kgo], #main [data-kcli]"); if (!k) return;
+  const k = e.target.closest("#main [data-kgo], #main [data-kcli]"); if (!k) return; e.preventDefault();
   if (!S.me) { toast("Entre com seu usuário para ver os detalhes"); return abrirLogin(); }
   if (k.dataset.kgo) { F.status = k.dataset.kgo; F.busca = ""; go("os"); } else { FC.tier = k.dataset.kcli; FC.busca = ""; go("clientes"); }
 });
@@ -753,7 +754,7 @@ VIEWS.dashboard = el => {
     <div style="display:flex;flex-direction:column;gap:16px">
       <div class="card"><h2>Tempo em aberto das OS pendentes</h2>
         ${faixas.map(([f, l, c, cor]) => `<div class="fx kgo" data-kgo="${c}" title="Ver estas OS"><span class="dias ${c} sm">${k[f]}</span><span class="fxL">${l}</span><div class="fxB"><i style="width:${totF ? (k[f] / totF * 100) : 0}%;background:${cor}"></i></div></div>`).join("")}
-        <small class="muted">${totF} OS pendentes com data de abertura</small></div>
+        <small class="muted">${totF} OS pendentes · sem data de abertura no Inside, conta do dia em que a OS apareceu na 1ª importação</small></div>
       <div class="card"><h2>Clientes</h2>
         <div class="mini" style="grid-template-columns:1fr 1fr;margin:0">
           <div class="m kgo" data-kcli="ouro"><span class="medal ouro"></span><b>${k.ouro}</b><span>Ouro</span></div>
@@ -761,8 +762,14 @@ VIEWS.dashboard = el => {
         </div><small class="muted">${k.contas} contas cadastradas</small></div>
     </div>
   </div>
+  ${S.me ? (() => {
+    const at = lista("os").filter(o => (atraso(o) ?? -1) > 0).sort((a, b) => atraso(b) - atraso(a) || (diasAberta(b) ?? 0) - (diasAberta(a) ?? 0));
+    return `<div class="card" style="margin-top:16px"><h2>⚠️ Quem está atrasado <span class="pill">${at.length}</span><span class="sp"></span><span class="muted" style="font-weight:500;font-size:12px">atualiza sozinho a cada importação</span></h2>${legendaDias()}
+      ${at.length ? `<div class="tbl"><table><thead><tr><th>Aberta há</th><th>Atraso</th><th>Nº</th><th>Cliente</th><th class="hidesm">Serviço</th><th class="hidesm">Técnico</th><th class="hidesm">Prazo</th></tr></thead><tbody>${at.slice(0, 40).map(o => `<tr class="click" data-os="${esc(o.id)}"><td>${badgeDias(o)}</td><td><span class="late ${atraso(o) > 3 ? "l3" : "l2"}">+${atraso(o)}d</span></td><td><b>${esc(o.numero || "—")}</b></td><td>${esc(o.cliente || "—")} ${pillTier(tierDe(o.cliente))}</td><td class="hidesm">${esc(o.servico || "")}</td><td class="hidesm">${esc(o.tecnico || "—")}</td><td class="hidesm">${br(prazoEf(o))}</td></tr>`).join("")}</tbody></table></div>${at.length > 40 ? `<p class="muted">+${at.length - 40} atrasadas… <a href="#" data-kgo="atrasadas">ver todas</a></p>` : ""}` : `<div class="empty">Nenhuma OS atrasada 👏</div>`}</div>`;
+  })() : ""}
   <div class="dashMarca"><img src="protemaxi.png" alt="Protemaxi Segurança"></div>
   ${!S.me ? `<div class="hint" style="margin-top:16px">🔒 A parte interna (ordens de serviço, clientes, arquivos) é só para quem tem acesso. <a href="#" id="dEnt">Entrar</a> · <a href="#" id="dSol">Solicitar acesso</a></div>` : ""}`;
+  S.me && typeof ligaTabelaOS === "function" && ligaTabelaOS(el);
   $("#dEnt") && ($("#dEnt").onclick = e => { e.preventDefault(); abrirLogin(); });
   $("#dSol") && ($("#dSol").onclick = e => { e.preventDefault(); abrirSolicitar(); });
 };
@@ -1109,7 +1116,7 @@ function montarItens() {
     return IMP.inside.map(r => {
       const id = "inside_" + r.numero; const old = T("os")[id] || {};
       const st = /fechad|conclu|finaliz|faturad/i.test(r.etapa) ? "concluida" : /execu/i.test(r.etapa) || old.status === "execucao" ? "execucao" : "aberta";
-      const d = { ...old, numero: r.numero, origem: "Inside", cliente: r.cliente || old.cliente || "", codCliente: r.codCli, servico: r.servico || old.servico || "", tecnico: r.tecnico || old.tecnico || "", prazo: r.prazo || old.prazo || "", etapa: r.etapa || old.etapa || "", valor: r.valor || old.valor || "", orcamento: r.orcamento || old.orcamento || "", status: st, abertura: old.abertura || "", visto: old.visto || hoje(), importado: new Date().toISOString() };
+      const d = { ...old, numero: r.numero, origem: "Inside", cliente: r.cliente || old.cliente || "", codCliente: r.codCli, servico: r.servico || old.servico || "", tecnico: r.tecnico || old.tecnico || "", prazo: r.prazo || old.prazo || "", etapa: r.etapa || old.etapa || "", valor: r.valor || old.valor || "", orcamento: r.orcamento || old.orcamento || "", status: st, abertura: old.abertura || old.visto || hoje(), visto: old.visto || hoje(), importado: new Date().toISOString() };
       if (st === "concluida" && !d.conclusao) d.conclusao = hoje(); if (ativa(d)) d.conclusao = "";
       delete d.exemplo; return { tipo: "os", id, dados: d };
     });
@@ -1235,7 +1242,8 @@ function renderPrev() {
       await salvarVarios(its);
       if (!isCli) await salvar("importacao", uid(), { origem, qtd: its.length, por: S.me?.nome, em: new Date().toISOString() }).catch(() => {});
       toast(`${its.length} registro(s) importado(s)!`, "ok");
-      IMP.linhas = null; IMP.texto = ""; go(isCli ? "clientes" : "painel");
+      IMP.linhas = null; IMP.texto = "";
+      if (isCli) go("clientes"); else { const at = lista("os").filter(o => (atraso(o) ?? -1) > 0).length; if (at) setTimeout(() => toast(`⚠️ ${at} OS atrasada(s) — veja no Dashboard`, "bad"), 600); go("dashboard"); }
     } catch (err) { toast(err.message, "bad"); e.target.disabled = false; }
   };
 }
@@ -1264,7 +1272,7 @@ function renderPrevInside(box) {
       await salvarVarios(its);
       await salvar("importacao", uid(), { origem: "Inside", qtd: its.length, por: S.me?.nome, em: new Date().toISOString() }).catch(() => {});
       toast(`${its.length} OS atualizadas no painel!`, "ok");
-      IMP.linhas = null; IMP.inside = null; IMP.texto = ""; go("painel");
+      IMP.linhas = null; IMP.inside = null; IMP.texto = ""; { const at = lista("os").filter(o => (atraso(o) ?? -1) > 0).length; if (at) setTimeout(() => toast(`⚠️ ${at} OS atrasada(s) — veja no Dashboard`, "bad"), 600); } go("dashboard");
     } catch (err) { toast(err.message, "bad"); e.target.disabled = false; }
   };
 }
@@ -1860,9 +1868,10 @@ function checarLembretes() {
    ATUALIZAÇÕES — pop-up de novidades para toda a equipe
    (a cada versão nova: troque APP_VERSAO e acrescente no topo de NOVIDADES)
    ============================================================ */
-const APP_VERSAO = "2026.11.19-2";
+const APP_VERSAO = "2026.11.19-3";
 const NOVIDADES = [
-  { v: "2026.11.19-2", data: "19/11/2026", itens: ["💬 Chat da equipe: botão flutuante que você arrasta para onde quiser", "📝 Anotações dentro do chat (só suas ou compartilhadas com a equipe)", "🚀 Este aviso: sempre que sair uma atualização, todo mundo vê o que mudou", "🟢🟡🔴 Dias em aberto de cada OS em destaque: verde até 2 dias, amarelo de 3 a 4, vermelho acima de 4", "🥈 Cliente que não é ouro agora é prata (bronze saiu)", "📷 Fotos da equipe: clique na foto para trocar, enquadrar o rosto, dar zoom e girar", "👤 Clique na sua bolinha (ou na de quem está online) para ver o perfil e trocar a foto", "📊 Novo Dashboard com gráficos: quem tem só o link vê apenas ele; o resto exige login", "🔐 Pedido de acesso: quem quiser entrar pede, e o administrador autoriza ou recusa", "🏗️ Atalho Projetos no menu, que abre o app de projetos", "👆 Os cartões (OS abertas, em execução, concluídas, atrasadas, ouro/prata e faixas de dias) são clicáveis e abrem a lista certa", "🔷 Nova logo BASE: clique nela (no topo) para voltar à página principal", "🦅 Marca Protemaxi Segurança no Dashboard", "💻 Cada computador ou celular precisa ser autorizado pelo administrador; em Admin → Máquinas você vê quem está logado e em qual máquina"] },
+  { v: "2026.11.19-3", data: "19/11/2026", itens: ["⚠️ Depois de importar as OS, o app abre o Dashboard com quem está atrasado e há quantos dias", "📅 OS do Inside sem data de abertura contam a partir do dia em que apareceram na primeira importação"] },
+  { v: "2026.11.19-2", data: "19/11/2026", itens: ["💬 Chat da equipe: botão flutuante que você arrasta para onde quiser", "📝 Anotações dentro do chat (só suas ou compartilhadas com a equipe)", "🚀 Este aviso: sempre que sair uma atualização, todo mundo vê o que mudou", "🟢🟡🔴 Dias em aberto de cada OS em destaque: verde até 2 dias, amarelo de 3 a 4, vermelho acima de 4", "🥈 Cliente que não é ouro agora é prata (bronze saiu)", "📷 Fotos da equipe: clique na foto para trocar, enquadrar o rosto, dar zoom e girar", "👤 Clique na sua bolinha (ou na de quem está online) para ver o perfil e trocar a foto", "📊 Novo Dashboard com gráficos: quem tem só o link vê apenas ele; o resto exige login", "🔐 Pedido de acesso: quem quiser entrar pede, e o administrador autoriza ou recusa", "🏗️ Atalho Projetos no menu, que abre o app de projetos", "👆 Os cartões (OS abertas, em execução, concluídas, atrasadas, ouro/prata e faixas de dias) são clicáveis e abrem a lista certa", "🔷 Nova logo BASE: clique nela (no topo) para voltar à página principal", "🦅 Marca Protemaxi Segurança no Dashboard", "⚠️ Depois de importar as OS, o app abre o Dashboard com a lista de quem está atrasado e há quantos dias", "💻 Cada computador ou celular precisa ser autorizado pelo administrador; em Admin → Máquinas você vê quem está logado e em qual máquina"] },
   { v: "2026.11.19-1", data: "19/11/2026", itens: ["🏷️ Cargo virou lista para selecionar, com edição (✎) para renomear e acrescentar", "🗓️ Novo campo Escala, com lista editável e cartões mostrando quem está em cada escala", "🔎 Filtros por cargo e por escala no quadro de funcionários"] },
 ];
 function mostrarNovidades(forcar) {
