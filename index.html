@@ -1138,9 +1138,13 @@ function abrirOS(id) {
     return;
   }
   const fs = OSF();
+  const cli = o.cliente ? clienteDe(o.cliente) : null; const ppOk = cli && pode("clientes");
+  const ppHtml = !o.cliente ? "" : ppOk ? popupForm(cli.popup).replace('<div class="ppBox" id="ppBox">', `<div class="ppBox" id="ppBox" style="margin-top:16px"><div class="muted" style="font-size:12.5px;margin-bottom:8px">Vale para todas as OS de <b>${esc(cli.nome)}</b> (fica salvo no cliente).</div>`)
+    : cli ? (cli.popup && cli.popup.modo && cli.popup.modo !== "padrao" ? `<div class="ppBox" style="margin-top:16px"><h3>🔔 Popup</h3><div class="ppRes">${esc(popupResumo(cli.popup))}</div></div>` : "")
+    : `<div class="ppBox" style="margin-top:16px"><h3>🔔 Popup</h3><div class="ppRes">Este cliente ainda não está cadastrado em Clientes. Cadastre para configurar o popup.</div></div>`;
   modal({
     titulo: id ? "Editar OS " + esc(o.numero || "") : "Nova OS", wide: true,
-    corpo: campos(fs, o) + datalist("dlCli", lista("cliente").map(c => c.nome)) + datalist("dlTec", tecs),
+    corpo: campos(fs, o) + ppHtml + datalist("dlCli", lista("cliente").map(c => c.nome)) + datalist("dlTec", tecs),
     botoes: [
       ...(id ? [{ txt: "Excluir", cls: "bad", fn: async () => { if (!await confirma("Excluir esta OS?")) return false; await excluir("os", id); toast("OS excluída"); } }] : []),
       ...(id && ativa(o) ? [{ txt: "✓ Concluir", fn: async () => { await salvar("os", id, { ...T("os")[id], status: "concluida", conclusao: hoje() }); toast("OS concluída", "ok"); } }] : []),
@@ -1149,10 +1153,17 @@ function abrirOS(id) {
         if (d.status === "concluida" && !d.conclusao) d.conclusao = hoje();
         if (d.status !== "concluida") d.conclusao = d.conclusao && d.status === "cancelada" ? d.conclusao : "";
         const nid = id || (norm(d.origem) + "_" + (d.numero ? d.numero.replace(/\W+/g, "") : uid()));
-        await salvar("os", nid, d); toast("OS salva", "ok");
+        const pp0 = ppOk ? lerPopup(r) : null; const pp = pp0 && JSON.stringify(pp0) !== JSON.stringify(ppCfg(cli.popup)) ? pp0 : null;
+        if (pp) {
+          if (pp.modo === "personalizado" && !pp.horarios.length) throw new Error("Popup: adicione pelo menos um horário");
+          if (pp.modo === "personalizado" && !pp.dias.length && !pp.datas.length) throw new Error("Popup: marque pelo menos um dia da semana ou uma data");
+          const dc = { ...T("cliente")[cli.id], popup: pp }; delete dc.id; await salvar("cliente", cli.id, dc); setTimeout(checarPopupClientes, 300);
+        }
+        await salvar("os", nid, d); toast(pp ? "OS e popup salvos" : "OS salva", "ok");
       } }
     ]
   });
+  ppOk && $("#ppBox") && ligarPopupForm($("#ppBox"));
 }
 function confirma(msg) {
   return new Promise(ok => {
@@ -2211,8 +2222,9 @@ function checarLembretes() {
    ATUALIZAÇÕES — pop-up de novidades para toda a equipe
    (a cada versão nova: troque APP_VERSAO e acrescente no topo de NOVIDADES)
    ============================================================ */
-const APP_VERSAO = "2026.11.19-8";
+const APP_VERSAO = "2026.11.19-9";
 const NOVIDADES = [
+  { v: "2026.11.19-9", data: "19/11/2026", itens: ["🔔 Popup também dentro de Editar OS: ajuste os dias, as datas e os horários do aviso do cliente sem sair da OS"] },
   { v: "2026.11.19-8", data: "19/11/2026", itens: ["🔔 Botão Popup em cada cliente da lista: abre direto os dias, as datas e os horários do aviso", "⬆️ No perfil do cliente, o Popup agora fica no topo"] },
   { v: "2026.11.19-7", data: "19/11/2026", itens: ["🔔 Popup em cada cliente: escolha os dias da semana (ex.: Seg, Qua e Sex), datas avulsas, os horários (quantas vezes por dia) e a partir de quantos dias em aberto o aviso aparece", "🔕 Dá para desligar o aviso de um cliente ou deixar no padrão (aviso geral de atraso)", "🏢 O aviso mostra o cliente, quantas OS estão em aberto e há quantos dias"] },
   { v: "2026.11.19-6", data: "19/11/2026", itens: ["👀 Sem login agora dá para ver o Dashboard completo e as Ordens de serviço (só consulta), tudo ao vivo"] },
