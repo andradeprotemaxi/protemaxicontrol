@@ -98,6 +98,13 @@ textarea.in{width:100%;min-height:120px;resize:vertical}
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px}
 .tab{padding:7px 13px;border-radius:9px;cursor:pointer;color:var(--tx2);font-weight:600;border:1px solid transparent;background:none}
 .tab.on{background:var(--card2);color:var(--tx);border-color:var(--line)}
+.opRow{display:flex;gap:6px;align-items:stretch}.opRow select{flex:1;min-width:0}
+.opBox{margin-top:8px}.opEd{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px;font-weight:400}
+.opItens{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow:auto}.opIt{display:flex;gap:6px}.opIt .in{flex:1;min-width:0}
+.escList{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-bottom:14px}
+.escCard{text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--tx);cursor:pointer;font:inherit}
+.escCard.on{border-color:var(--ac);box-shadow:0 0 0 1px var(--ac) inset}.escCard .c{float:right;background:var(--bg2);border-radius:6px;padding:0 7px;font-size:12px;font-weight:700}
+.escCard .k{color:var(--tx2);font-size:12.5px;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tab .c{background:var(--bg2);border-radius:6px;padding:0 6px;margin-left:5px;font-size:11.5px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
 .item{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:13px;display:flex;flex-direction:column;gap:5px;cursor:default}
@@ -495,6 +502,10 @@ function campos(fs, o = {}) {
     const v = o[f.k] ?? f.def ?? "";
     let inp;
     if (f.t === "select") inp = `<select class="in" name="${f.k}">${f.op.map(x => { const [val, lab] = Array.isArray(x) ? x : [x, x]; return `<option value="${esc(val)}" ${String(v) === String(val) ? "selected" : ""}>${esc(lab)}</option>`; }).join("")}</select>`;
+    else if (f.t === "opcoes") {
+      const ops = opcoes(f.lista); const todas = v && !ops.some(o => norm(o) === norm(v)) ? [v, ...ops] : ops;
+      inp = `<div class="opRow"><select class="in" name="${f.k}" data-op="${f.lista}"><option value="">— selecione —</option>${todas.map(o => `<option value="${esc(o)}" ${norm(o) === norm(v) ? "selected" : ""}>${esc(o)}</option>`).join("")}</select>${f.editavel !== false && pode("coordenador") ? `<button type="button" class="btn sm" data-oped="${f.lista}" title="Editar lista">✎</button>` : ""}</div><div class="opBox" data-opbox="${f.lista}" hidden></div>`;
+    }
     else if (f.t === "area") inp = `<textarea class="in" name="${f.k}" rows="3" style="min-height:70px">${esc(v)}</textarea>`;
     else inp = `<input class="in" name="${f.k}" type="${f.t || "text"}" value="${esc(v)}" ${f.list ? `list="${f.list}"` : ""} ${f.ph ? `placeholder="${esc(f.ph)}"` : ""}>`;
     return `<label class="${f.full ? "full" : ""}">${esc(f.l)}${inp}</label>`;
@@ -1066,7 +1077,7 @@ function extIco(n) { const e = (String(n).split(".").pop() || "").toLowerCase();
 
 /* ---------- Coordenador ---------- */
 const COORD = {
-  funcionarios: { l: "Quadro de funcionários", ic: "👷", f: [{ k: "nome", l: "Nome" }, { k: "cargo", l: "Cargo / função" }, { k: "setor", l: "Setor" }, { k: "telefone", l: "Telefone" }, { k: "turno", l: "Turno" }, { k: "status", l: "Situação", t: "select", op: ["Ativo", "Férias", "Afastado", "Folga", "Desligado"] }, { k: "admissao", l: "Admissão", t: "date" }, { k: "obs", l: "Observações", t: "area", full: true }] },
+  funcionarios: { l: "Quadro de funcionários", ic: "👷", f: [{ k: "nome", l: "Nome" }, { k: "cargo", l: "Cargo / função", t: "opcoes", lista: "cargos" }, { k: "setor", l: "Setor" }, { k: "telefone", l: "Telefone" }, { k: "escala", l: "Escala", t: "opcoes", lista: "escalas" }, { k: "turno", l: "Turno" }, { k: "status", l: "Situação", t: "select", op: ["Ativo", "Férias", "Afastado", "Folga", "Desligado"] }, { k: "admissao", l: "Admissão", t: "date" }, { k: "obs", l: "Observações", t: "area", full: true }] },
   operadores: { l: "Operadores", ic: "🎧", f: [{ k: "nome", l: "Nome" }, { k: "turno", l: "Turno", t: "select", op: ["Manhã", "Tarde", "Noite", "12x36 dia", "12x36 noite", "Comercial"] }, { k: "sistema", l: "Sistema que opera", ph: "Segware, Inside…" }, { k: "telefone", l: "Telefone" }, { k: "status", l: "Situação", t: "select", op: ["Em serviço", "Folga", "Férias", "Afastado"] }, { k: "obs", l: "Observações", t: "area", full: true }] },
   tecnicos: { l: "Técnicos externos", ic: "🛠️", f: [{ k: "nome", l: "Nome" }, { k: "empresa", l: "Empresa / vínculo", ph: "Própria, terceirizado…" }, { k: "especialidade", l: "Especialidade", ph: "CFTV, alarme, cerca…" }, { k: "telefone", l: "Telefone" }, { k: "regiao", l: "Região de atendimento" }, { k: "status", l: "Situação", t: "select", op: ["Disponível", "Em campo", "Indisponível", "Folga"] }, { k: "obs", l: "Observações", t: "area", full: true }] },
   motos: { l: "Motos", ic: "🏍️", f: [{ k: "placa", l: "Placa" }, { k: "modelo", l: "Modelo" }, { k: "responsavel", l: "Responsável", list: "dlPess" }, { k: "km", l: "KM atual", t: "number" }, { k: "revisao", l: "Próxima revisão", t: "date" }, { k: "status", l: "Situação", t: "select", op: ["Em uso", "Disponível", "Manutenção", "Parada"] }, { k: "obs", l: "Observações", t: "area", full: true }] },
@@ -1074,22 +1085,93 @@ const COORD = {
   sistemas: { l: "Sistemas", ic: "💻", f: [{ k: "nome", l: "Sistema" }, { k: "uso", l: "Para que serve" }, { k: "url", l: "Endereço (link)" }, { k: "responsavel", l: "Responsável" }, { k: "obs", l: "Observações (não coloque senhas aqui)", t: "area", full: true }] },
 };
 let coordTab = "funcionarios";
+/* listas editáveis (cargos, escalas) — ficam em coord_listas */
+const LISTAS = {
+  cargos: { l: "Cargos", ic: "🏷️", campo: "cargo", base: ["Coordenador operacional", "Supervisor", "Técnico externo", "Técnico interno", "Auxiliar técnico", "Operador de monitoramento", "Administrativo", "Motoboy"] },
+  escalas: { l: "Escalas", ic: "🗓️", campo: "escala", base: ["12x36 dia", "12x36 noite", "6x1", "5x2 (comercial)", "4x2", "24x48", "Folguista"] },
+};
+const opcoes = nome => { const r = T("coord_listas")[nome]; return Array.isArray(r?.itens) ? r.itens : [...(LISTAS[nome]?.base || [])]; };
+function editorLista(nome) {
+  const L = LISTAS[nome];
+  return `<div class="opEd" data-ed="${nome}"><div class="muted" style="margin-bottom:8px">${L.ic} ${L.l}: renomeie, apague ou acrescente. Ao renomear, quem já tinha o nome antigo é atualizado.</div>
+    <div class="opItens">${opcoes(nome).map(o => `<div class="opIt"><input class="in" value="${esc(o)}" data-orig="${esc(o)}"><button type="button" class="btn sm" data-oprm title="Apagar">🗑</button></div>`).join("")}</div>
+    <div class="opIt" style="margin-top:8px"><input class="in" data-opnovo placeholder="Novo item…"><button type="button" class="btn sm" data-opadd>+ Adicionar</button></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px"><button type="button" class="btn sm" data-opcanc>Cancelar</button><button type="button" class="btn sm pri" data-opsalva>Salvar lista</button></div></div>`;
+}
+function ligarEditor(box, nome, depois) {
+  const novoIt = v => { const d = document.createElement("div"); d.className = "opIt"; d.innerHTML = `<input class="in" data-orig=""><button type="button" class="btn sm" data-oprm title="Apagar">🗑</button>`; d.querySelector("input").value = v; return d; };
+  const add = () => { const i = box.querySelector("[data-opnovo]"); const v = i.value.trim(); if (!v) return; box.querySelector(".opItens").appendChild(novoIt(v)); i.value = ""; i.focus(); };
+  box.addEventListener("click", async e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.hasAttribute("data-oprm")) b.parentElement.remove();
+    else if (b.hasAttribute("data-opadd")) add();
+    else if (b.hasAttribute("data-opcanc")) depois?.(null);
+    else if (b.hasAttribute("data-opsalva")) {
+      b.disabled = true;
+      try {
+        const itens = [], ren = {};
+        $$(".opItens .opIt input", box).forEach(i => { const v = i.value.trim(); if (v && !itens.some(x => norm(x) === norm(v))) itens.push(v); if (i.dataset.orig && v && i.dataset.orig !== v) ren[norm(i.dataset.orig)] = v; });
+        const pend = box.querySelector("[data-opnovo]").value.trim(); if (pend && !itens.some(x => norm(x) === norm(pend))) itens.push(pend);
+        const campo = LISTAS[nome].campo; const mud = [];
+        for (const f of lista("coord_funcionarios")) { const n = ren[norm(f[campo] || "")]; if (n) { const { id, ...d } = f; mud.push({ tipo: "coord_funcionarios", id, dados: { ...d, [campo]: n } }); } }
+        await salvarVarios([{ tipo: "coord_listas", id: nome, dados: { itens } }, ...mud]);
+        toast(LISTAS[nome].l + " salvos" + (mud.length ? ` · ${mud.length} funcionário(s) atualizado(s)` : ""), "ok");
+        depois?.(itens, ren);
+      } catch (err) { toast(err.message || String(err), "bad"); b.disabled = false; }
+    }
+  });
+  box.querySelector("[data-opnovo]").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); add(); } });
+}
+/* botão ✎ dentro do formulário: edita a lista sem perder o que já foi digitado */
+function ligarOpcoes(root) {
+  $$("[data-oped]", root).forEach(b => b.onclick = () => {
+    const nome = b.dataset.oped; const box = root.querySelector(`[data-opbox="${nome}"]`);
+    if (!box.hidden) { box.hidden = true; box.innerHTML = ""; return; }
+    box.innerHTML = editorLista(nome); box.hidden = false;
+    ligarEditor(box, nome, (itens, ren) => {
+      box.hidden = true; box.innerHTML = "";
+      if (!itens) return;
+      $$(`select[data-op="${nome}"]`, root).forEach(sel => {
+        let v = sel.value; if (ren && ren[norm(v)]) v = ren[norm(v)];
+        const todas = v && !itens.some(o => norm(o) === norm(v)) ? [v, ...itens] : itens;
+        sel.innerHTML = `<option value="">— selecione —</option>` + todas.map(o => `<option value="${esc(o)}" ${norm(o) === norm(v) ? "selected" : ""}>${esc(o)}</option>`).join("");
+      });
+    });
+    box.querySelector("[data-opnovo]").focus();
+  });
+}
+function abrirLista(nome) {
+  const L = LISTAS[nome];
+  const root = modal({ titulo: `${L.ic} ${L.l}`, corpo: `<div id="opM"></div>`, botoes: [] });
+  const box = root.querySelector("#opM"); box.innerHTML = editorLista(nome);
+  ligarEditor(box, nome, () => fechaModal());
+}
+let filtroFunc = { cargo: "", escala: "" };
 const tabsCoord = () => `<div class="tabs">${Object.entries(COORD).map(([k, v]) => `<button class="tab ${coordTab === k ? "on" : ""}" data-ct="${k}">${v.ic} ${v.l}<span class="c">${lista("coord_" + k).length}</span></button>`).join("")}<button class="tab ${coordTab === "relatorios" ? "on" : ""}" data-ct="relatorios">📝 Relatórios<span class="c">${lista("rel_relatorio").length}</span></button></div>`;
 VIEWS.coordenador = el => {
   if (coordTab === "relatorios") { el.innerHTML = tabsCoord() + '<div id="relB"></div>'; $$("[data-ct]", el).forEach(b => b.onclick = () => { coordTab = b.dataset.ct; renderAll(); }); return viewRelatorios($("#relB")); }
   const ed = pode("coordenador");
-  const c = COORD[coordTab]; const arr = lista("coord_" + coordTab);
+  const c = COORD[coordTab]; const ehF = coordTab === "funcionarios";
+  const arr = lista("coord_" + coordTab).filter(x => !ehF || ((!filtroFunc.cargo || norm(x.cargo || "") === norm(filtroFunc.cargo)) && (!filtroFunc.escala || (filtroFunc.escala === "-" ? !x.escala : norm(x.escala || "") === norm(filtroFunc.escala)))));
   const tit = x => x.nome || x.placa || "—";
-  const sub = x => c.f.slice(1, 4).map(f => x[f.k] ? (f.t === "date" ? br(x[f.k]) : esc(x[f.k])) : "").filter(Boolean).join(" · ");
+  const sub = x => (ehF ? c.f.filter(f => ["cargo", "escala", "setor"].includes(f.k)) : c.f.slice(1, 4)).map(f => x[f.k] ? (f.t === "date" ? br(x[f.k]) : esc(x[f.k])) : "").filter(Boolean).join(" · ");
   const stCor = s => /dispon|ativo|em servi/i.test(s) ? "concluida" : /campo|uso/i.test(s) ? "execucao" : /manut|afast|indisp|parad|deslig/i.test(s) ? "cancelada" : "aberta";
   el.innerHTML = `${tabsCoord()}
-  <div class="tools"><input class="in" id="kB" placeholder="Buscar em ${c.l.toLowerCase()}…" style="flex:1">${ed ? `<button class="btn pri" id="kN">+ Adicionar</button>` : ""}</div>
+  <div class="tools"><input class="in" id="kB" placeholder="Buscar em ${c.l.toLowerCase()}…" style="flex:1">${ehF ? `<select class="in" id="fCg" style="width:auto"><option value="">Todos os cargos</option>${[...new Set([...opcoes("cargos"), ...lista("coord_funcionarios").map(f => f.cargo).filter(Boolean)])].map(o => `<option ${filtroFunc.cargo === o ? "selected" : ""}>${esc(o)}</option>`).join("")}</select><select class="in" id="fEs" style="width:auto"><option value="">Todas as escalas</option>${[...new Set([...opcoes("escalas"), ...lista("coord_funcionarios").map(f => f.escala).filter(Boolean)])].map(o => `<option ${filtroFunc.escala === o ? "selected" : ""}>${esc(o)}</option>`).join("")}<option value="-" ${filtroFunc.escala === "-" ? "selected" : ""}>Sem escala</option></select>${ed ? `<button class="btn" id="gCg">🏷️ Cargos</button><button class="btn" id="gEs">🗓️ Escalas</button>` : ""}` : ""}${ed ? `<button class="btn pri" id="kN">+ Adicionar</button>` : ""}</div>
+  ${ehF ? (() => { const todos = lista("coord_funcionarios").filter(f => f.status !== "Desligado"); const nomes = [...new Set([...opcoes("escalas"), ...todos.map(f => f.escala).filter(Boolean)])]; return `<div class="escList">${nomes.map(e => { const q = todos.filter(f => norm(f.escala || "") === norm(e)); return `<button class="escCard ${filtroFunc.escala === e ? "on" : ""}" data-esc="${esc(e)}"><b>🗓️ ${esc(e)}</b><span class="c">${q.length}</span><div class="k">${q.length ? q.map(f => esc(f.nome || "—")).join(", ") : "ninguém"}</div></button>`; }).join("")}${todos.some(f => !f.escala) ? `<button class="escCard ${filtroFunc.escala === "-" ? "on" : ""}" data-esc="-"><b>⚪ Sem escala</b><span class="c">${todos.filter(f => !f.escala).length}</span><div class="k">${todos.filter(f => !f.escala).map(f => esc(f.nome || "—")).join(", ")}</div></button>` : ""}</div>`; })() : ""}
   ${coordTab === "motos" ? (() => { const r = arr.filter(m => m.revisao && diasEntre(hoje(), m.revisao) <= 7); return r.length ? `<div class="hint warn">⚠️ Revisão próxima ou vencida: ${r.map(m => esc(m.placa) + " (" + br(m.revisao) + ")").join(", ")}</div>` : ""; })() : ""}
   ${arr.length ? `<div class="grid" id="kG">${arr.sort((a, b) => tit(a).localeCompare(tit(b))).map(x => `<div class="item click" data-k="${esc(x.id)}" data-n="${esc(norm(Object.values(x).join(" ")))}"><div class="t">${c.ic} ${esc(tit(x))}</div><div class="k">${sub(x)}</div>${x.status ? `<div><span class="pill ${stCor(x.status)}">${esc(x.status)}</span></div>` : ""}</div>`).join("")}</div>` : `<div class="empty">Nada cadastrado em ${c.l.toLowerCase()}.</div>`}`;
   $$("[data-ct]", el).forEach(b => b.onclick = () => { coordTab = b.dataset.ct; renderAll(); });
   $("#kB").oninput = e => { const q = norm(e.target.value); $$("#kG [data-n]").forEach(d => d.style.display = d.dataset.n.includes(q) ? "" : "none"); };
   $$("[data-k]", el).forEach(d => d.onclick = () => abrirCoord(d.dataset.k));
   $("#kN") && ($("#kN").onclick = () => abrirCoord(null));
+  if (ehF) {
+    $("#fCg").onchange = e => { filtroFunc.cargo = e.target.value; renderAll(); };
+    $("#fEs").onchange = e => { filtroFunc.escala = e.target.value; renderAll(); };
+    $$("[data-esc]", el).forEach(b => b.onclick = () => { filtroFunc.escala = filtroFunc.escala === b.dataset.esc ? "" : b.dataset.esc; renderAll(); });
+    $("#gCg") && ($("#gCg").onclick = () => abrirLista("cargos"));
+    $("#gEs") && ($("#gEs").onclick = () => abrirLista("escalas"));
+  }
 };
 function abrirCoord(id) {
   const c = COORD[coordTab]; const tipo = "coord_" + coordTab; const x = id ? T(tipo)[id] : {};
@@ -1103,6 +1185,7 @@ function abrirCoord(id) {
       { txt: "Salvar", cls: "pri", fn: async r => { const d = { ...x, ...ler(c.f, r) }; delete d.exemplo; await salvar(tipo, id || "k_" + uid(), d); toast("Salvo", "ok"); } }
     ] : []
   });
+  ligarOpcoes($("#modalRoot"));
 }
 
 
