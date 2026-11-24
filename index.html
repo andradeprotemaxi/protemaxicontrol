@@ -841,7 +841,7 @@ VIEWS.dashboard = el => {
   </div>
   ${(S.me || Array.isArray(S.pub?.os) || API === Local) ? (() => {
     const at = lista("os").filter(o => (atraso(o) ?? -1) > 0).sort((a, b) => atraso(b) - atraso(a) || (diasAberta(b) ?? 0) - (diasAberta(a) ?? 0));
-    return `<div class="card" style="margin-top:16px"><h2>⚠️ Quem está atrasado <span class="pill">${at.length}</span>${at.length ? ` <button class="btn sm" onclick="alertaAtrasos(true)" style="margin-left:6px">🔔 Aviso</button>` : ""}<span class="sp"></span><span class="muted" style="font-weight:500;font-size:12px">atualiza sozinho a cada importação</span></h2>${legendaDias()}
+    return `<div class="card" style="margin-top:16px"><h2>⚠️ Quem está atrasado <span class="pill">${at.length}</span><span class="sp"></span><span class="muted" style="font-weight:500;font-size:12px">atualiza sozinho a cada importação</span></h2>${legendaDias()}
       ${at.length ? `<div class="tbl"><table><thead><tr><th>Aberta há</th><th>Atraso</th><th>Nº</th><th>Cliente</th><th class="hidesm">Serviço</th><th class="hidesm">Técnico</th><th class="hidesm">Prazo</th></tr></thead><tbody>${at.slice(0, 40).map(o => `<tr class="click" data-os="${esc(o.id)}"><td>${badgeDias(o)}</td><td><span class="late ${atraso(o) > 3 ? "l3" : "l2"}">+${atraso(o)}d</span></td><td><b>${esc(o.numero || "—")}</b></td><td>${esc(o.cliente || "—")} ${pillTier(tierDe(o.cliente))}</td><td class="hidesm">${esc(o.servico || "")}</td><td class="hidesm">${esc(o.tecnico || "—")}</td><td class="hidesm">${br(prazoEf(o))}</td></tr>`).join("")}</tbody></table></div>${at.length > 40 ? `<p class="muted">+${at.length - 40} atrasadas… <a href="#" data-kgo="atrasadas">ver todas</a></p>` : ""}` : `<div class="empty">Nenhuma OS atrasada 👏</div>`}</div>`;
   })() : ""}
   ${(() => { const ms = missoesFonte().filter(m => ocorrencia(m)).sort((a, b) => (ocorrencia(a) + (a.hora || "")).localeCompare(ocorrencia(b) + (b.hora || ""))); return (ms.length || podeMissao()) ? `<div class="card" style="margin-top:16px" id="dMs"><h2>📌 Missões <span class="pill">${ms.length}</span><span class="sp"></span>${podeMissao() ? `<button class="btn sm pri" id="dMsN">+ Nova missão</button>` : ""}</h2>${ms.length ? ms.slice(0, 20).map(m => linhaMissao(m, !!S.me)).join("") : '<div class="empty">Nenhuma missão programada.</div>'}</div>` : ""; })()}
@@ -965,6 +965,7 @@ function resumoAtrasos() {
 }
 let _atrT = null;
 function alertaAtrasos(forcar) {
+  return;   /* 24/11/2026: popup de OS atrasada desligado — o app não é mais de OS */
   const r = resumoAtrasos(); if (!r.length) return;
   const os = r.reduce((t, x) => t + x.n, 0), sig = r.length + ":" + os + ":" + r[0].max;
   const ult = LS.get("pm_atr_ult", { sig: "", em: 0 });
@@ -984,7 +985,7 @@ function notificacoes() {
   const n = [];
   for (const m of missoesFonte()) { const oc = ocorrencia(m); if (missaoVencida(m, oc)) { const a = diasEntre(oc, hoje()); n.push({ ic: "📣", cor: "warn", t: m.titulo, s: (m.cliente ? m.cliente + " · " : "") + (a > 0 ? a + " dia" + (a > 1 ? "s" : "") + " sem realizar" : "hoje às " + (m.hora || "")), go: () => { LS.set("pm_miss_ack", {}); checarMissoes(); } }); } }
   if (S.me) {
-    const r = resumoAtrasos(); if (r.length) n.push({ ic: "⚠️", cor: "bad", t: `${r.length} cliente${r.length > 1 ? "s" : ""} com OS atrasada`, s: `maior atraso: ${r[0].max} dia${r[0].max > 1 ? "s" : ""} · ${r[0].cliente}`, go: () => alertaAtrasos(true) });
+    const r = []; if (r.length) n.push({ ic: "⚠️", cor: "bad", t: `${r.length} cliente${r.length > 1 ? "s" : ""} com OS atrasada`, s: `maior atraso: ${r[0].max} dia${r[0].max > 1 ? "s" : ""} · ${r[0].cliente}`, go: () => alertaAtrasos(true) });
     const cn = chatNaoLidas(); if (cn) n.push({ ic: "💬", cor: "ac", t: `${cn} mensage${cn > 1 ? "ns" : "m"} nova${cn > 1 ? "s" : ""} no chat`, s: (chatMsgs().slice(-1)[0] || {}).nome || "", go: () => abrirChat(true) });
     if (isAdmin()) {
       const pd = pedidos().length, mq = maqPend().length;
@@ -2627,8 +2628,9 @@ function checarLembretes() {
    ATUALIZAÇÕES — pop-up de novidades para toda a equipe
    (a cada versão nova: troque APP_VERSAO e acrescente no topo de NOVIDADES)
    ============================================================ */
-const APP_VERSAO = "2026.11.24-2";
+const APP_VERSAO = "2026.11.24-3";
 const NOVIDADES = [
+  { v: "2026.11.24-3", data: "24/11/2026", itens: ["🔕 Popup de OS atrasada removido (e o aviso dele no sino)"] },
   { v: "2026.11.24-2", data: "24/11/2026", itens: ["🔒 Lista de clientes e carteira saíram do código: agora ficam só no banco online, protegido por login", "📂 Rota: a planilha é carregada pelo botão Escolher a planilha"] },
   { v: "2026.11.24-1", data: "24/11/2026", itens: ["🛵 Nova aba Rota: a lista de clientes da planilha gira sozinha entre Célio, Edmar (noturnos, revezando) e Wesley (diurno, fins de semana), com Eólica e os 2 terrenos fixos", "🖼️ Cada plantão vira imagem igual à planilha: copiar, baixar ou compartilhar direto no grupo Rota Inspetores", "☁️ As rotas vão sozinhas para o Drive (pasta Base), uma pasta por semana", "🧹 Ordens de serviço saiu do menu"] },
   { v: "2026.11.19-10", data: "19/11/2026", itens: ["🔗 Popup em todas as OS: quando o nome do Inside é diferente do cadastro (ex.: BRAZIL LIMP x BRAZLIMP), você liga a OS ao cliente certo na própria tela da OS"] },
