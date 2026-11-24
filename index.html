@@ -105,6 +105,11 @@ textarea.in{width:100%;min-height:120px;resize:vertical}
 .onl .u div{min-width:0}
 .onl .u b{display:block;font-size:13.5px}
 .onl .u small{color:var(--tx3)}
+.rDia{margin-bottom:16px}.rDh{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:15px}.rDh .sp{flex:1}
+.rCard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:10px}
+.rHd{color:#111;font-weight:800;text-align:center;padding:8px 10px;font-size:14px}
+.rTb td{padding:7px 10px;font-size:13px}.rTb tr td:first-child{width:28px;text-align:center}
+.rAc{display:flex;gap:6px;flex-wrap:wrap;padding:10px 12px;border-top:1px solid var(--line)}
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px}
 .tab{padding:7px 13px;border-radius:9px;cursor:pointer;color:var(--tx2);font-weight:600;border:1px solid transparent;background:none}
 .tab.on{background:var(--card2);color:var(--tx);border-color:var(--line)}
@@ -364,6 +369,7 @@ function ico(n) {
   const p = {
     dashboard: '<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>',
     projetos: '<path d="M3 21h18"/><path d="M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/>',
+    rota: '<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
     painel: '<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
     os: '<path d="M9 4h6M9 4a2 2 0 0 0-2 2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-1a2 2 0 0 0-2-2"/><path d="M8 12h8M8 16h5"/>',
     clientes: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 20a6.5 6.5 0 0 0-3-5.5"/>',
@@ -699,7 +705,8 @@ const LINK_PROJETOS = "https://andradeprotemaxi.github.io/protemaxiprojetos/";
 const ROTAS = [
   ["dashboard", "Dashboard", true],
   ["painel", "Painel", false],
-  ["os", "Ordens de serviço", false],
+  ["rota", "Rota", false],
+  ["os", "Ordens de serviço", false, true],
   ["clientes", "Clientes", false],
   ["importar", "Importar Inside / Segware", false],
   ["arquivos", "Arquivos", false],
@@ -709,6 +716,7 @@ const ROTAS = [
 function permitido(r) {
   if (r === "dashboard" || r === "os") return true;
   if (!S.me) return false;
+  if (r === "rota") return rotaPermitido();
   if (r === "admin" || r === "arquivos") return isAdmin();
   if (r === "coordenador") return pode("coordenador") || S.me.papel === "coordenador";
   if (r === "importar") return pode("os") || pode("clientes");
@@ -724,7 +732,7 @@ function route() {
 addEventListener("hashchange", route);
 
 function renderNav() {
-  $("#nav").innerHTML = ROTAS.filter(([r]) => S.me ? permitido(r) : (r === "dashboard" || r === "os")).map(([r, l]) =>
+  $("#nav").innerHTML = ROTAS.filter(([r, , , oculto]) => !oculto && (S.me ? permitido(r) : r === "dashboard")).map(([r, l]) =>
     `<a href="#${r}" class="${S.route === r ? "on" : ""}">${ico(r)}<span>${l.replace(" Inside / Segware", "")}</span></a>`).join("")
     + (S.me ? (isAdmin() ? `<a href="${LINK_PROJETOS}" target="_blank" rel="noopener">${ico("projetos")}<span>Projetos</span><span class="lock">↗</span></a>` : "") : `<a href="#" id="navLogin">${ico("admin")}<span>Entrar</span></a>`);
   $("#navLogin") && ($("#navLogin").onclick = e => { e.preventDefault(); abrirLogin(); });
@@ -1955,6 +1963,338 @@ function imprimirRel(texto) {
 
 /* ---------- Admin ---------- */
 let admTab = "checklist", calMes = null, calSel = null;
+/* ============================================================
+   ROTA DOS INSPETORES — fila única de clientes que gira sozinha
+   - cada plantão pega os próximos clientes da fila; no fim volta pro começo
+   - noturno (Célio/Edmar revezando dia sim, dia não): N clientes + Eólica + 2 terrenos
+   - diurno (Wesley, nos dias marcados): N clientes + 2 terrenos (sem Eólica)
+   - gera sozinho até o fim da próxima semana; guarda tudo no banco e manda pro Drive
+   ============================================================ */
+const ROTA_SEED = {"cli":[{"conta":"0285","nome":"CLÍNICA SÃO BENTO","end":"R PAULA NEY N° 170","bairro":"ALDEOTA","grupo":"ROTA 1","status":"violado","turno":"todos"},{"conta":"0115","nome":"COND. ACONCÁGUA","end":"RUA FONSECA LOBO N° 1400","bairro":"ALDEOTA","grupo":"ROTA 1","status":"","turno":"todos"},{"conta":"9467","nome":"H E M","end":"R PADRE LUIZ FIGUEIRA N° 555","bairro":"ALDEOTA","grupo":"ROTA 1","status":"","turno":"todos"},{"conta":"9011","nome":"QUANT CONTÁBIL","end":"R TRAVESSA HIUNETE N° 29","bairro":"ALDEOTA","grupo":"ROTA 1","status":"","turno":"todos"},{"conta":"9836","nome":"FARIAS BRITO PRÉ VESTIBULAR","end":"RUA JULIO ABREU Nº 284","bairro":"ALDEOTA","grupo":"ROTA 1","status":"","turno":"todos"},{"conta":"9834","nome":"FARIAS BRITO ODILON BRAVEZA","end":"R 08 DE SETEMBRO Nº 1330","bairro":"ALDEOTA","grupo":"ROTA 1","status":"","turno":"todos"},{"conta":"9833","nome":"FARIAS BRITO FACULDADE","end":"RUA CASTRO MONTE 1364","bairro":"VARJOTA","grupo":"ROTA 1","status":"","turno":"todos"},{"conta":"9835","nome":"FARIAS BRITO BABY","end":"RUA OSORIO PALMELLA Nº 244","bairro":"VARJOTA","grupo":"ROTA 1","status":"","turno":"todos"},{"conta":"9686","nome":"AYO BEIRA MAR","end":"R TIBURCIO CAVALCANTE N° 01","bairro":"ALDEOTA","grupo":"ROTA 1","status":"","turno":"todos"},{"conta":"1069","nome":"COND. FIRENZE","end":"AV ABOLIÇÃO N° 3000","bairro":"MEIRELES","grupo":"ROTA 1","status":"","turno":"todos"},{"conta":"0262","nome":"COND. JOSÉ PESSOA DE ARAÚJO","end":"AV VIRGÍLIO TÁVORA N° 2431","bairro":"MEIRELES","grupo":"ROTA 1","status":"","turno":"todos"},{"conta":"9744","nome":"CONSTANCE - DOM LUIZ","end":"AV DOM LUIS N° 1023","bairro":"MEIRELES","grupo":"ROTA 1","status":"","turno":"todos"},{"conta":"9748","nome":"VC COMERCIO DE ACESSORIOS DE MODA","end":"R PEREIRA VALENTE N° 705","bairro":"MEIRELES","grupo":"ROTA 1","status":"","turno":"todos"},{"conta":"9822","nome":"EDIFICIO VILLA MONTALCINO","end":"R MANUEL JACARE N° 190","bairro":"MUCURIPE","grupo":"ROTA 1","status":"","turno":"todos"},{"conta":"1144","nome":"BATERIAS TUDOR","end":"R BARAO DO RIO BRANCO N° 2613","bairro":"JOSÉ BONIFACIO CENTRO","grupo":"ROTA 1","status":"","turno":"todos"},{"conta":"9796","nome":"ABERTTA SAUDE - ASSOCIACAO BENEFICENTE","end":"R JOAQUIM TORRES N° 654","bairro":"JOAQUIM TÁVORA","grupo":"ROTA 2","status":"","turno":"todos"},{"conta":"9759","nome":"CONTROLPAX CONTABILIDADE E GESTAO","end":"R PADRE VALDEVINO N° 1600","bairro":"JOAQUIM TÁVORA","grupo":"ROTA 2","status":"","turno":"todos"},{"conta":"9733","nome":"ELEVARTECH ELEVADORES E COMPONENTES","end":"R JULIO CESAR N° 454","bairro":"JARDIM AMERICA","grupo":"ROTA 2","status":"","turno":"todos"},{"conta":"9828","nome":"INSTITUTO QUEIROZ JEREISSATI","end":"AV TRISTAO GONCALVES N° 1354","bairro":"BENFICA","grupo":"ROTA 2","status":"","turno":"todos"},{"conta":"9713","nome":"IMPACTO PRIME","end":"R DOMINGOS OLIMPIO N° 999","bairro":"BENFICA","grupo":"ROTA 2","status":"","turno":"todos"},{"conta":"1043","nome":"HABBI'S 13 DE MAIO","end":"AV 13 DE MAIO N° 1746","bairro":"FÁTIMA","grupo":"ROTA 2","status":"","turno":"todos"},{"conta":"9794","nome":"OTIMIZE SAUDE E BEM ESTAR LTDA","end":"R JOSE EUCLIDES N° 400","bairro":"FÁTIMA","grupo":"ROTA 2","status":"violado","turno":"todos"},{"conta":"9832","nome":"REDE CORDIMARIANA EDUCAÇÃO","end":"R MONSENHOR OTAVIO DE CASTRO N° 535","bairro":"FÁTIMA","grupo":"ROTA 2","status":"","turno":"todos"},{"conta":"9803","nome":"RESERVA COWORKING","end":"R MONSENHOR OTAVIO DE CASTRO N° 435","bairro":"FÁTIMA","grupo":"ROTA 2","status":"","turno":"todos"},{"conta":"9756","nome":"MATIAS COELHO - SOCIEDADE ADVOGADO","end":"R TIBURCIO CAVALCANTI N° 2935","bairro":"DIONISIO TORRES","grupo":"ROTA 2","status":"","turno":"todos"},{"conta":"9786","nome":"AMARAL BAIA ADVOGADOS ASSOCIADOS","end":"AV ANTONIO SALES N° 3027","bairro":"DIONISIO TORRES","grupo":"ROTA 2","status":"","turno":"todos"},{"conta":"0257","nome":"PROSPER SOLUÇÕES CONTABEIS","end":"R MARCONDES PEREIRA N° 1368","bairro":"DIONISÍO TORRES","grupo":"ROTA 2","status":"violado","turno":"todos"},{"conta":"9848","nome":"SLS TERCEIRIZACAO DE SERVICOS LTDA","end":"RUA MARCONDES PEREIRA,1354","bairro":"DIONISIO TORRES","grupo":"ROTA 2","status":"","turno":"todos"},{"conta":"9112","nome":"CAPELA RODOLFO TEÓFILO","end":"R PROFESSOR JOÃO BOSCO N° 501","bairro":"RODOLFO TEÓFILO","grupo":"ROTA 2","status":"","turno":"todos"},{"conta":"0186","nome":"DIFARMA DISTRIBUIDORA DE MEDICAMENTOS","end":"R HAROLDO TORRES N° 1305","bairro":"PRESIDENTE KENNEDY","grupo":"ROTA 3","status":"","turno":"todos"},{"conta":"9824","nome":"PROVIDA SARGENTO HERMINIO","end":"AV SARGT HERMÍNIO SAMPAIO N° 2476","bairro":"VILA ELLERY","grupo":"ROTA 3","status":"","turno":"todos"},{"conta":"9773","nome":"POSTO MORRO DO OURO","end":"R CEL CARNEIRO DA CUNHA N° 503","bairro":"MONTE CASTELO","grupo":"ROTA 3","status":"","turno":"todos"},{"conta":"1214","nome":"DINAMICA HOSPITALAR II","end":"R AMADEU FURTADO N° 994","bairro":"PARQUELANDIA","grupo":"ROTA 3","status":"","turno":"todos"},{"conta":"0162","nome":"FREDERICO MAPURUNGA","end":"R JOSÉ DE BARCELOS N° 581","bairro":"PARQUE ARAXÁ","grupo":"ROTA 3","status":"","turno":"todos"},{"conta":"9811","nome":"UTILÍDER","end":"R RUBIA SAMPAIO N° 55","bairro":"FARIAS BRITO","grupo":"ROTA 3","status":"","turno":"todos"},{"conta":"9681","nome":"MARCELINO FREITAS IMOBILIARIA LTDA","end":"AV BEZERRA DE MENEZES N° 2085","bairro":"FARIAS BRITO","grupo":"ROTA 3","status":"","turno":"todos"},{"conta":"0193","nome":"CAPELA CIDADE OESTE","end":"R PADRE PERDIGÃO SAMPAIO N° 400","bairro":"QUINTINO CUNHA","grupo":"ROTA 3","status":"","turno":"todos"},{"conta":"9808","nome":"VASCONCELOS EMBALAGENS","end":"AV INDEPEDENCIA N° 1484","bairro":"QUINTINO CUNHA","grupo":"ROTA 3","status":"","turno":"todos"},{"conta":"9812","nome":"MURILO FARM","end":"R ROSINHA SAMPAIO N° 2371","bairro":"VILA VELHA","grupo":"ROTA 3","status":"","turno":"todos"},{"conta":"0239","nome":"IGREJA PRESBITERIANA DA GRAÇA","end":"R RIO JURUÁ N° 100","bairro":"BARRA DO CEARÁ","grupo":"ROTA 3","status":"violado","turno":"todos"},{"conta":"1138","nome":"CAPELA  IPANEMA","end":"R TENENTE QUEIROZ N° 400","bairro":"ANTONIO BEZERRA","grupo":"ROTA 3","status":"","turno":"todos"},{"conta":"9745","nome":"IGREJA JESUS CRISTO SANTOS ULTIMOS DIAS","end":"AV DE CONTORNO OESTE N° 512","bairro":"ARATURI","grupo":"ROTA 3","status":"","turno":"todos"},{"conta":"9130","nome":"CAPELA ALVARO WEYNE","end":"AV PASTEUR N° 861","bairro":"ALVARO WEYNE","grupo":"ROTA 3","status":"","turno":"todos"},{"conta":"0137","nome":"LILIANA MARIA GOMES SILVA","end":"R TEODORICO BARROSO N° 189","bairro":"VILA UNIÃO","grupo":"ROTA 4","status":"","turno":"todos"},{"conta":"0256","nome":"CHICA BELA","end":"R ABEL GARCIA N° 1015","bairro":"VILA UNIÃO","grupo":"ROTA 4","status":"","turno":"todos"},{"conta":"1086","nome":"DEPOSITO REALCE","end":"R PAPI JUNIOR N° 1677","bairro":"BELA VISTA","grupo":"ROTA 4","status":"","turno":"todos"},{"conta":"1014","nome":"VILMAR VEICULOS","end":"AV JOSÉ BASTOS N° 3878","bairro":"BELA VISTA","grupo":"ROTA 4","status":"","turno":"todos"},{"conta":"9214","nome":"LOJÃO DAS PEÇAS","end":"AV PROFESSOR GOMES DE MATOS N° 1381","bairro":"MONTESE","grupo":"ROTA 4","status":"","turno":"todos"},{"conta":"9742","nome":"BRASA GRILL","end":"R QUEIRÓS RIBEIRO N° 580","bairro":"MONTESE","grupo":"ROTA 4","status":"","turno":"todos"},{"conta":"9816","nome":"ESTOCK EMBALAGENS","end":"AV PROFESSOR GOMES DE MATOS N° 1212","bairro":"MONTESE","grupo":"ROTA 4","status":"","turno":"todos"},{"conta":"0110","nome":"CAPELA MONTESE","end":"R ELVIRA PINHO N° 220","bairro":"MONTESE","grupo":"ROTA 4","status":"","turno":"todos"},{"conta":"0249","nome":"CAPELA DEMÓCRITO ROCHA","end":"R RIO GRANDE DO SUL N° 888","bairro":"DEMÓCRITO ROCHA","grupo":"ROTA 5","status":"","turno":"todos"},{"conta":"0206","nome":"CAPELA HENRIQUE JORGE","end":"AV FERNANDES TÁVORA Nº 2200","bairro":"HENRIQUE JORGE","grupo":"ROTA 5","status":"violado","turno":"todos"},{"conta":"9701","nome":"FARMACIA PROVIDA FERNANDES TAVORA","end":"AV SENADOR FERNANDES TAVORA N° 1804","bairro":"HENRIQUE JORGE","grupo":"ROTA 5","status":"","turno":"todos"},{"conta":"0228","nome":"AGUIAR GÁS","end":"R JOSÉ ABÍLIO N° 1150","bairro":"GRANJA PORTUGAL","grupo":"ROTA 5","status":"","turno":"todos"},{"conta":"0251","nome":"DATA COMP","end":"R 07 DE SETEMBRO N° 182","bairro":"PARANGABA","grupo":"ROTA 5","status":"","turno":"todos"},{"conta":"9003","nome":"FARMACIA PROVIDA LINEU MACHADO","end":"AV LINEU MACHADO N° 1451","bairro":"JOQUEI CLUBE","grupo":"ROTA 5","status":"","turno":"todos"},{"conta":"9463","nome":"FARMACIA PROVIDA OSÓRIO DE PAIVA","end":"AV OSÓRIO DE PAIVA N° 4849","bairro":"OSÓRIO DE PAIVA","grupo":"ROTA 5","status":"","turno":"todos"},{"conta":"9702","nome":"FARMACIA PROVIDA CAUCAIA","end":"AV DOM ALMEIDA LUSTOSA N° 2625","bairro":"PARQUE GUADALAJARA","grupo":"ROTA 5","status":"","turno":"todos"},{"conta":"9838","nome":"ENDY SERVIÇOS AUTOMOTIVOS","end":"AV NOVA FORTALEZA Nº 112","bairro":"PLANALTO AYRTON SENNA","grupo":"ROTA 6","status":"","turno":"todos"},{"conta":"9085","nome":"CALDAS & FURLANE","end":"R MARIA GOMES DE SÁ N° 1890","bairro":"MONDUBIM","grupo":"ROTA 6","status":"","turno":"todos"},{"conta":"9439","nome":"FARMACIA PROVIDA BERNARDO MANUEL","end":"AV BERNARDO MANUEL N° 1117","bairro":"DENDE","grupo":"ROTA 6","status":"","turno":"todos"},{"conta":"9793","nome":"COND. IGNEZ FIUZA","end":"R CARLOS JUACABA N° 821","bairro":"MARAPONGA","grupo":"ROTA 6","status":"","turno":"todos"},{"conta":"9765","nome":"MAISON GAMANE CONFECCAO ROUPAS","end":"R VIDAL DE NEGREIROS N° 37","bairro":"MARAPONGA","grupo":"ROTA 6","status":"","turno":"todos"},{"conta":"9820","nome":"BEGHUS CASA CARNES (RONDA SOMENTE NOITE)","end":"AV GODOFREDO MACIEL N° 1730 - LOJA 2","bairro":"MARAPONGA","grupo":"ROTA 6","status":"","turno":"noite"},{"conta":"0269","nome":"CAPELA ITAPERI","end":"AV DR SILAS MUNGUBA N° 3902","bairro":"ITAPERI","grupo":"ROTA 7","status":"","turno":"todos"},{"conta":"0109","nome":"CAPELA VENEZA","end":"AV DR SILAS MUNGUBA  N° 4850","bairro":"ITAPERI","grupo":"ROTA 7","status":"","turno":"todos"},{"conta":"9252","nome":"POWER LINK","end":"R MENINO JESUS DE PRAGA N° 1120","bairro":"PARQUE DOIS IRMÃO","grupo":"ROTA 7","status":"violado","turno":"todos"},{"conta":"9253","nome":"POWERLINK","end":"AV BERNARDO EMANUEL 9229 N° 9229","bairro":"PARQUE DOIS IRMÃOS","grupo":"ROTA 7","status":"violado","turno":"todos"},{"conta":"9749","nome":"WL LOCACOES","end":"AV DEPUTADO PAULINO ROCHA N° 1881","bairro":"CAJAZEIRAS","grupo":"ROTA 7","status":"","turno":"todos"},{"conta":"1130","nome":"ESUTRA","end":"AV JUSCELINO KUBITSCHECK N° 3381","bairro":"CASTELÃO","grupo":"ROTA 7","status":"","turno":"todos"},{"conta":"0232","nome":"FONTANELLA TRANSPORTES","end":"ROD QUARTO ANEL VIÁRIO N° 1754","bairro":"ANCURI","grupo":"ROTA 8","status":"","turno":"todos"},{"conta":"9711","nome":"SK DISTRIBUIDORA","end":"ROD BR-116 N° 3.400","bairro":"ANCURI","grupo":"ROTA 8","status":"","turno":"todos"},{"conta":"9692","nome":"AGRIBIOS","end":"R CLEIA N° 317","bairro":"BARROSO","grupo":"ROTA 8","status":"","turno":"todos"},{"conta":"0250","nome":"MARCOGRAF - IND. GRÁFICA- COFRE 2","end":"R CAPITÃO HUGO BEZERRA N° 386","bairro":"BARROSO","grupo":"ROTA 8","status":"","turno":"todos"},{"conta":"9821","nome":"IMEX FITNESS LTDA.","end":"ROD BR 116 Nº 4270","bairro":"BARROSO","grupo":"ROTA 8","status":"","turno":"todos"},{"conta":"9839","nome":"MOGNO HOME DESIGN LTDA","end":"R TAQUATIARA (MESSEJANA) N° 345","bairro":"BARROSO","grupo":"ROTA 8","status":"","turno":"todos"},{"conta":"9693","nome":"FARMACIA PROVIDA MESSEJANA","end":"AV DEPUTADO CASTELO DE CASTRO N° 1150","bairro":"CONJUNTO PALMEIRAS","grupo":"ROTA 8","status":"","turno":"todos"},{"conta":"9720","nome":"LOJAO DOS PARAFUSOS","end":"ROD BR-116 N° 10040","bairro":"JANGURUSSU","grupo":"ROTA 8","status":"","turno":"todos"},{"conta":"9712","nome":"CONDOMINIO ARVOREDO","end":"R FRANCISCO ALVES RIBEIRO N° 530","bairro":"JANGURUSSU","grupo":"ROTA 8","status":"","turno":"todos"},{"conta":"9466","nome":"BRAZLIMP","end":"R JOÃO CRISPIM N° 1325","bairro":"ANCURI / MESSEJANA","grupo":"ROTA 9","status":"","turno":"todos"},{"conta":"0271","nome":"CENTRAL DAS FRALDAS DISTRIBUIDORA LTDA","end":"ROD BR - 116 N° 3131","bairro":"MESSEJANA","grupo":"ROTA 9","status":"","turno":"todos"},{"conta":"9779","nome":"CONDOMINIO RESID. VILLAGE DAS PALMEIRAS","end":"R OSCAR LEITAO N° 505","bairro":"MESSEJANA","grupo":"ROTA 9","status":"","turno":"todos"},{"conta":"0301","nome":"F&F DISTRIBUIDORA","end":"R MANUEL ARRUDA N° 381","bairro":"MESSEJANA","grupo":"ROTA 9","status":"","turno":"todos"},{"conta":"9696","nome":"IURY COSTA DA SILVA","end":"R AVELEDO N° 416","bairro":"MESSEJANA","grupo":"ROTA 9","status":"","turno":"todos"},{"conta":"0300","nome":"LOJÃO DOS PARAFUSOS (MESSEJANA)","end":"R JOSÉ HIPÓLITO N° 221","bairro":"MESSEJANA","grupo":"ROTA 9","status":"violado","turno":"todos"},{"conta":"1205","nome":"NELSON DINIZ","end":"R CORONEL ALVES RIBEIRO N° 355","bairro":"MESSEJANA","grupo":"ROTA 9","status":"","turno":"todos"},{"conta":"9680","nome":"TRADE IN TECHNOLOGY","end":"R FRANCISCO PARACAMPOS N° 55","bairro":"CAMBEBA","grupo":"ROTA 9","status":"","turno":"todos"},{"conta":"9732","nome":"UBIRAJARA FERREIRA LIMA","end":"R SANTA MARTA N° 610","bairro":"CAMBEBA","grupo":"ROTA 9","status":"","turno":"todos"},{"conta":"9751","nome":"CARTEC AUTOMOTIVO LTDA","end":"R 1O DE MAIO N° 411","bairro":"EUSEBIO","grupo":"ROTA 9","status":"","turno":"todos"},{"conta":"9768","nome":"ASSOCIACAO JARDINS DO LAGO MAX","end":"AV CORONEL CICERO SA N° 2514","bairro":"URUCUNEMA","grupo":"ROTA 9","status":"","turno":"todos"},{"conta":"0235","nome":"GALPÃO BRASIL MOLAS","end":"R JOÃO CRISPIM N° 1251","bairro":"PAUPINA","grupo":"ROTA 9","status":"","turno":"todos"},{"conta":"0135","nome":"CERTA SERVIÇOS EMPRESARIAIS E","end":"R DESEMBARGADOR WALDEMAR ALVES P N° 515","bairro":"ENG LUCIANO CAVALCANTE","grupo":"ROTA 10","status":"","turno":"todos"},{"conta":"9837","nome":"FORCE","end":"Rua Eduardo Sabóia N° 387","bairro":"PAPICU","grupo":"ROTA 10","status":"","turno":"todos"},{"conta":"9777","nome":"CONDOMINIO ED. PALACIO DO PLANALTO","end":"AV SANTOS DUMONT N° 6870","bairro":"COCÓ","grupo":"ROTA 10","status":"","turno":"todos"},{"conta":"9770","nome":"CONDOMINIO ROYAL OAK RESIDENCE","end":"R  JULIO SILVA N° 720","bairro":"DE LOURDES","grupo":"ROTA 10","status":"","turno":"todos"},{"conta":"9819","nome":"ONG GRUPO MULHERES DO BRASIL","end":"AV CHANCELER EDSON QUEIROZ N° 909","bairro":"EDSON QUEIROZ","grupo":"ROTA 10","status":"","turno":"todos"},{"conta":"9731","nome":"FB JUNIOR SUL","end":"AV ENGENHEIRO LEAL LIMA VERDE N° 700","bairro":"EDSON QUEIROZ","grupo":"ROTA 10","status":"","turno":"todos"},{"conta":"9729","nome":"FB BABY II SUL","end":"R ELIZEU ORIA N° 1185","bairro":"EDSON QUEIROZ","grupo":"ROTA 10","status":"","turno":"todos"},{"conta":"9688","nome":"DEYSE TAVARES","end":"R MARIO ALENCAR ARARIPE N° 800","bairro":"SAPIRANGA","grupo":"ROTA 10","status":"","turno":"todos"},{"conta":"9728","nome":"FB BABY PLUS","end":"R SALVADOR CORREIA DE SA N° 990","bairro":"SAPIRANGA","grupo":"ROTA 10","status":"","turno":"todos"},{"conta":"9730","nome":"FB JOVEM SUL","end":"R Salvador Correia de Sá N° 1111","bairro":"SAPIRANGA","grupo":"ROTA 10","status":"","turno":"todos"},{"conta":"9718","nome":"ARENA AYO","end":"AV NCHANCELER EDSON QUEIROZ N° 100","bairro":"PATRIOLINO RIBEIRO","grupo":"ROTA 10","status":"violado","turno":"todos"},{"conta":"9429","nome":"AYO FITNESS CLUB","end":"AV CHANCELER EDSON QUEIROZ N° 100","bairro":"PATRIOLINO RIBEIRO","grupo":"ROTA 10","status":"","turno":"todos"},{"conta":"9249","nome":"A. C. CONSTRUÇÕES LTDA","end":"AV DESEMBARGADOR GONZAGA N° 1221","bairro":"CIDADE DOS FUNCIONARIOS","grupo":"ROTA 11","status":"","turno":"todos"},{"conta":"9714","nome":"SS PRANCHARIA","end":"AV CLOVIS ARRAIS MAIA N° 3080","bairro":"PRAIA DO FUTURO I","grupo":"ROTA 11","status":"","turno":"todos"},{"conta":"1217","nome":"DIRETORIA","end":"R ALBERT SABIN N° 61","bairro":"GUARARAPES","grupo":"ROTA 11","status":"","turno":"todos"},{"conta":"9699","nome":"VERA UCHOA","end":"R JAIME PINHEIRO N° 84","bairro":"GUARARAPES","grupo":"ROTA 11","status":"","turno":"todos"},{"conta":"9667","nome":"CAPELA ALVORADA","end":"R CONSELHEIRO GOMES DE FREITAS N° 3400","bairro":"ALAGADIÇO NOVO / SAPIRANGA","grupo":"ROTA 11","status":"","turno":"todos"},{"conta":"0212","nome":"IGREJA BATISTA DO PLANALTO","end":"R OTAVIO FERREIRA MACHADO N° 81","bairro":"PAPICU 1","grupo":"ROTA 11","status":"","turno":"todos"},{"conta":"9781","nome":"CENTRAL DAS CORREIAS E CORRENTES","end":"AV DOS MARINHEIROS N° 519","bairro":"CIDADE NOVA","grupo":"ROTA 12","status":"","turno":"todos"},{"conta":"9789","nome":"WL ELETRÔNICA","end":"R PEDO BATISTA N° 549","bairro":"JARDINS PARAISO","grupo":"ROTA 12","status":"","turno":"todos"},{"conta":"9784","nome":"MENDONCA BORRACHAS - FILIAL MARACANAU","end":"R UM RESIDENCIAL NOVO JENIPAPEIRO N° 56","bairro":"JENIPAPEIRO","grupo":"ROTA 12","status":"","turno":"todos"},{"conta":"0219","nome":"TERRAQUA COMÉRCIO SERV. EQUP. AGRICOLAS","end":"AV MENDEL STEINBRUCH Nº 2527 N° 2527","bairro":"PAJUÇARA","grupo":"ROTA 12","status":"","turno":"todos"},{"conta":"0248","nome":"ATX SERVIÇOS - AMADEU TAVARES XAVIER - EPP","end":"R POTENGI N° 320","bairro":"PAJUÇARA","grupo":"ROTA 12","status":"","turno":"todos"},{"conta":"0217","nome":"BARATÃO DA IRRIGAÇÃO COMERCIAL DE BOMBAS","end":"AV DR MENDEL STEINBRUCH Nº 2290 - LJ 01 E 02","bairro":"JEREISSATI 1","grupo":"ROTA 12","status":"","turno":"todos"},{"conta":"9155","nome":"BARATÃO DEPOSITO","end":"AV DR MENDEL STEINBRUCH Nº 2290 LJ 01 E 02","bairro":"JEREISSATI 1","grupo":"ROTA 12","status":"","turno":"todos"},{"conta":"9679","nome":"LOJAO DOS PARAFUSOS","end":"R DOUTOR MENDEL STEINBRUCH N° 10403","bairro":"DISTRITO INDUSTRIAL I","grupo":"ROTA 12","status":"violado","turno":"todos"},{"conta":"9831","nome":"PONTO D SISTEMA","end":"R 8 PRQ ANTONIO VIANA N° 644 - LT 31 32 33 E 34","bairro":"CÁGADO","grupo":"ROTA 12","status":"","turno":"todos"},{"conta":"0158","nome":"COLÉGIO CARLOS LOBO","end":"R 11  Nº 576","bairro":"MARACANAU","grupo":"ROTA 12","status":"","turno":"todos"},{"conta":"0236","nome":"VERTICE MOBILIA","end":"R 7 N° 271","bairro":"PAU SERRADO","grupo":"ROTA 12","status":"","turno":"todos"},{"conta":"0143","nome":"CAPELA RIO ( PACATUBA)","end":"AV XXI Nº 362","bairro":"SENADOR CARLOS JEREISSATI","grupo":"ROTA 12","status":"","turno":"todos"},{"conta":"9763","nome":"EOLICA PRAINHA","end":"ROD CE 025 KM 04 N° S/N","bairro":"PRAINHA /PORTO DAS DUNAS","grupo":"ROTA 12","status":"violado","turno":"todos","fixo":"noite"},{"conta":"0001","nome":"01 TERRENOS PACATUBA","end":"CE-060, 2499-2101","bairro":"PACATUBA (MONGUBA)","grupo":"ROTA 12","status":"","turno":"todos","fixo":"todos"},{"conta":"0002","nome":"02 TERRENOS PACATUBA","end":"R. MANOEL PEREIRA 778-5806","bairro":"PACATUBA (OLHO D'ÁGUA","grupo":"ROTA 12","status":"","turno":"todos","fixo":"todos"}],"hist":[{"insp":"C","data":"2026-11-23","titulo":"Célio -  23/11 Segunda - NOTURNO","contas":["9749","1130","0232","9711","9763","0001","0002"]},{"insp":"C","data":"2026-11-25","titulo":"Célio -  25/11 Quarta - NOTURNO","contas":["9693","9720","9712","9466","9763","0001","0002"]},{"insp":"C","data":"2026-11-27","titulo":"Célio -  27/11 Sexta - NOTURNO","contas":["0300","1205","9680","9732","9763","0001","0002"]},{"insp":"C","data":"2026-11-29","titulo":"Célio -  29/11 Domingo - NOTURNO","contas":["9837","9777","9770","9819","9763","0001","0002"]},{"insp":"E","data":"2026-11-24","titulo":"Edmar - 24/11 Terça - NOTURNO","contas":["9692","0250","9821","9839","9763","0001","0002"]},{"insp":"E","data":"2026-11-26","titulo":"Edmar - 26/11 Quinta - NOTURNO","contas":["0271","9779","0301","9696","9763","0001","0002"]},{"insp":"E","data":"2026-11-28","titulo":"Edmar - 28/11 Sábado - NOTURNO","contas":["9751","9768","0235","0135","9763","0001","0002"]},{"insp":"W","data":"2026-11-29","titulo":"Wesley - 29/11 Domingo - Diurno","contas":["9731","9729","9688","9728","9730","9718","9429","0001","0002"]}]};
+const DSEM = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+const DSEM3 = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const RSTATUS = { "": ["Normal", ""], violado: ["Violado / tentativa (vermelho)", "#ea9999"], ouro: ["Cliente ouro (amarelo)", "#ffff00"], bloqueado: ["Inadimplente / bloqueado — não entra na rota", "#999999"], naovisitar: ["Não visitar — não entra na rota", "#38761d"] };
+const RTURNO = { todos: "Dia e noite", noite: "Só à noite", dia: "Só de dia" };
+const RFIXO = { "": "Não (gira na fila)", noite: "Sim, em todo plantão noturno", todos: "Sim, em todo plantão (dia e noite)" };
+const DRIVE_PASTA_BASE = "1hiToFtsU64y5LJnKUMHkWyJEUg9_Z6E1";
+let rotaTab = "semana", rotaSeg = null, rotaBusca = "";
+
+const rcfg = () => ({ insp: {}, noite: [], diasDia: [6, 0], qtdNoite: 4, qtdDia: 7, ult: -1, pend: [], pulos: {}, extras: {}, ...(T("coord_rotacfg").geral || {}) });
+const rclis = () => lista("coord_rotacli").sort((a, b) => a.ordem - b.ordem);
+const rgira = () => rclis().filter(c => !c.fixo);
+const rplants = () => lista("coord_rotaplant").sort((a, b) => (a.data + a.turno).localeCompare(b.data + b.turno));
+const rentra = c => c && c.status !== "bloqueado" && c.status !== "naovisitar";
+const rservio = (c, turno) => !c.turno || c.turno === "todos" || c.turno === turno;
+const rnomeIns = (k, cf = rcfg()) => cf.insp[k]?.nome || k;
+const rdm = s => s.slice(8, 10) + "/" + s.slice(5, 7);
+const rtitulo = p => `${rnomeIns(p.insp)} - ${rdm(p.data)} ${DSEM[dt(p.data).getDay()]} - ${p.turno === "dia" ? "DIURNO" : "NOTURNO"}`;
+const rhorizonte = () => addDias(segunda(), 13);   // domingo da semana que vem
+const rmin = p => ({ conta: p.conta, nome: p.nome, end: p.end, bairro: p.bairro, status: p.status || "", fixo: p.fixo || "" });
+
+/* quem faz o noturno nesse dia: revezamento dia sim, dia não a partir da data de referência */
+function rquemNoite(data, cf) {
+  const n = cf.noite.length; if (!n || !cf.refData) return null;
+  const i0 = Math.max(0, cf.noite.indexOf(cf.refInsp));
+  return cf.noite[(((i0 + diasEntre(cf.refData, data)) % n) + n) % n];
+}
+function rquemDia(data, cf) {
+  const k = Object.keys(cf.insp).find(x => cf.insp[x].turno === "dia"); if (!k) return null;
+  const key = data + "_" + k;
+  if (cf.extras[key]) return k;
+  return cf.diasDia.includes(dt(data).getDay()) ? k : null;
+}
+/* tira os próximos n clientes da fila */
+function rpegar(n, turno, st, gira) {
+  const out = [], pend = [];
+  for (const id of st.pend) { const c = gira.find(x => x.id === id); if (!rentra(c)) continue; if (out.length < n && rservio(c, turno)) out.push(c); else pend.push(id); }
+  if (gira.length) {
+    let i = gira.findIndex(c => c.ordem > st.ult); if (i < 0) i = 0;
+    for (let k = 0; k < gira.length && out.length < n; k++) {
+      const c = gira[(i + k) % gira.length]; st.ult = c.ordem;
+      if (!rentra(c) || out.includes(c) || pend.includes(c.id)) continue;
+      if (rservio(c, turno)) out.push(c); else pend.push(c.id);
+    }
+  }
+  st.pend = pend; return out;
+}
+/* gera os plantões de "de" até "ate" e devolve os registros pra salvar */
+function rgerar(de, ate, cf) {
+  const gira = rgira(), fix = rclis().filter(c => c.fixo && rentra(c)), itens = [];
+  const st = { ult: cf.ult, pend: [...(cf.pend || [])] };
+  for (let d = de; d <= ate; d = addDias(d, 1)) {
+    const slots = [];
+    const wd = rquemDia(d, cf); if (wd && !cf.pulos[d + "_" + wd]) slots.push([wd, "dia"]);
+    const wn = rquemNoite(d, cf); if (wn && !cf.pulos[d + "_" + wn]) slots.push([wn, "noite"]);
+    for (const [ins, turno] of slots) {
+      const antes = { ult: st.ult, pend: [...st.pend] };
+      const rot = rpegar(turno === "dia" ? +cf.qtdDia : +cf.qtdNoite, turno, st, gira);
+      const fx = fix.filter(c => c.fixo === "todos" || (c.fixo === "noite" && turno === "noite")).sort((a, b) => (a.fixo === "noite" ? 0 : 1) - (b.fixo === "noite" ? 0 : 1) || a.ordem - b.ordem);
+      itens.push({ tipo: "coord_rotaplant", id: d + "_" + ins, dados: { data: d, insp: ins, turno, itens: [...rot, ...fx].map(rmin), antes, criado: new Date().toISOString() } });
+    }
+  }
+  cf.ult = st.ult; cf.pend = st.pend; cf.ate = ate;
+  return itens;
+}
+let _rotaLock = false;
+async function rotaAuto() {
+  if (_rotaLock || !S.me || !pode("coordenador") || !T("coord_rotacfg").geral) return;
+  const cf = rcfg(), h = rhorizonte(); if (cf.ate && cf.ate >= h) return rotaDriveAuto();
+  _rotaLock = true;
+  try {
+    let de = cf.ate ? addDias(cf.ate, 1) : hoje(); if (de < hoje()) de = hoje();
+    const it = rgerar(de, h, cf);
+    await salvarVarios([...it, { tipo: "coord_rotacfg", id: "geral", dados: cf }]);
+    if (it.length) toast(`🛵 Rota gerada sozinha: ${it.length} plantões até ${br(h)}`, "ok");
+  } catch (e) { toast("Rota: " + e.message, "bad"); } finally { _rotaLock = false; }
+  rotaDriveAuto();
+}
+/* apaga os plantões a partir da data e gera de novo (usa o ponto da fila salvo naquele dia) */
+const rminGen = () => { const im = rplants().filter(p => p.importado).map(p => p.data).sort().pop(); return im ? addDias(im, 1) : "0000"; };
+async function rotaRegerar(desde, mudarCfg) {
+  if (desde < rminGen()) desde = rminGen();
+  _rotaLock = true;
+  try {
+    const cf = rcfg();
+    const fut = rplants().filter(p => p.data >= desde && !p.importado);
+    if (fut.length && fut[0].antes) { cf.ult = fut[0].antes.ult; cf.pend = [...fut[0].antes.pend]; }
+    mudarCfg && mudarCfg(cf);
+    if (cf._proxOrdem != null) { cf.ult = cf._proxOrdem - 0.001; cf.pend = []; } delete cf._proxOrdem;
+    for (const p of fut) { await API.del("coord_rotaplant", p.id).catch(() => {}); delete T("coord_rotaplant")[p.id]; }
+    const h = rhorizonte(), it = rgerar(desde, h > desde ? h : addDias(desde, 6), cf);
+    await salvarVarios([...it, { tipo: "coord_rotacfg", id: "geral", dados: cf }]);
+    toast("Rota refeita a partir de " + br(desde), "ok");
+  } catch (e) { toast("Rota: " + e.message, "bad"); } finally { _rotaLock = false; }
+  rotaDriveAuto();
+}
+/* primeira vez: carrega a planilha oficial (clientes + rotas já feitas da semana 23 a 29/11) */
+async function rotaSemear() {
+  const its = [];
+  ROTA_SEED.cli.forEach((c, i) => its.push({ tipo: "coord_rotacli", id: "r" + c.conta, dados: { ...c, ordem: (i + 1) * 10 } }));
+  const porConta = Object.fromEntries(ROTA_SEED.cli.map((c, i) => [c.conta, { ...c, ordem: (i + 1) * 10 }]));
+  for (const h of ROTA_SEED.hist) its.push({ tipo: "coord_rotaplant", id: h.data + "_" + h.insp, dados: { data: h.data, insp: h.insp, turno: h.insp === "W" ? "dia" : "noite", itens: h.contas.map(k => rmin(porConta[k])), antes: null, importado: true, drive: false } });
+  const prox = porConta["9249"];   // A. C. CONSTRUÇÕES: próximo da fila depois do Wesley em 29/11
+  const cf = {
+    insp: { C: { nome: "Célio", turno: "noite", cor: "#6d9eeb" }, E: { nome: "Edmar", turno: "noite", cor: "#c9c9c9" }, W: { nome: "Wesley", turno: "dia", cor: "#93c47d" } },
+    noite: ["C", "E"], refData: "2026-11-23", refInsp: "C", diasDia: [6, 0], qtdNoite: 4, qtdDia: 7,
+    ult: prox ? prox.ordem - 1 : -1, pend: [], pulos: {}, extras: {}, ate: "2026-11-29", driveUrl: ""
+  };
+  its.push({ tipo: "coord_rotacfg", id: "geral", dados: cf });
+  await salvarVarios(its);
+  toast("Lista da planilha carregada: " + ROTA_SEED.cli.length + " clientes", "ok");
+  await rotaAuto();
+}
+
+/* ---------- imagem igual à planilha (para o WhatsApp) ---------- */
+function rotaCanvas(p) {
+  const cf = rcfg(), sc = 2, W = [46, 74, 420, 430, 300], tw = W.reduce((a, b) => a + b), hh = 32, rh = 29;
+  const cv = document.createElement("canvas"); cv.width = tw * sc; cv.height = (hh + rh * p.itens.length) * sc;
+  const g = cv.getContext("2d"); g.scale(sc, sc);
+  g.fillStyle = cf.insp[p.insp]?.cor || "#c9c9c9"; g.fillRect(0, 0, tw, hh);
+  g.fillStyle = "#111"; g.font = "bold 15px Calibri, Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText(rtitulo(p), tw / 2, hh / 2 + 1);
+  p.itens.forEach((c, i) => {
+    const y = hh + i * rh; const cor = c.nome === "EOLICA PRAINHA" ? "#ea9999" : (RSTATUS[c.status]?.[1] || "");
+    let x = 0;
+    [String(i + 1), c.conta, c.nome, c.end, c.bairro].forEach((t, j) => {
+      g.fillStyle = j === 0 ? "#d0d0d0" : (cor || "#efefef"); g.fillRect(x, y, W[j], rh);
+      g.strokeStyle = "#a6a6a6"; g.lineWidth = 1; g.strokeRect(x + .5, y + .5, W[j] - 1, rh - 1);
+      g.fillStyle = "#111"; g.font = "14px Calibri, Arial, sans-serif"; g.textAlign = j === 0 ? "center" : "left";
+      let s = String(t || "").toUpperCase(); while (s.length > 1 && g.measureText(s).width > W[j] - 10) s = s.slice(0, -1);
+      g.fillText(s, j === 0 ? x + W[j] / 2 : x + 6, y + rh / 2 + 1); x += W[j];
+    });
+  });
+  g.strokeStyle = "#a6a6a6"; g.strokeRect(.5, .5, tw - 1, hh - 1);
+  return cv;
+}
+const rotaBlob = p => new Promise(ok => rotaCanvas(p).toBlob(ok, "image/png"));
+const rotaArq = p => `${p.data} ${rtitulo(p).replace(/[\/\\:]/g, "-").replace(/\s+/g, " ")}.png`;
+function baixarBlob(b, nome) { const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = nome; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+async function rotaCopiarImg(p) {
+  try { const b = await rotaBlob(p); await navigator.clipboard.write([new ClipboardItem({ "image/png": b })]); toast("Imagem copiada — cole no grupo do WhatsApp (Ctrl+V)", "ok"); }
+  catch { toast("Este navegador não deixa copiar imagem. Use Baixar ou Compartilhar.", "bad"); }
+}
+async function rotaCompartilhar(p) {
+  const f = new File([await rotaBlob(p)], rotaArq(p), { type: "image/png" });
+  if (navigator.canShare && navigator.canShare({ files: [f] })) { try { await navigator.share({ files: [f], text: rtitulo(p) }); } catch {} }
+  else baixarBlob(f, f.name);
+}
+async function rotaZip(ps, nome) {
+  await carregarScript("https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js");
+  const zip = new JSZip(); for (const p of ps) zip.file(rotaArq(p), await rotaBlob(p));
+  zip.file("textos.txt", ps.map(rtitulo).join("\n"));
+  baixarBlob(await zip.generateAsync({ type: "blob" }), nome);
+}
+/* ---------- Drive: manda cada plantão novo para a pasta Base (via Apps Script) ---------- */
+const semanaDe = d => addDias(d, -((dt(d).getDay() + 6) % 7));
+const rpastaSem = d => { const s = semanaDe(d); return `Semana ${rdm(s).replace("/", "-")} a ${rdm(addDias(s, 6)).replace("/", "-")} de ${s.slice(0, 4)}`; };
+async function rotaEnviarDrive(p, cf) {
+  const b = await rotaBlob(p);
+  const b64 = await new Promise(ok => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1]); r.readAsDataURL(b); });
+  await fetch(cf.driveUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ pasta: rpastaSem(p.data), nome: rotaArq(p), base64: b64, texto: rtitulo(p) + "\n" + p.itens.map((c, i) => `${i + 1}. ${c.conta} ${c.nome} — ${c.end} — ${c.bairro}`).join("\n") }) });
+}
+let _rotaDrv = false;
+async function rotaDriveAuto(forcar) {
+  const cf = rcfg(); if (_rotaDrv || !cf.driveUrl || !S.me || !pode("coordenador")) return;
+  const fila = rplants().filter(p => forcar || !p.drive); if (!fila.length) return;
+  _rotaDrv = true; let n = 0;
+  try {
+    for (const p of fila) { await rotaEnviarDrive(p, cf); const { id, ...d } = p; await API.save("coord_rotaplant", id, { ...d, drive: true }); T("coord_rotaplant")[id] = { ...d, drive: true }; n++; }
+    toast(`☁️ ${n} rota(s) enviada(s) para o Drive (pasta Base)`, "ok"); softRender();
+  } catch (e) { toast("Drive: " + e.message, "bad"); } finally { _rotaDrv = false; }
+}
+const APPS_SCRIPT = `// Cole em script.google.com > Novo projeto > Implantar > Nova implantação > App da Web
+// Executar como: Eu  |  Quem pode acessar: Qualquer pessoa   → copie o link e cole no app (Rota > Ajustes)
+const PASTA_BASE = "${DRIVE_PASTA_BASE}"; // pasta Base (Bravus Midia > 03 Equipe > Andrade > Base)
+function doPost(e) {
+  const d = JSON.parse(e.postData.contents);
+  const base = DriveApp.getFolderById(PASTA_BASE);
+  const it = base.getFoldersByName(d.pasta);
+  const pasta = it.hasNext() ? it.next() : base.createFolder(d.pasta);
+  const velhos = pasta.getFilesByName(d.nome); while (velhos.hasNext()) velhos.next().setTrashed(true);
+  pasta.createFile(Utilities.newBlob(Utilities.base64Decode(d.base64), "image/png", d.nome));
+  const txt = d.nome.replace(/\\.png$/, ".txt"); const tv = pasta.getFilesByName(txt); while (tv.hasNext()) tv.next().setTrashed(true);
+  pasta.createFile(txt, d.texto || "", MimeType.PLAIN_TEXT);
+  return ContentService.createTextOutput("ok");
+}`;
+
+/* ---------- tela ---------- */
+const rotaPermitido = () => pode("coordenador") || S.me?.papel === "coordenador";
+VIEWS.rota = el => {
+  if (!T("coord_rotacfg").geral) {
+    el.innerHTML = `<div class="card" style="max-width:640px"><h2>🛵 Rota dos inspetores</h2><p>Ainda não tem lista. Vou carregar a planilha oficial (<b>${ROTA_SEED.cli.length} clientes</b>, rotas 1 a 12) e as rotas já feitas da semana de 23 a 29/11. A partir daí a rota gira sozinha.</p><button class="btn pri" id="rSeed">Carregar lista da planilha</button></div>`;
+    $("#rSeed").onclick = async e => { e.target.disabled = true; try { await rotaSemear(); } catch (x) { toast(x.message, "bad"); e.target.disabled = false; } };
+    return;
+  }
+  setTimeout(rotaAuto, 300);
+  const cf = rcfg(), ed = pode("coordenador");
+  const tabs = `<div class="tabs">${[["semana", "📅 Rotas da semana"], ["clientes", `👥 Clientes da rota<span class="c">${rclis().length}</span>`], ["ajustes", "⚙️ Ajustes"]].map(([k, l]) => `<button class="tab ${rotaTab === k ? "on" : ""}" data-rt="${k}">${l}</button>`).join("")}</div>`;
+  el.innerHTML = tabs + '<div id="rB"></div>';
+  $$("[data-rt]", el).forEach(b => b.onclick = () => { rotaTab = b.dataset.rt; renderAll(); });
+  ({ semana: rotaSemana, clientes: rotaClientes, ajustes: rotaAjustes })[rotaTab]($("#rB"), cf, ed);
+};
+function rproximo(cf) { const g = rgira().filter(rentra); return g.find(c => c.ordem > cf.ult) || g[0]; }
+function rotaSemana(el, cf, ed) {
+  if (!rotaSeg) { const hj = hoje(); const temHoje = rplants().some(p => p.data >= hj && p.data < addDias(segunda(), 7)); rotaSeg = temHoje ? segunda() : addDias(segunda(), 7); }
+  const fim = addDias(rotaSeg, 6), ps = rplants().filter(p => p.data >= rotaSeg && p.data <= fim);
+  const prox = rproximo(cf), kDia = Object.keys(cf.insp).find(k => cf.insp[k].turno === "dia");
+  let dias = ""; const ordemD = [];
+  for (let d = rotaSeg; d <= fim; d = addDias(d, 1)) {
+    const pd = ps.filter(p => p.data === d); ordemD.push(...pd);
+    const wTem = pd.some(p => p.turno === "dia"), futuro = d > hoje() && d >= rminGen();
+    dias += `<div class="rDia"><div class="rDh"><b>${DSEM3[dt(d).getDay()]} ${rdm(d)}</b>${d === hoje() ? ' <span class="pill execucao">hoje</span>' : ""}<span class="sp"></span>${ed && futuro && kDia && !wTem ? `<button class="btn sm" data-wadd="${d}">+ ${esc(rnomeIns(kDia, cf))} neste dia</button>` : ""}</div>
+      ${pd.length ? pd.map(p => rotaCard(p, cf, ed && futuro && !p.importado)).join("") : '<p class="muted" style="margin:4px 0 10px">Sem plantão.</p>'}</div>`;
+  }
+  el.innerHTML = `<div class="tools" style="flex-wrap:wrap;gap:8px">
+      <button class="btn" id="rAnt">◀</button><b style="align-self:center">Semana ${rdm(rotaSeg)} a ${rdm(fim)}</b><button class="btn" id="rPrx">▶</button>
+      <span class="sp" style="flex:1"></span>
+      ${ps.length ? `<button class="btn" id="rTxt">📋 Copiar textos</button><button class="btn" id="rZip">⬇️ Baixar semana (imagens)</button>` : ""}
+      ${cf.driveUrl ? `<button class="btn" id="rDrv">☁️ Mandar pro Drive</button>` : ""}
+    </div>
+    <div class="hint">▶ Próximo da fila: <b>${prox ? esc(prox.conta + " " + prox.nome) : "—"}</b> (${prox ? esc(prox.grupo || "") : ""}) · Rotas prontas até <b>${br(cf.ate || "")}</b> — o app gera sozinho e mantém sempre a próxima semana pronta.${cf.driveUrl ? " · ☁️ Drive ligado" : ' · ☁️ Drive ainda não ligado (veja Ajustes)'}</div>
+    ${ps.length ? dias : `<div class="empty">Nenhuma rota nesta semana${rotaSeg > rhorizonte() ? " ainda — ela é gerada sozinha uma semana antes" : ""}.</div>`}`;
+  $("#rAnt").onclick = () => { rotaSeg = addDias(rotaSeg, -7); renderAll(); };
+  $("#rPrx").onclick = () => { rotaSeg = addDias(rotaSeg, 7); renderAll(); };
+  $("#rTxt") && ($("#rTxt").onclick = () => { navigator.clipboard.writeText(ordemD.map(p => rtitulo(p) + "\n" + p.itens.map((c, i) => `${i + 1}. ${c.conta} ${c.nome} — ${c.end} — ${c.bairro}`).join("\n")).join("\n\n")); toast("Textos copiados", "ok"); });
+  $("#rZip") && ($("#rZip").onclick = () => rotaZip(ordemD, `Rotas ${rotaSeg} a ${fim}.zip`).catch(e => toast(e.message, "bad")));
+  $("#rDrv") && ($("#rDrv").onclick = async () => { const cf2 = rcfg(); let n = 0; for (const p of ordemD) { try { await rotaEnviarDrive(p, cf2); n++; } catch {} } toast(`☁️ ${n} imagem(ns) enviada(s) para o Drive`, "ok"); });
+  const P = id => T("coord_rotaplant")[id] && { id, ...T("coord_rotaplant")[id] };
+  $$("[data-rcp]", el).forEach(b => b.onclick = () => rotaCopiarImg(P(b.dataset.rcp)));
+  $$("[data-rtx]", el).forEach(b => b.onclick = () => { navigator.clipboard.writeText(rtitulo(P(b.dataset.rtx))); toast("Texto copiado: cole antes da imagem", "ok"); });
+  $$("[data-rdl]", el).forEach(b => b.onclick = async () => { const p = P(b.dataset.rdl); baixarBlob(await rotaBlob(p), rotaArq(p)); });
+  $$("[data-rsh]", el).forEach(b => b.onclick = () => rotaCompartilhar(P(b.dataset.rsh)));
+  $$("[data-rpul]", el).forEach(b => b.onclick = async () => {
+    const p = P(b.dataset.rpul); if (!await confirma(`${rnomeIns(p.insp)} não vai fazer a rota de ${rdm(p.data)}? Os clientes dele passam para os próximos plantões.`)) return;
+    await rotaRegerar(p.data, c => { c.pulos[p.id] = 1; delete c.extras[p.id]; });
+  });
+  $$("[data-wadd]", el).forEach(b => b.onclick = async () => { const d = b.dataset.wadd, id = d + "_" + kDia; await rotaRegerar(d, c => { c.extras[id] = 1; delete c.pulos[id]; }); });
+}
+function rotaCard(p, cf, podePular) {
+  const cor = cf.insp[p.insp]?.cor || "#c9c9c9";
+  return `<div class="rCard"><div class="rHd" style="background:${esc(cor)}">${esc(rtitulo(p))}</div>
+    <div class="tbl"><table class="rTb">${p.itens.map((c, i) => `<tr style="${c.nome === "EOLICA PRAINHA" || c.status === "violado" ? "background:rgba(234,153,153,.22)" : c.status === "ouro" ? "background:rgba(245,197,66,.18)" : ""}"><td class="muted">${i + 1}</td><td>${esc(c.conta)}</td><td><b>${esc(c.nome)}</b></td><td class="hidesm">${esc(c.end)}</td><td>${esc(c.bairro)}</td></tr>`).join("")}</table></div>
+    <div class="rAc"><button class="btn sm" data-rtx="${esc(p.id)}">📋 Texto</button><button class="btn sm pri" data-rcp="${esc(p.id)}">🖼️ Copiar imagem</button><button class="btn sm" data-rdl="${esc(p.id)}">⬇️ Baixar</button><button class="btn sm" data-rsh="${esc(p.id)}">📤 Compartilhar</button>
+    ${podePular ? `<span class="sp" style="flex:1"></span><button class="btn sm bad" data-rpul="${esc(p.id)}">${esc(rnomeIns(p.insp))} não vai</button>` : ""}${p.drive ? '<span class="muted" style="font-size:12px;align-self:center">☁️ no Drive</span>' : ""}</div></div>`;
+}
+function rotaClientes(el, cf, ed) {
+  const cs = rclis(), prox = rproximo(cf);
+  el.innerHTML = `<div class="tools"><input class="in" id="rcB" placeholder="Buscar cliente, conta, bairro…" style="flex:1" value="${esc(rotaBusca)}">${ed ? '<button class="btn pri" id="rcN">+ Novo cliente</button>' : ""}</div>
+  <div class="hint">A ordem desta lista é a ordem das visitas. Cada plantão pega os próximos e, no fim, volta pro começo. Clique num cliente para editar ou mudar de lugar.</div>
+  <div class="card"><div class="tbl"><table><thead><tr><th>#</th><th>Conta</th><th>Cliente</th><th class="hidesm">Endereço</th><th>Bairro</th><th class="hidesm">Rota</th><th></th></tr></thead><tbody id="rcT">
+  ${cs.map((c, i) => `<tr class="click" data-rc="${esc(c.id)}" data-n="${esc(norm([c.conta, c.nome, c.end, c.bairro, c.grupo].join(" ")))}" style="${c.status && RSTATUS[c.status] ? `box-shadow:inset 4px 0 0 ${RSTATUS[c.status][1]}` : ""}">
+    <td class="muted">${prox && prox.id === c.id ? '<b style="color:var(--ok)">▶</b>' : i + 1}</td><td>${esc(c.conta)}</td><td><b>${esc(c.nome)}</b>${c.fixo ? ' <span class="pill execucao">fixo</span>' : ""}${c.turno && c.turno !== "todos" ? ` <span class="pill">${RTURNO[c.turno]}</span>` : ""}${!rentra(c) ? ' <span class="pill cancelada">fora da rota</span>' : ""}</td>
+    <td class="hidesm muted">${esc(c.end)}</td><td>${esc(c.bairro)}</td><td class="hidesm muted">${esc(c.grupo || "")}</td><td class="muted">${prox && prox.id === c.id ? "próximo" : ""}</td></tr>`).join("")}
+  </tbody></table></div></div>`;
+  const filtra = () => { const q = norm(rotaBusca); $$("#rcT tr[data-n]").forEach(tr => tr.style.display = tr.dataset.n.includes(q) ? "" : "none"); };
+  $("#rcB").oninput = e => { rotaBusca = e.target.value; filtra(); }; filtra();
+  $("#rcN") && ($("#rcN").onclick = () => rotaEditar(null));
+  $$("[data-rc]", el).forEach(tr => tr.onclick = () => ed && rotaEditar(tr.dataset.rc));
+}
+function rotaEditar(id) {
+  const c = id ? { id, ...T("coord_rotacli")[id] } : { turno: "todos", status: "", fixo: "" }, cs = rclis().filter(x => x.id !== id);
+  const ant = id ? (rclis().filter(x => x.ordem < c.ordem).pop() || null) : cs[cs.length - 1];
+  const grupos = [...new Set(cs.map(x => x.grupo).filter(Boolean))];
+  const fs = [
+    { k: "conta", l: "Conta" }, { k: "nome", l: "Nome fantasia" }, { k: "end", l: "Logradouro", full: true }, { k: "bairro", l: "Bairro" },
+    { k: "grupo", l: "Rota (grupo)", list: "rGr" },
+    { k: "status", l: "Marcação", t: "select", op: Object.entries(RSTATUS).map(([k, v]) => [k, v[0]]) },
+    { k: "turno", l: "Quem pode visitar", t: "select", op: Object.entries(RTURNO) },
+    { k: "fixo", l: "Visita fixa (todo plantão)?", t: "select", op: Object.entries(RFIXO) },
+  ];
+  modal({
+    titulo: id ? "Editar cliente da rota" : "Novo cliente na rota", wide: true,
+    corpo: campos(fs, c) + datalist("rGr", grupos) + `<div class="form" style="margin-top:10px"><label class="full">Posição na fila — entra logo depois de:<select class="in" name="depois"><option value="__ini">— no começo da lista —</option>${cs.map(x => `<option value="${esc(x.id)}" ${ant && ant.id === x.id ? "selected" : ""}>${esc(x.conta + " · " + x.nome + " (" + (x.bairro || "") + ")")}</option>`).join("")}</select></label></div>`,
+    botoes: [
+      ...(id ? [{ txt: "Excluir", cls: "bad", fn: async () => { if (!await confirma("Tirar " + c.nome + " da lista de rota?")) return false; await excluir("coord_rotacli", id); toast("Removido da rota"); } }] : []),
+      { txt: "Salvar", cls: "pri", fn: async r => {
+        const o = ler(fs, r); if (!o.nome) throw new Error("Preencha o nome");
+        o.conta = o.conta.padStart(4, "0"); o.nome = o.nome.toUpperCase(); o.end = o.end.toUpperCase(); o.bairro = o.bairro.toUpperCase();
+        const dep = r.querySelector("[name=depois]").value, ix = dep === "__ini" ? -1 : cs.findIndex(x => x.id === dep);
+        const a = ix >= 0 ? cs[ix].ordem : (cs[0] ? cs[0].ordem - 10 : 0), b = cs[ix + 1] ? cs[ix + 1].ordem : a + 20;
+        o.ordem = (id && ant && ant.id === dep) ? c.ordem : (a + b) / 2;
+        const nid = id || "r" + (o.conta && !T("coord_rotacli")["r" + o.conta] ? o.conta : uid());
+        await salvar("coord_rotacli", nid, o); toast(id ? "Cliente atualizado" : "Cliente incluído na fila", "ok");
+      } }
+    ]
+  });
+}
+function rotaAjustes(el, cf, ed) {
+  const ks = Object.keys(cf.insp), kDia = ks.find(k => cf.insp[k].turno === "dia"), quemHoje = rquemNoite(hoje(), cf), g = rgira().filter(rentra), prox = rproximo(cf);
+  el.innerHTML = `<div class="grid2" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px">
+  <div class="card"><h2>👷 Inspetores</h2>${ks.map(k => `<div class="form" style="margin-bottom:8px"><label>Nome (${k})<input class="in" data-in="${k}" value="${esc(cf.insp[k].nome)}"></label><label>Turno<select class="in" data-it="${k}"><option value="noite" ${cf.insp[k].turno === "noite" ? "selected" : ""}>Noturno</option><option value="dia" ${cf.insp[k].turno === "dia" ? "selected" : ""}>Diurno</option></select></label><label>Cor do título<input class="in" type="color" style="height:40px;padding:3px" data-ic="${k}" value="${esc(cf.insp[k].cor || "#c9c9c9")}"></label></div>`).join("")}
+    <div class="form"><label class="full">Quem está de plantão HOJE à noite (${br(hoje())})<select class="in" id="aHoje">${cf.noite.map(k => `<option value="${k}" ${k === quemHoje ? "selected" : ""}>${esc(cf.insp[k].nome)}</option>`).join("")}</select></label></div>
+    <p class="muted" style="font-size:12.5px">Os noturnos revezam dia sim, dia não (12x36). Se a escala trocar, mude aqui e clique em Salvar.</p></div>
+  <div class="card"><h2>🔢 Quantidades e dias</h2><div class="form">
+    <label>Clientes por plantão noturno<input class="in" type="number" min="1" id="aQn" value="${cf.qtdNoite}"></label>
+    <label>Clientes por plantão diurno<input class="in" type="number" min="1" id="aQd" value="${cf.qtdDia}"></label>
+    <label class="full">Dias que ${esc(kDia ? cf.insp[kDia].nome : "o diurno")} faz rota<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">${[1, 2, 3, 4, 5, 6, 0].map(d => `<label style="display:flex;gap:4px;align-items:center;font-weight:500"><input type="checkbox" data-dd="${d}" ${cf.diasDia.includes(d) ? "checked" : ""}>${DSEM3[d]}</label>`).join("")}</div></label>
+    <label class="full">Próximo cliente da fila<select class="in" id="aProx">${g.map(c => `<option value="${esc(c.id)}" ${prox && prox.id === c.id ? "selected" : ""}>${esc(c.conta + " · " + c.nome)}</option>`).join("")}</select></label>
+    <label class="full">Refazer as rotas a partir de<input class="in" type="date" id="aDe" value="${addDias(hoje(), 1)}"></label></div>
+    <p class="muted" style="font-size:12.5px">Fixos (não giram): ${rclis().filter(c => c.fixo).map(c => esc(c.nome) + (c.fixo === "noite" ? " (só noturno)" : "")).join(", ")}. Para mudar, edite o cliente em "Clientes da rota".</p>
+    ${ed ? '<button class="btn pri" id="aSalvar">Salvar e refazer as rotas a partir da data</button>' : ""}</div>
+  <div class="card"><h2>☁️ Google Drive (pasta Base)</h2>
+    <p style="margin-top:0">As imagens das rotas vão sozinhas para <b>Drive › Bravus Mídia › 03 Equipe › Andrade › Base</b>, uma pasta por semana. Ligar uma vez só (3 minutos):</p>
+    <ol style="padding-left:18px;margin:0 0 10px;line-height:1.6"><li>Abra <a href="https://script.google.com/home/projects/create" target="_blank" rel="noopener">script.google.com</a> logado no <b>bravusmidiaoficial@gmail.com</b></li><li>Apague o que tiver e cole o código abaixo (botão Copiar)</li><li><b>Implantar › Nova implantação › App da Web</b> · Executar como <b>Eu</b> · Acesso <b>Qualquer pessoa</b> · autorize</li><li>Copie o link que termina em <b>/exec</b> e cole aqui</li></ol>
+    <textarea class="in" rows="6" readonly style="font-family:monospace;font-size:11.5px">${esc(APPS_SCRIPT)}</textarea>
+    <div class="tools" style="margin-top:8px"><button class="btn sm" id="aCp">📋 Copiar código</button></div>
+    <div class="form"><label class="full">Link do App da Web (/exec)<input class="in" id="aUrl" value="${esc(cf.driveUrl || "")}" placeholder="https://script.google.com/macros/s/…/exec"></label></div>
+    ${ed ? '<div class="tools"><button class="btn pri" id="aDrv">Salvar link</button><button class="btn" id="aDrvT">Enviar todas as rotas agora</button></div>' : ""}</div></div>`;
+  $("#aCp").onclick = () => { navigator.clipboard.writeText(APPS_SCRIPT); toast("Código copiado", "ok"); };
+  if (!ed) return;
+  $("#aDrv").onclick = async () => { const u = $("#aUrl").value.trim(); if (u && !/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec/.test(u)) return toast("O link precisa ser do App da Web e terminar em /exec", "bad"); await salvar("coord_rotacfg", "geral", { ...rcfg(), driveUrl: u }); toast(u ? "Drive ligado — enviando as rotas…" : "Drive desligado", "ok"); rotaDriveAuto(); };
+  $("#aDrvT").onclick = () => rotaDriveAuto(true);
+  $("#aSalvar").onclick = async () => {
+    const de = $("#aDe").value; if (!de) return toast("Escolha a data", "bad");
+    if (!await confirma(`Refazer todas as rotas a partir de ${br(de)}? As de antes ficam como estão.`)) return;
+    const insp = {}; ks.forEach(k => insp[k] = { nome: $(`[data-in="${k}"]`).value.trim() || k, turno: $(`[data-it="${k}"]`).value, cor: $(`[data-ic="${k}"]`).value });
+    const noite = ks.filter(k => insp[k].turno === "noite"), proxId = $("#aProx").value, qn = Math.max(1, +$("#aQn").value || 4), qd = Math.max(1, +$("#aQd").value || 7);
+    const dd = $$("[data-dd]").filter(x => x.checked).map(x => +x.dataset.dd), hojeIns = $("#aHoje").value, mudouProx = !prox || prox.id !== proxId;
+    await rotaRegerar(de, c => {
+      Object.assign(c, { insp, noite, qtdNoite: qn, qtdDia: qd, diasDia: dd, refData: hoje(), refInsp: noite.includes(hojeIns) ? hojeIns : noite[0] });
+      if (mudouProx) c._proxOrdem = T("coord_rotacli")[proxId]?.ordem;
+    });
+  };
+}
+
 VIEWS.admin = el => {
   el.innerHTML = `<div class="tabs">${[["checklist", "✅ Checklist diário"], ["usuarios", "👥 Usuários e permissões"], ["maquinas", "💻 Máquinas" + (maqPend().length ? " 🔴" + maqPend().length : "")], ["tempo", "⏱️ Tempo logado"], ["config", "⚙️ Configurações"]].map(([k, l]) => `<button class="tab ${admTab === k ? "on" : ""}" data-at="${k}">${l}</button>`).join("")}</div><div id="admB"></div>`;
   $$("[data-at]", el).forEach(b => b.onclick = () => { admTab = b.dataset.at; renderAll(); });
@@ -2239,8 +2579,9 @@ function checarLembretes() {
    ATUALIZAÇÕES — pop-up de novidades para toda a equipe
    (a cada versão nova: troque APP_VERSAO e acrescente no topo de NOVIDADES)
    ============================================================ */
-const APP_VERSAO = "2026.11.19-10";
+const APP_VERSAO = "2026.11.24-1";
 const NOVIDADES = [
+  { v: "2026.11.24-1", data: "24/11/2026", itens: ["🛵 Nova aba Rota: a lista de clientes da planilha gira sozinha entre Célio, Edmar (noturnos, revezando) e Wesley (diurno, fins de semana), com Eólica e os 2 terrenos fixos", "🖼️ Cada plantão vira imagem igual à planilha: copiar, baixar ou compartilhar direto no grupo Rota Inspetores", "☁️ As rotas vão sozinhas para o Drive (pasta Base), uma pasta por semana", "🧹 Ordens de serviço saiu do menu"] },
   { v: "2026.11.19-10", data: "19/11/2026", itens: ["🔗 Popup em todas as OS: quando o nome do Inside é diferente do cadastro (ex.: BRAZIL LIMP x BRAZLIMP), você liga a OS ao cliente certo na própria tela da OS"] },
   { v: "2026.11.19-9", data: "19/11/2026", itens: ["🔔 Popup também dentro de Editar OS: ajuste os dias, as datas e os horários do aviso do cliente sem sair da OS"] },
   { v: "2026.11.19-8", data: "19/11/2026", itens: ["🔔 Botão Popup em cada cliente da lista: abre direto os dias, as datas e os horários do aviso", "⬆️ No perfil do cliente, o Popup agora fica no topo"] },
@@ -2435,6 +2776,7 @@ addEventListener("keydown", e => { if (e.key === "Escape") { document.body.class
   API.start();
   if (S.me) iniciarSessao();
   route();
+  if (S.me) { setTimeout(rotaAuto, 5000); setInterval(rotaAuto, 30 * 60000); }
   if (S.me) { setTimeout(checarPedidos, 1500); setTimeout(ofereceMigrar, 2500); setTimeout(() => alertaAtrasos(true), 3500); setInterval(() => alertaAtrasos(false), 10 * 60000); }
   if (maqPend) setTimeout(() => aguardarMaquina(...maqPend), 600);
   else if (!S.me && API === Supa && !sessionStorage.getItem("pm_aviso")) setTimeout(avisoRestrito, 700);
