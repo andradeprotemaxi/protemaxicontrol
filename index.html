@@ -802,52 +802,52 @@ function dadosDash() {
   };
 }
 VIEWS.dashboard = el => {
-  const k = dadosDash();
-  if (!k) { el.innerHTML = '<div class="empty">Carregando o dashboard…</div>'; API === Supa && Supa.publico(); return; }
-  const faixas = [["d_verde", "Até 2 dias", "dv", "#22c55e"], ["d_amarelo", "3 a 4 dias", "da", "#f59e0b"], ["d_vermelho", "Mais de 4 dias", "dr", "#ef4444"]];
-  const totF = faixas.reduce((a, [f]) => a + (+k[f] || 0), 0);
-  const ser = k.serie || []; const mx = Math.max(1, ...ser.map(x => Math.max(+x.abertas, +x.concluidas)));
-  const W = 700, H = 220, pl = 28, pb = 26, pt = 10, bw = (W - pl) / Math.max(1, ser.length);
-  const y = v => pt + (H - pt - pb) * (1 - v / mx);
-  const ticks = [...new Set([0, Math.round(mx / 2), mx])];
-  const dm = d => String(d).slice(8, 10) + "/" + String(d).slice(5, 7);
+  const temRota = !!(S.me && T("coord_rotacfg").geral);
+  const cf = temRota ? rcfg() : null, hj = hoje(), ps = temRota ? rplants() : [];
+  const hojeP = ps.filter(p => p.data === hj), prox7 = ps.filter(p => p.data > hj && p.data <= addDias(hj, 7));
+  const seg = segunda(), sem = ps.filter(p => p.data >= seg && p.data <= addDias(seg, 6));
+  const nVis = p => p.itens.length;
+  /* andamento da volta na lista: posição do próximo cliente da fila */
+  const gira = temRota ? rgira().filter(rentra) : [], N = gira.length;
+  const ref = hojeP.find(p => p.turno === "noite") || hojeP[0] || prox7[0];
+  const pr = ref ? ref.itens.find(c => !c.fixo) : null;
+  const pos = pr ? Math.max(0, gira.findIndex(c => c.conta === pr.conta)) : 0, pct = N ? Math.round(pos / N * 100) : 0;
+  const porDia = prox7.length ? prox7.reduce((t, p) => t + p.itens.filter(c => !c.fixo).length, 0) / 7 : 0;
+  const faltam = porDia ? Math.ceil((N - pos) / porDia) : null;
+  const cl = lista("cliente"), k = S.me ? { ouro: new Set(cl.filter(c => c.categoria === "ouro").map(c => c.grupo || c.id)).size, prata: new Set(cl.filter(c => c.categoria !== "ouro").map(c => c.grupo || c.id)).size, contas: cl.length } : (S.pub || {});
+  const marc = temRota ? rclis().reduce((o, c) => (o[c.status || "ok"] = (o[c.status || "ok"] || 0) + 1, o), {}) : {};
+  const ins = temRota ? Object.keys(cf.insp) : [];
+  const cont = ins.map(kk => ({ kk, nome: cf.insp[kk].nome, cor: cf.insp[kk].cor, pl: sem.filter(p => p.insp === kk).length, vis: sem.filter(p => p.insp === kk).reduce((t, p) => t + nVis(p), 0) }));
+  const mxV = Math.max(1, ...cont.map(c => c.vis));
+  const quem = t => hojeP.filter(p => p.turno === t).map(p => esc(rnomeIns(p.insp, cf))).join(", ") || "—";
   el.innerHTML = `
-  <div class="aoVivo"><span class="dotV"></span> Ao vivo · atualiza sozinho · última atualização <b id="ultS">${new Date(S.ultSync || Date.now()).toLocaleTimeString("pt-BR")}</b></div>
-  <div class="kpis">
-    <div class="kpi k1 kgo" data-kgo="aberta" title="Ver estas OS"><div class="l">OS abertas</div><div class="v">${k.abertas}</div><div class="s">Serviços pendentes</div></div>
-    <div class="kpi k2 kgo" data-kgo="execucao" title="Ver estas OS"><div class="l">Em execução</div><div class="v">${k.execucao}</div><div class="s">Em andamento agora</div></div>
-    <div class="kpi k3 kgo" data-kgo="semana" title="Ver estas OS"><div class="l">Concluídas na semana</div><div class="v">${k.semana}</div><div class="s">Desde segunda-feira</div></div>
-    <div class="kpi k4 kgo" data-kgo="atrasadas" title="Ver estas OS"><div class="l">Atrasadas</div><div class="v">${k.atrasadas}</div><div class="s">Passaram do prazo</div></div>
+  <div class="aoVivo"><span class="dotV"></span> Ao vivo · atualiza sozinho · ${DSEM[dt(hj).getDay()]}, ${br(hj)} · <b id="ultS">${new Date(S.ultSync || Date.now()).toLocaleTimeString("pt-BR")}</b></div>
+  ${temRota ? `<div class="kpis">
+    <div class="kpi k1 dgo" data-dgo="rota"><div class="l">🌙 Noturno hoje</div><div class="v" style="font-size:34px">${quem("noite")}</div><div class="s">${hojeP.filter(p => p.turno === "noite").reduce((t, p) => t + nVis(p), 0)} visitas no plantão</div></div>
+    <div class="kpi k2 dgo" data-dgo="rota"><div class="l">☀️ Diurno hoje</div><div class="v" style="font-size:34px">${quem("dia")}</div><div class="s">${hojeP.some(p => p.turno === "dia") ? hojeP.filter(p => p.turno === "dia").reduce((t, p) => t + nVis(p), 0) + " visitas" : "sem rota de dia hoje"}</div></div>
+    <div class="kpi k3 dgo" data-dgo="rota"><div class="l">Visitas na semana</div><div class="v">${sem.reduce((t, p) => t + nVis(p), 0)}</div><div class="s">${sem.length} plantões de ${br(seg).slice(0, 5)} a ${br(addDias(seg, 6)).slice(0, 5)}</div></div>
+    <div class="kpi k4 dgo" data-dgo="rota" style="--c:var(--ac)"><div class="l">Volta na lista</div><div class="v" style="color:var(--tx)">${pct}%</div><div class="s">${pos} de ${N} clientes${faltam != null ? ` · volta completa em ~${faltam} dia${faltam > 1 ? "s" : ""}` : ""}</div></div>
   </div>
   <div class="row" style="margin-top:16px">
-    <div class="card"><h2>Abertas × concluídas · últimos 14 dias</h2>
-      <div class="legDias" style="margin:0 0 6px"><span class="lgSw" style="background:#38bdf8"></span> Abertas <span class="lgSw" style="background:#a78bfa;margin-left:10px"></span> Concluídas</div>
-      <svg viewBox="0 0 ${W} ${H}" class="dChart" role="img" aria-label="OS abertas e concluídas por dia">
-        ${ticks.map(t => `<line x1="${pl}" x2="${W}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)" stroke-width="1"/><text x="${pl - 6}" y="${y(t) + 4}" text-anchor="end" class="dAx">${t}</text>`).join("")}
-        ${ser.map((x, i) => { const x0 = pl + i * bw + bw * .18, w = bw * .3; return `<g class="dBar"><title>${dm(x.d)}: ${x.abertas} aberta(s), ${x.concluidas} concluída(s)</title><rect x="${pl + i * bw}" y="${pt}" width="${bw}" height="${H - pt - pb}" fill="transparent"/>
-          <rect x="${x0}" y="${y(+x.abertas)}" width="${w}" height="${Math.max(0, H - pb - y(+x.abertas))}" rx="3" fill="#38bdf8"/><rect x="${x0 + w + 2}" y="${y(+x.concluidas)}" width="${w}" height="${Math.max(0, H - pb - y(+x.concluidas))}" rx="3" fill="#a78bfa"/>
-          ${i % 2 === ser.length % 2 ? "" : `<text x="${pl + i * bw + bw / 2}" y="${H - 8}" text-anchor="middle" class="dAx">${dm(x.d)}</text>`}</g>`; }).join("")}
-      </svg></div>
+    <div class="card"><h2>🛵 Rota de hoje<span class="sp"></span><a href="#rota" class="btn sm">Abrir Rota</a></h2>
+      ${hojeP.length ? hojeP.map(p => `<div class="rCard" style="margin-bottom:10px"><div class="rHd" style="background:${esc(cf.insp[p.insp]?.cor || "#c9c9c9")}">${esc(rtitulo(p))}</div><div class="tbl"><table class="rTb">${p.itens.map((c, i) => `<tr style="${c.fixo === "noite" || c.status === "violado" ? "background:rgba(234,153,153,.22)" : c.status === "ouro" ? "background:rgba(245,197,66,.18)" : ""}"><td class="muted">${i + 1}</td><td>${esc(c.conta)}</td><td><b>${esc(c.nome)}</b></td><td>${esc(c.bairro)}</td></tr>`).join("")}</table></div></div>`).join("") : '<div class="empty">Sem plantão hoje.</div>'}
+    </div>
     <div style="display:flex;flex-direction:column;gap:16px">
-      <div class="card"><h2>Tempo em aberto das OS pendentes</h2>
-        ${faixas.map(([f, l, c, cor]) => `<div class="fx kgo" data-kgo="${c}" title="Ver estas OS"><span class="dias ${c} sm">${k[f]}</span><span class="fxL">${l}</span><div class="fxB"><i style="width:${totF ? (k[f] / totF * 100) : 0}%;background:${cor}"></i></div></div>`).join("")}
-        <small class="muted">${totF} OS pendentes · clique numa faixa para ver as OS. Quando o Inside não traz a abertura, ela é estimada pela data de entrega.</small></div>
-      <div class="card"><h2>Clientes</h2>
-        <div class="mini" style="grid-template-columns:1fr 1fr;margin:0">
-          <div class="m kgo" data-kcli="ouro"><span class="medal ouro"></span><b>${k.ouro}</b><span>Ouro</span></div>
-          <div class="m kgo" data-kcli="prata"><span class="medal prata"></span><b>${k.prata}</b><span>Prata</span></div>
-        </div><small class="muted">${k.contas} contas cadastradas</small></div>
+      <div class="card"><h2>📅 Próximos plantões</h2>${prox7.length ? `<div style="display:flex;flex-direction:column;gap:6px">${prox7.slice(0, 9).map(p => `<div style="display:flex;align-items:center;gap:8px;font-size:13.5px"><span style="width:10px;height:10px;border-radius:3px;background:${esc(cf.insp[p.insp]?.cor || "#999")}"></span><b style="min-width:62px">${DSEM3[dt(p.data).getDay()]} ${rdm(p.data)}</b><span style="flex:1">${esc(rnomeIns(p.insp, cf))}</span><span class="muted">${p.turno === "dia" ? "☀️" : "🌙"} ${nVis(p)}</span></div>`).join("")}</div>` : '<p class="muted">Nenhum ainda.</p>'}</div>
+      <div class="card"><h2>👷 Visitas por inspetor · semana</h2>${cont.map(c => `<div style="margin-bottom:10px"><div style="display:flex;font-size:13px;margin-bottom:4px"><b>${esc(c.nome)}</b><span class="sp" style="flex:1"></span><span class="muted">${c.pl} plantões · ${c.vis} visitas</span></div><div class="fxB" style="height:10px"><i style="width:${c.vis / mxV * 100}%;background:${esc(c.cor || "var(--ac)")}"></i></div></div>`).join("")}</div>
     </div>
   </div>
-  ${(S.me || Array.isArray(S.pub?.os) || API === Local) ? (() => {
-    const at = lista("os").filter(o => (atraso(o) ?? -1) > 0).sort((a, b) => atraso(b) - atraso(a) || (diasAberta(b) ?? 0) - (diasAberta(a) ?? 0));
-    return `<div class="card" style="margin-top:16px"><h2>⚠️ Quem está atrasado <span class="pill">${at.length}</span><span class="sp"></span><span class="muted" style="font-weight:500;font-size:12px">atualiza sozinho a cada importação</span></h2>${legendaDias()}
-      ${at.length ? `<div class="tbl"><table><thead><tr><th>Aberta há</th><th>Atraso</th><th>Nº</th><th>Cliente</th><th class="hidesm">Serviço</th><th class="hidesm">Técnico</th><th class="hidesm">Prazo</th></tr></thead><tbody>${at.slice(0, 40).map(o => `<tr class="click" data-os="${esc(o.id)}"><td>${badgeDias(o)}</td><td><span class="late ${atraso(o) > 3 ? "l3" : "l2"}">+${atraso(o)}d</span></td><td><b>${esc(o.numero || "—")}</b></td><td>${esc(o.cliente || "—")} ${pillTier(tierDe(o.cliente))}</td><td class="hidesm">${esc(o.servico || "")}</td><td class="hidesm">${esc(o.tecnico || "—")}</td><td class="hidesm">${br(prazoEf(o))}</td></tr>`).join("")}</tbody></table></div>${at.length > 40 ? `<p class="muted">+${at.length - 40} atrasadas… <a href="#" data-kgo="atrasadas">ver todas</a></p>` : ""}` : `<div class="empty">Nenhuma OS atrasada 👏</div>`}</div>`;
-  })() : ""}
+  <div class="mini" style="margin-top:16px">
+    <div class="m dgo" data-dgo="rotacli"><span style="font-size:18px">🗺️</span><b>${N}</b><span>clientes girando na rota</span></div>
+    <div class="m dgo" data-dgo="rotacli"><span class="medal" style="background:#ea9999"></span><b>${marc.violado || 0}</b><span>violados / tentativa</span></div>
+    <div class="m dgo" data-dgo="rotacli"><span class="medal" style="background:#999"></span><b>${(marc.bloqueado || 0) + (marc.naovisitar || 0)}</b><span>fora da rota (bloqueado / não visitar)</span></div>
+    <div class="m kgo" data-kcli="ouro"><span class="medal ouro"></span><b>${k.ouro ?? "—"}</b><span>clientes ouro · ${k.prata ?? "—"} prata</span></div>
+  </div>` : `<div class="card"><h2>🛵 Rota dos inspetores</h2><p class="muted" style="margin:0">${S.me ? 'A rota ainda não foi carregada. <a href="#rota">Abrir a aba Rota</a> e escolher a planilha.' : "Entre com seu usuário para ver a rota de hoje, os plantões e as visitas."}</p></div>
+  <div class="mini" style="grid-template-columns:repeat(3,1fr)"><div class="m kgo" data-kcli="ouro"><span class="medal ouro"></span><b>${k.ouro ?? "—"}</b><span>Ouro</span></div><div class="m kgo" data-kcli="prata"><span class="medal prata"></span><b>${k.prata ?? "—"}</b><span>Prata</span></div><div class="m"><span style="font-size:18px">🏢</span><b>${k.contas ?? "—"}</b><span>contas cadastradas</span></div></div>`}
   ${(() => { const ms = missoesFonte().filter(m => ocorrencia(m)).sort((a, b) => (ocorrencia(a) + (a.hora || "")).localeCompare(ocorrencia(b) + (b.hora || ""))); return (ms.length || podeMissao()) ? `<div class="card" style="margin-top:16px" id="dMs"><h2>📌 Missões <span class="pill">${ms.length}</span><span class="sp"></span>${podeMissao() ? `<button class="btn sm pri" id="dMsN">+ Nova missão</button>` : ""}</h2>${ms.length ? ms.slice(0, 20).map(m => linhaMissao(m, !!S.me)).join("") : '<div class="empty">Nenhuma missão programada.</div>'}</div>` : ""; })()}
   <div class="dashMarca"><img src="protemaxi.png" alt="Protemaxi Segurança"></div>
-  ${!S.me ? `<div class="hint" style="margin-top:16px">🔒 Clientes, arquivos e alterações são só para quem tem acesso. <a href="#" id="dEnt">Entrar</a> · <a href="#" id="dSol">Solicitar acesso</a></div>` : ""}`;
-  typeof ligaTabelaOS === "function" && ligaTabelaOS(el);
+  ${!S.me ? `<div class="hint" style="margin-top:16px">🔒 Rota, clientes e arquivos são só para quem tem acesso. <a href="#" id="dEnt">Entrar</a> · <a href="#" id="dSol">Solicitar acesso</a></div>` : ""}`;
+  $$("[data-dgo]", el).forEach(d => { d.style.cursor = "pointer"; d.onclick = () => { rotaTab = d.dataset.dgo === "rotacli" ? "clientes" : "semana"; rotaSeg = null; go("rota"); }; });
   $("#dMs") && ligarMissoes($("#dMs")); $("#dMsN") && ($("#dMsN").onclick = () => abrirMissao(null));
   $("#dEnt") && ($("#dEnt").onclick = e => { e.preventDefault(); abrirLogin(); });
   $("#dSol") && ($("#dSol").onclick = e => { e.preventDefault(); abrirSolicitar(); });
@@ -2628,8 +2628,9 @@ function checarLembretes() {
    ATUALIZAÇÕES — pop-up de novidades para toda a equipe
    (a cada versão nova: troque APP_VERSAO e acrescente no topo de NOVIDADES)
    ============================================================ */
-const APP_VERSAO = "2026.11.24-3";
+const APP_VERSAO = "2026.11.24-4";
 const NOVIDADES = [
+  { v: "2026.11.24-4", data: "24/11/2026", itens: ["📊 Dashboard novo: quem está de plantão hoje, rota do dia, próximos plantões, visitas por inspetor e quanto falta para dar a volta na lista — sem OS"] },
   { v: "2026.11.24-3", data: "24/11/2026", itens: ["🔕 Popup de OS atrasada removido (e o aviso dele no sino)"] },
   { v: "2026.11.24-2", data: "24/11/2026", itens: ["🔒 Lista de clientes e carteira saíram do código: agora ficam só no banco online, protegido por login", "📂 Rota: a planilha é carregada pelo botão Escolher a planilha"] },
   { v: "2026.11.24-1", data: "24/11/2026", itens: ["🛵 Nova aba Rota: a lista de clientes da planilha gira sozinha entre Célio, Edmar (noturnos, revezando) e Wesley (diurno, fins de semana), com Eólica e os 2 terrenos fixos", "🖼️ Cada plantão vira imagem igual à planilha: copiar, baixar ou compartilhar direto no grupo Rota Inspetores", "☁️ As rotas vão sozinhas para o Drive (pasta Base), uma pasta por semana", "🧹 Ordens de serviço saiu do menu"] },
